@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+body { @apply bg-stone-50 text-stone-900 antialiased; }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: white; }
+  .no-print { display: none !important; }
+  .page-break { break-before: page; }
+  .avoid-break { break-inside: avoid; }
+}
