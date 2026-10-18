@@ -3,6 +3,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
+import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { webWhen } from '@/lib/domain/web-dates';
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const [events, tours] = await Promise.all([publicEvents(), publicTours()]);
   const today = todayIso();
-  const lead = events.find((r) => r.event.highlight && r.event.headerImage) ?? events.find((r) => r.event.headerImage);
+  const lead = pickLead(events, today);
   const otherHighlights = events.filter((r) => r.event.highlight && r !== lead).slice(0, 2);
   const comingUp = events.filter((r) => r !== lead && !r.event.highlight && UNIQUE.includes(r.event.occurrence)).slice(0, 6);
   const datedTours = tours.slice(0, 3);
