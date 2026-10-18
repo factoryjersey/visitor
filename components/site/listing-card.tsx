@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Image } from '@/lib/db/schema';
+import type { Genre } from '@/lib/domain/genre';
 import { printParish } from '@/lib/domain/house-style';
 import { CardMore } from './card-more';
 import { CategoryMarkers } from './category-markers';
@@ -28,6 +29,8 @@ export function ListingCard(props: {
   tag?: string | null;
   /** Its kinds, shown as small icons in the picture's corner. */
   types?: readonly string[] | null;
+  /** A tour's genre: one tile in the corner instead. */
+  genre?: Genre | null;
   highlight?: boolean;
   /** A feature: full width, image beside the text. For a highlight on its own. */
   wide?: boolean;
@@ -44,7 +47,7 @@ export function ListingCard(props: {
           )}
           {props.highlight && <span className="absolute left-3 top-3 rounded bg-coral px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">Highlight</span>}
           {!props.highlight && props.tag && <span className="absolute left-3 top-3 rounded bg-white/90 px-2 py-0.5 text-xs font-medium text-harbour">{props.tag}</span>}
-          <CategoryMarkers types={props.types} />
+          <CategoryMarkers types={props.types} genre={props.genre} />
         </div>
         <div className={`flex flex-1 flex-col gap-1 p-4 ${props.wide ? 'md:justify-center md:p-8' : ''}`}>
           {props.when && <p className="text-xs font-semibold uppercase tracking-wide text-sea">{props.when}</p>}

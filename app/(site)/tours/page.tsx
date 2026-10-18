@@ -34,6 +34,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
       price={printPrice(t.fromPricePence, t.toPricePence)}
       image={t.headerImage}
+      genre={t.genre}
       summary={t.summary ?? t.guideCopy}
       tag={t.genre}
       highlight={t.highlight}
