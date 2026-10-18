@@ -38,7 +38,12 @@ async function fetchText(url: string): Promise<string> {
   for (let attempt = 1; ; attempt += 1) {
     try {
       const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html,application/xml' }, signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
+      // Asked to slow down: wait a good while, not a moment.
+      if (res.status === 429 && attempt < 3) {
+        await pause(60_000 * attempt);
+        continue;
+      }
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       return await res.text();
     } catch (e) {
       if (attempt >= 3) throw e;
@@ -54,12 +59,26 @@ async function loadTicketsolve(feed: (typeof FEEDS)[number]): Promise<Item[]> {
   return parseShows(xml, feed).map((v) => ({ v, raw: { feed: feed.host, show: v.externalId, title: v.title, dates: v.dates } }));
 }
 
+const PAGE_FRESH_DAYS = 7;
+
 /**
  * Every Jersey listing page, then each event's own page for its times and
- * price, a second apart: a few hundred requests a day, read as a search
- * engine would.
+ * price. An event's page is fetched when it is new to us or our copy is
+ * over a week old, so a day's run asks for a few dozen pages rather than
+ * all of them; Eventbrite turns away a few hundred in a row.
  */
 async function loadEventbrite(): Promise<Item[]> {
+  const kept = new Map<string, { page: LdEvent | null; fetchedAt: Date }>();
+  for (const r of await db
+    .select({ id: sourceRecords.externalId, payload: sourceRecords.payload, fetchedAt: sourceRecords.fetchedAt })
+    .from(sourceRecords)
+    .where(eq(sourceRecords.source, 'eventbrite'))) {
+    const payload = r.payload as { page?: LdEvent | null; pageFetchedAt?: string | null };
+    // Records from before pageFetchedAt was kept: the record's own time is when the page was read.
+    if (payload?.page) kept.set(r.id, { page: payload.page, fetchedAt: payload.pageFetchedAt ? new Date(payload.pageFetchedAt) : r.fetchedAt });
+  }
+  const freshAfter = Date.now() - PAGE_FRESH_DAYS * 86_400_000;
+
   const listed = new Map<string, LdEvent>();
   for (let page = 1; page <= 30; page += 1) {
     const found = ldEvents(await fetchText(`https://www.eventbrite.co.uk/d/jersey/all-events/?page=${page}`));
@@ -72,19 +91,24 @@ async function loadEventbrite(): Promise<Item[]> {
     await pause(1000);
   }
   const out: Item[] = [];
-  let n = 0;
-  for (const listing of listed.values()) {
-    n += 1;
-    let page: LdEvent | null = null;
-    try {
-      page = ldEvents(await fetchText(listing.url!))[0] ?? null;
-    } catch (e) {
-      console.warn(`\n${listing.url}: ${(e as Error).message}; using the listing alone`);
+  let fetched = 0;
+  for (const [id, listing] of listed) {
+    const old = kept.get(id);
+    let page = old?.page ?? null;
+    let pageFetchedAt = old?.fetchedAt.toISOString() ?? null;
+    if (!old || old.fetchedAt.getTime() < freshAfter) {
+      try {
+        page = ldEvents(await fetchText(listing.url!))[0] ?? null;
+        pageFetchedAt = new Date().toISOString();
+      } catch (e) {
+        console.warn(`\n${listing.url}: ${(e as Error).message}; using ${old ? 'our last copy' : 'the listing alone'}`);
+      }
+      fetched += 1;
+      process.stdout.write(`\reventbrite event pages fetched: ${fetched}   `);
+      await pause(2000);
     }
     const v = fromEventbrite(listing, page);
-    if (v) out.push({ v, raw: { listing, page } });
-    process.stdout.write(`\reventbrite event ${n}/${listed.size}   `);
-    await pause(1000);
+    if (v) out.push({ v, raw: { listing, page, pageFetchedAt } });
   }
   return out;
 }
