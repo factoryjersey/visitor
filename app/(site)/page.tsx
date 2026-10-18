@@ -52,7 +52,7 @@ export default async function Home() {
 
         <section className="mb-14">
           <div className="mb-5 flex items-baseline justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-ink">Coming up</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink">Unique events coming soon</h2>
             <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-coral">Everything on →</Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
