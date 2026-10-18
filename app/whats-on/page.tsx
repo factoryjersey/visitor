@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { Filters, INCLUSION_OPTIONS } from '@/components/filters';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
+import { OccurrenceBadge } from '@/components/occurrence';
 import { listEvents } from '@/lib/db/queries';
 import { eventDatesText, priceRange } from '@/lib/domain/format';
 import { webImage } from '@/lib/domain/images';
-import { asInclusion, one, type SearchParams } from '@/lib/params';
+import { asInclusion, occurrencesFrom, one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,8 +22,13 @@ function monthOptions() {
 
 export default async function WhatsOn({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), inclusion: one(sp.inclusion), month: one(sp.month) };
-  const rows = await listEvents({ q: values.q, inclusion: asInclusion(values.inclusion), month: values.month });
+  const values = { q: one(sp.q), inclusion: one(sp.inclusion), month: one(sp.month), regular: one(sp.regular), ongoing: one(sp.ongoing) };
+  const rows = await listEvents({
+    q: values.q,
+    inclusion: asInclusion(values.inclusion),
+    month: values.month,
+    occurrences: occurrencesFrom(values),
+  });
   const included = rows.filter((r) => r.event.inclusion === 'included').length;
 
   return (
@@ -38,6 +44,10 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
           { name: 'month', label: 'On during', options: monthOptions() },
           { name: 'inclusion', label: 'Status', options: INCLUSION_OPTIONS },
         ]}
+        checkboxes={[
+          { name: 'regular', label: 'Show regular (weekly)' },
+          { name: 'ongoing', label: 'Show ongoing (open daily, exhibitions)' },
+        ]}
       />
       <ul className="divide-y divide-stone-200 rounded border border-stone-200 bg-white">
         {rows.map(({ event: e, venue }) => (
@@ -47,7 +57,8 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
               <img src={webImage(e.headerImage, 160, 120)} alt="" className="h-[60px] w-[80px] shrink-0 rounded object-cover" />
             ) : <div className="h-[60px] w-[80px] shrink-0 rounded bg-stone-100" />}
             <div className="min-w-0 flex-1">
-              <Link href={`/whats-on/${e.slug}`} className="font-medium hover:underline">{e.title}</Link>
+              <Link href={`/whats-on/${e.slug}`} className="font-medium hover:underline">{e.title}</Link>{' '}
+              <OccurrenceBadge occurrence={e.occurrence} />
               <div className="text-sm text-stone-600">
                 {venue ? <Link href={`/venues/${venue.slug}`} className="hover:underline">{venue.name}</Link> : e.venue ?? <span className="italic">No venue given</span>}
               </div>

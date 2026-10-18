@@ -15,13 +15,14 @@ import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { and, eq, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
-import { events, places, sourceRecords, type Event, type Place } from '@/lib/db/schema';
+import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
+import { normaliseName } from '@/lib/domain/same-place';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { isSamePlace } from '@/lib/domain/same-place';
 import { matchVenue } from '@/lib/domain/venue-match';
 import { uniqueSlug } from '@/lib/domain/slug';
 import { PLACE_TYPES, fetchRawListings, type ListingType, type PlaceType, type RawItem } from '@/lib/integrations/jersey-com/directory';
-import { isListingType, toEvent, toPlace, type VjEvent, type VjPlace } from '@/lib/integrations/jersey-com/parse';
+import { isListingType, toEvent, toExperience, toPlace, type VjEvent, type VjExperience, type VjPlace } from '@/lib/integrations/jersey-com/parse';
 
 const SOURCE = 'visit_jersey';
 
@@ -31,7 +32,7 @@ const { values } = parseArgs({
 
 const types: ListingType[] = values.types
   ? values.types.split(',').map((t) => t.trim()).filter(isListingType)
-  : [...PLACE_TYPES, 'events'];
+  : [...PLACE_TYPES, 'tours-and-activities', 'events'];
 
 const fixture = values.fixture
   ? (JSON.parse(readFileSync(values.fixture, 'utf8')) as Record<string, RawItem[]>)
@@ -160,6 +161,83 @@ async function importEvents(raws: RawItem[], allPlaces: Place[]) {
   }
 }
 
+function experienceFields(v: VjExperience, providerId: string | null) {
+  const { externalId: _id, provider: _p, providerListingId: _l, modifiedAt: _m, portalSyncedAt: _s, ...fields } = v;
+  return { ...fields, providerId };
+}
+
+/**
+ * The provider a tour names, found or created by name. Contact details
+ * come from their own listing when the tour links one, else the tour.
+ * The code is never set here: codes are ours.
+ */
+async function providerFor(v: VjExperience, known: Provider[], allPlaces: Place[]): Promise<Provider | null> {
+  if (!v.provider) return null;
+  const key = normaliseName(v.provider);
+  const existing = known.find((p) => normaliseName(p.name) === key);
+  if (existing) return existing;
+  let place: Place | undefined;
+  if (v.providerListingId) {
+    const [rec] = await db.select({ placeId: sourceRecords.placeId }).from(sourceRecords)
+      .where(and(eq(sourceRecords.source, SOURCE), eq(sourceRecords.externalId, v.providerListingId)));
+    place = allPlaces.find((p) => p.id === rec?.placeId);
+  }
+  place ??= allPlaces.find((p) => normaliseName(p.name) === key);
+  const [created] = await db
+    .insert(providers)
+    .values({
+      name: v.provider,
+      phone: place?.phone ?? v.phone,
+      email: place?.email ?? v.email,
+      website: place?.website ?? v.website,
+      placeId: place?.id ?? null,
+    })
+    .onConflictDoNothing()
+    .returning();
+  if (created) known.push(created);
+  return created ?? null;
+}
+
+async function importExperiences(raws: RawItem[], allPlaces: Place[]) {
+  const existing: Experience[] = await db.select().from(experiences);
+  const known: Provider[] = await db.select().from(providers);
+  const taken = new Set(existing.map((e) => e.slug));
+  for (const raw of raws) {
+    const v = toExperience(raw);
+    if (!v.title) continue;
+    const record = await upsertRecord('tours-and-activities', raw, v.modifiedAt, v.portalSyncedAt);
+    const stamp = { source: SOURCE, ref: `tours-and-activities/${v.externalId}`, at: new Date().toISOString() };
+    const provider = await providerFor(v, known, allPlaces);
+    const current = record.experienceId ? existing.find((e) => e.id === record.experienceId) : undefined;
+    const fields = experienceFields(v, provider?.id ?? null);
+
+    if (!current) {
+      const slug = uniqueSlug(`${v.title} ${v.provider ?? ''}`.trim(), (s) => taken.has(s));
+      taken.add(slug);
+      const { fieldSources } = mergeFromSource({}, fields, { locked: [], fieldSources: {}, stamp });
+      const [created] = await db.insert(experiences).values({ ...fields, slug, fieldSources, sourceModifiedAt: v.modifiedAt }).returning();
+      await db.update(sourceRecords).set({ experienceId: created!.id }).where(eq(sourceRecords.id, record.id));
+      counts.created += 1;
+      continue;
+    }
+    const { patch, fieldSources, changed } = mergeFromSource<Record<string, unknown>>(current, fields, {
+      locked: current.lockedFields,
+      fieldSources: current.fieldSources,
+      stamp,
+    });
+    await db
+      .update(experiences)
+      .set({
+        ...(patch as Partial<Experience>),
+        fieldSources,
+        sourceModifiedAt: latest(current.sourceModifiedAt, v.modifiedAt),
+        ...(changed.length ? { updatedAt: new Date() } : {}),
+      })
+      .where(eq(experiences.id, current.id));
+    counts[changed.length ? 'updated' : 'unchanged'] += 1;
+  }
+}
+
 /** Records this run did not see are gone from the source. Kept, flagged. */
 async function markMissing(type: ListingType, seen: RawItem[]) {
   const ids = seen.map((r) => String(r.id));
@@ -174,10 +252,12 @@ async function markMissing(type: ListingType, seen: RawItem[]) {
 
 const allPlaces: Place[] = await db.select().from(places);
 let missing = 0;
-// Places first, so events can find their venue.
-for (const type of [...types].sort((a, b) => Number(a === 'events') - Number(b === 'events'))) {
+// Places first, so events can find their venue and tours their provider.
+const ORDER = (t: ListingType) => (t === 'events' ? 2 : t === 'tours-and-activities' ? 1 : 0);
+for (const type of [...types].sort((a, b) => ORDER(a) - ORDER(b))) {
   const raws = await load(type);
   if (type === 'events') await importEvents(raws, allPlaces);
+  else if (type === 'tours-and-activities') await importExperiences(raws, allPlaces);
   else await importPlaces(type, raws, allPlaces);
   // A fixture is a sample, not the whole directory; only a live run knows what is gone.
   if (!fixture) missing += await markMissing(type, raws);

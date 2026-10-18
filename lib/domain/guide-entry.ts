@@ -1,10 +1,12 @@
-import type { Event, Place } from '@/lib/db/schema';
+import type { Event, Experience, Place, Provider } from '@/lib/db/schema';
+import { UNIQUE } from './occurrence';
 import {
   printAddress,
   printContact,
   printDates,
   printPrice,
   printTimes,
+  printTourDates,
   printWebsite,
 } from './house-style';
 
@@ -24,6 +26,8 @@ export type GuideEvent = {
   contact: string;
   website: string;
   imageUrl: string;
+  /** Unique events print in date order; ongoing and regular ones in their own block first. */
+  block: 'dated' | 'all season';
   /** The first date inside the edition, for ordering. Not printed. */
   sortKey: string;
 };
@@ -51,6 +55,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     contact: printContact(e.phone ?? venue?.phone ?? null, e.email) ?? '',
     website: printWebsite(e.website ?? venue?.website ?? null) ?? '',
     imageUrl: e.headerImage?.url ?? '',
+    block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',
     sortKey: inside[0]?.date ?? e.startsOn ?? '',
   };
 }
@@ -92,5 +97,55 @@ export function guideVenue(p: Place): GuideVenue {
     phone: p.phone ?? '',
     website: printWebsite(p.website) ?? '',
     imageUrl: p.headerImage?.url ?? '',
+  };
+}
+
+/**
+ * One tour as the guide prints it. Dated tours (one-off, specific dates)
+ * carry their dates; on-demand ones (regular, bookable any day) print
+ * under their genre without dates. From the autumn 2026 pages:
+ *
+ *   1/8/15/22/29 Sep, 6 Oct  Beach Blokarting  AA  1-2 hrs  If you're looking for…
+ *   Arena Paintball  VAC  1-2 hrs  Arena Paintball is a high octane…
+ */
+export type GuideTour = {
+  kind: 'dated' | 'on demand';
+  genre: string;
+  dates: string;
+  title: string;
+  code: string;
+  provider: string;
+  duration: string;
+  times: string;
+  copy: string;
+  sortKey: string;
+};
+
+export function guideTour(
+  x: Experience,
+  provider: Pick<Provider, 'name' | 'code'> | null,
+  window?: Window,
+): GuideTour | null {
+  const inside = x.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
+  const dated = UNIQUE.includes(x.occurrence);
+  const dates = dated ? x.printDates ?? printTourDates(x.dates, window) : '';
+  // A dated tour with no dates in this edition is not in it; an on-demand
+  // one is, if it runs at all during the edition or lists no dates.
+  if (dated && !dates) return null;
+  if (!dated && x.dates.length > 0 && inside.length === 0 && !x.printDates) return null;
+
+  const times = x.printTimes ?? printTimes(inside.length ? inside : x.dates) ?? '';
+  return {
+    kind: dated ? 'dated' : 'on demand',
+    genre: x.genre ?? '',
+    dates: dates ?? '',
+    title: x.title,
+    code: provider?.code ?? '',
+    provider: provider?.name ?? '',
+    duration: x.duration ?? '',
+    // Bookable all day at many times reads as noise in print; leave it to the provider.
+    times: times.split(/ \| |, /).length > 2 ? '' : times,
+    copy: x.guideCopy ?? x.summary ?? '',
+    sortKey: inside[0]?.date ?? '',
   };
 }

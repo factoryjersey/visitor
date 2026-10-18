@@ -119,3 +119,25 @@ export function printAddress(p: { addressLine1: string | null; parish: string | 
   const parts = [p.addressLine1, printParish(p.parish), p.postcode].filter(Boolean);
   return parts.length ? parts.join(', ') : null;
 }
+
+const TOUR_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Tours print their dates differently from events, every date grouped by
+ * month: "1/8/15/22/29 Sep, 6 Oct", "2/13/16/27/28 Sep, 7/27 Oct".
+ */
+export function printTourDates(dates: readonly EventDate[], window?: { from: string; to: string }): string | null {
+  const isos = [...new Set(dates.map((x) => x.date))]
+    .filter((iso) => !window || (iso >= window.from && iso <= window.to))
+    .sort();
+  if (isos.length === 0) return null;
+  const groups: { key: string; label: string; days: number[] }[] = [];
+  for (const iso of isos) {
+    const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+    const key = `${y}-${m}`;
+    const g = groups.at(-1);
+    if (g?.key === key) g.days.push(d);
+    else groups.push({ key, label: TOUR_MONTHS[m - 1]!, days: [d] });
+  }
+  return groups.map((g) => `${g.days.join('/')} ${g.label}`).join(', ');
+}

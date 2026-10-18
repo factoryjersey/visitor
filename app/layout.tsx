@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 const NAV = [
   { href: '/whats-on', label: "What's on" },
+  { href: '/tours', label: 'Tours' },
   { href: '/venues', label: 'Venues' },
   { href: '/guide', label: 'Guide' },
   { href: '/map', label: 'Map' },

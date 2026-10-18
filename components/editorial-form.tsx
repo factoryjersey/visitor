@@ -1,7 +1,7 @@
 import { saveEditorial } from '@/app/actions';
 
 /** Our copy for the guide and a note on why it is in or out. Source copy stays alongside, untouched. */
-export function EditorialForm(props: { kind: 'event' | 'venue'; id: string; guideCopy: string | null; inclusionNote: string | null; sourceCopy: string | null }) {
+export function EditorialForm(props: { kind: 'event' | 'venue' | 'experience'; id: string; guideCopy: string | null; inclusionNote: string | null; sourceCopy: string | null }) {
   return (
     <form action={saveEditorial} className="space-y-3">
       <input type="hidden" name="kind" value={props.kind} />

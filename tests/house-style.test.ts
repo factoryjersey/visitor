@@ -6,8 +6,10 @@ import {
   printParish,
   printPrice,
   printTimes,
+  printTourDates,
   printWebsite,
 } from '@/lib/domain/house-style';
+import { suggestGenre } from '@/lib/domain/genre';
 
 // Expected strings are copied from the printed autumn 2026 edition.
 
@@ -92,5 +94,25 @@ describe('the rest of an entry', () => {
   it('prints a phone, or the email when there is none', () => {
     expect(printContact('+44 (0) 1534 633300', 'a@b.je')).toBe('+44 (0) 1534 633300');
     expect(printContact(null, 'drink@curfew.je')).toBe('drink@curfew.je');
+  });
+});
+
+
+describe('printTourDates', () => {
+  it('groups every date by month, as the tours pages do', () => {
+    expect(printTourDates(d('2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06'))).toBe('1/8/15/22/29 Sep, 6 Oct');
+    expect(printTourDates(d('2026-09-12'))).toBe('12 Sep');
+  });
+});
+
+describe('suggestGenre', () => {
+  it('reads the specific signal over the generous tags', () => {
+    expect(suggestGenre('Carteret RIB Voyage', ['Active & adrenaline', 'boat'])).toBe('On the water');
+    expect(suggestGenre('Discover Jersey | Vintage Open Top Bus Tour', ['History & culture', 'bus', 'Guided'])).toBe('Motorised');
+    expect(suggestGenre('Michelin Star Kitchen Tour, Wine Tasting & Canapes', ['food-drink', 'Guided'])).toBe('Foodie');
+    expect(suggestGenre('Intertidal Walk to Seymour Tower', ['Active & adrenaline', 'walking'])).toBe('On foot');
+    expect(suggestGenre('Yoga at Bouley Bay', ['Indoor', 'Yoga & pilates'])).toBe('Classes & crafts');
+    expect(suggestGenre('Arena Paintball', ['Active & adrenaline'])).toBe('Active');
+    expect(suggestGenre('Moonlight Walk to Seymour Tower', ['Active & adrenaline', 'water-sports', 'outdoors'])).toBe('On foot');
   });
 });

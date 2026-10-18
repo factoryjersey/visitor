@@ -20,7 +20,7 @@ export function InclusionBadge({ inclusion }: { inclusion: Inclusion }) {
 }
 
 /** Include / Leave out, as plain forms so they work without client JavaScript. */
-export function InclusionControl({ kind, id, inclusion }: { kind: 'event' | 'venue'; id: string; inclusion: Inclusion }) {
+export function InclusionControl({ kind, id, inclusion }: { kind: 'event' | 'venue' | 'experience'; id: string; inclusion: Inclusion }) {
   const button = (to: Inclusion, text: string, style: string) => (
     <form action={setInclusion}>
       <input type="hidden" name="kind" value={kind} />

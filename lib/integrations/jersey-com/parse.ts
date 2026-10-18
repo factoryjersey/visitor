@@ -1,5 +1,7 @@
 import type { Category, EventDate, Image } from '@/lib/db/schema';
 import type { ListingType, PlaceType, RawItem } from './directory';
+import { suggestGenre, type Genre } from '@/lib/domain/genre';
+import { classifyOccurrence, type Occurrence } from '@/lib/domain/occurrence';
 import { tidyParish } from '@/lib/domain/parish';
 import { tidyVenue } from '@/lib/domain/venue-match';
 
@@ -58,6 +60,7 @@ export type VjEvent = {
   eventTypes: string[];
   /** The listing says it costs nothing, rather than saying nothing. */
   free: boolean;
+  occurrence: Occurrence;
   lat: number | null;
   lon: number | null;
   dates: EventDate[];
@@ -308,6 +311,7 @@ export function toEvent(raw: RawItem): VjEvent {
     website: str(acf.website),
     eventTypes: labels(acf.type),
     free,
+    occurrence: classifyOccurrence(dates.map((x) => x.date)),
     ...pin(acf),
     dates,
     startsOn: isoDate(acf.event_dates_start) ?? dates[0]?.date ?? null,
@@ -321,6 +325,87 @@ export function toEvent(raw: RawItem): VjEvent {
   };
 }
 
+/**
+ * A tour or experience. Shaped differently from an event: dates in
+ * `dates`, prices in `price_from`, a duration, and the provider in
+ * `display_name` with a link to their own listing.
+ */
+export type VjExperience = {
+  externalId: string;
+  title: string;
+  provider: string | null;
+  /** The provider's own directory listing, where the tour links one. */
+  providerListingId: string | null;
+  summary: string | null;
+  description: string | null;
+  duration: string | null;
+  tags: string[];
+  genre: Genre | null;
+  dates: EventDate[];
+  occurrence: Occurrence;
+  fromPricePence: number | null;
+  toPricePence: number | null;
+  meetingPoint: string | null;
+  parish: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  lat: number | null;
+  lon: number | null;
+  headerImage: Image | null;
+  sourceLink: string | null;
+  modifiedAt: Date | null;
+  portalSyncedAt: Date | null;
+};
+
+function readDates(v: unknown): EventDate[] {
+  const out: EventDate[] = [];
+  if (!Array.isArray(v)) return out;
+  for (const d of v) {
+    if (d === null || typeof d !== 'object') continue;
+    const o = d as Record<string, unknown>;
+    const date = isoDate(o.date);
+    if (date !== null) out.push({ date, start: str(o.start_time), end: str(o.end_time) });
+  }
+  return out.sort((x, y) => x.date.localeCompare(y.date));
+}
+
+export function toExperience(raw: RawItem): VjExperience {
+  const acf = raw.acf ?? {};
+  const title = decodeEntities(raw.title?.rendered ?? '').trim();
+  const tags = [...labels(Array.isArray(acf.type) ? acf.type : [acf.type]), ...labels(acf.sub_type)];
+  const dates = readDates(acf.dates);
+  const loc = acf.map_location as { name?: unknown; address?: unknown } | undefined;
+  const linked = Array.isArray(acf.associate_with_listing) ? (acf.associate_with_listing[0] as { ID?: unknown } | undefined) : undefined;
+  const provider = str(acf.display_name) ?? str(acf.portal_post_owner_name);
+  const parishLabel = labelOf(acf.parish);
+  return {
+    externalId: String(raw.id),
+    title,
+    provider: provider === null ? null : decodeEntities(provider).trim(),
+    providerListingId: linked?.ID === undefined ? null : String(linked.ID),
+    summary: htmlToText(acf.short_description),
+    description: htmlToText(acf.long_description),
+    duration: labelOf(acf.duration),
+    tags,
+    genre: suggestGenre(title, tags),
+    dates,
+    occurrence: classifyOccurrence(dates.map((x) => x.date), { tour: true }),
+    fromPricePence: pence(acf.price_from ?? acf.from_price),
+    toPricePence: pence(acf.price_to),
+    meetingPoint: str(loc?.name) ?? str(loc?.address),
+    parish: parishLabel === null ? null : tidyParish(parishLabel),
+    phone: phoneOf(acf.telephone_number),
+    email: str(acf.email_address),
+    website: str(acf.website),
+    ...pin(acf),
+    headerImage: images(acf.header_image_data)[0] ?? null,
+    sourceLink: str(raw.link),
+    modifiedAt: utc(raw.modified_gmt),
+    portalSyncedAt: utc(acf.portal_last_synced),
+  };
+}
+
 export function isListingType(s: string): s is ListingType {
-  return s === 'events' || (CATEGORY_OF as Record<string, unknown>)[s] !== undefined;
+  return s === 'events' || s === 'tours-and-activities' || (CATEGORY_OF as Record<string, unknown>)[s] !== undefined;
 }

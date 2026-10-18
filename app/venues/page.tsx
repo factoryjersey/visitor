@@ -31,7 +31,7 @@ export default async function Venues({ searchParams }: { searchParams: SearchPar
           { name: 'category', label: 'Section', options: CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] })) },
           { name: 'inclusion', label: 'Status', options: INCLUSION_OPTIONS },
         ]}
-        checkbox={{ name: 'all', label: 'All directory listings, not only event venues' }}
+        checkboxes={[{ name: 'all', label: 'All directory listings, not only event venues' }]}
       />
       <ul className="divide-y divide-stone-200 rounded border border-stone-200 bg-white">
         {rows.map(({ place: p, eventCount }) => (

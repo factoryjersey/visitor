@@ -1,3 +1,5 @@
+import type { Genre } from '@/lib/domain/genre';
+import type { Occurrence } from '@/lib/domain/occurrence';
 import {
   boolean,
   date,
@@ -128,6 +130,8 @@ export const events = pgTable('events', {
   website: text('website'),
   eventTypes: text('event_types').array().notNull().default([]),
   free: boolean('free').notNull().default(false),
+  /** One-off, specific dates, regular or ongoing: computed from the dates, lockable. See lib/domain/occurrence.ts. */
+  occurrence: text('occurrence').$type<Occurrence>().notNull().default('one-off'),
   placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
   lat: doublePrecision('lat'),
   lon: doublePrecision('lon'),
@@ -181,6 +185,7 @@ export const sourceRecords = pgTable(
     externalId: text('external_id').notNull(),
     placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
     eventId: uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
+    experienceId: uuid('experience_id').references(() => experiences.id, { onDelete: 'set null' }),
     payload: jsonb('payload').notNull(),
     modifiedAt: timestamp('modified_at', { withTimezone: true }),
     portalSyncedAt: timestamp('portal_synced_at', { withTimezone: true }),
@@ -193,7 +198,76 @@ export const sourceRecords = pgTable(
   }),
 );
 
+/**
+ * Whoever runs a tour. The guide prints them once, in a key, with the
+ * short code each tour entry refers to ("AA Absolute Adventures"). Codes
+ * are ours and kept between editions.
+ */
+export const providers = pgTable('providers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  code: text('code').unique(),
+  phone: text('phone'),
+  email: text('email'),
+  website: text('website'),
+  /** Their own directory listing, when there is one. */
+  placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * A tour or experience. Providers list everything they offer the same
+ * way, so `occurrence` separates the ones on particular dates (printed
+ * as dated listings) from the ones bookable any day (printed under
+ * their genre, "on demand").
+ */
+export const experiences = pgTable('experiences', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  providerId: uuid('provider_id').references(() => providers.id, { onDelete: 'set null' }),
+  summary: text('summary'),
+  description: text('description'),
+  guideCopy: text('guide_copy'),
+
+  duration: text('duration'),
+  tags: text('tags').array().notNull().default([]),
+  genre: text('genre').$type<Genre>(),
+  dates: jsonb('dates').$type<EventDate[]>().notNull().default([]),
+  occurrence: text('occurrence').$type<Occurrence>().notNull().default('ongoing'),
+  fromPricePence: integer('from_price_pence'),
+  toPricePence: integer('to_price_pence'),
+  meetingPoint: text('meeting_point'),
+  parish: text('parish'),
+  phone: text('phone'),
+  email: text('email'),
+  website: text('website'),
+  lat: doublePrecision('lat'),
+  lon: doublePrecision('lon'),
+
+  printDates: text('print_dates'),
+  printTimes: text('print_times'),
+  headerImage: jsonb('header_image').$type<Image | null>(),
+  sourceLink: text('source_link'),
+
+  inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
+  inclusionNote: text('inclusion_note'),
+  inclusionSetBy: text('inclusion_set_by'),
+  inclusionSetAt: timestamp('inclusion_set_at', { withTimezone: true }),
+  editedBy: text('edited_by'),
+  editedAt: timestamp('edited_at', { withTimezone: true }),
+  fieldSources: jsonb('field_sources').$type<FieldSources>().notNull().default({}),
+  lockedFields: text('locked_fields').array().notNull().default([]),
+  sourceModifiedAt: timestamp('source_modified_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Place = typeof places.$inferSelect;
 export type NewPlace = typeof places.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
+export type Provider = typeof providers.$inferSelect;
+export type Experience = typeof experiences.$inferSelect;

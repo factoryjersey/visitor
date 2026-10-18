@@ -1,6 +1,8 @@
-import { and, asc, eq, gte, ilike, isNotNull, lte, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, gte, ilike, inArray, isNotNull, lte, or, sql, type SQL } from 'drizzle-orm';
 import { db } from './index';
-import { events, places, type Category, type Inclusion } from './schema';
+import { events, experiences, places, providers, type Category, type Inclusion } from './schema';
+import type { Genre } from '@/lib/domain/genre';
+import type { Occurrence } from '@/lib/domain/occurrence';
 import { metresBetween } from '@/lib/domain/same-place';
 
 export type EventFilter = {
@@ -9,6 +11,8 @@ export type EventFilter = {
   month?: string;
   q?: string;
   venueId?: string;
+  /** Which kinds to list. Unique ones by default; regular and ongoing on request. */
+  occurrences?: readonly Occurrence[];
 };
 
 function monthBounds(month: string): [string, string] | null {
@@ -24,6 +28,7 @@ export async function listEvents(f: EventFilter = {}) {
   const where: SQL[] = [];
   if (f.inclusion) where.push(eq(events.inclusion, f.inclusion));
   if (f.venueId) where.push(eq(events.placeId, f.venueId));
+  if (f.occurrences) where.push(inArray(events.occurrence, [...f.occurrences]));
   if (f.q) where.push(or(ilike(events.title, `%${f.q}%`), ilike(events.venue, `%${f.q}%`))!);
   const bounds = f.month ? monthBounds(f.month) : null;
   if (bounds) where.push(lte(events.startsOn, bounds[1]), gte(events.endsOn, bounds[0]));
@@ -111,4 +116,63 @@ export async function placesNear(lat: number, lon: number, limit = 15) {
     .map((r) => ({ ...r, metres: metresBetween({ lat, lon }, { lat: r.lat!, lon: r.lon! }) }))
     .sort((a, b) => a.metres - b.metres)
     .slice(0, limit);
+}
+
+export type ExperienceFilter = {
+  inclusion?: Inclusion;
+  q?: string;
+  month?: string;
+  genre?: Genre | 'none';
+  providerId?: string;
+  occurrences?: readonly Occurrence[];
+};
+
+/** Tours on any date in the month, from their date list. */
+function onInMonth(month: string): SQL | null {
+  const bounds = monthBounds(month);
+  if (!bounds) return null;
+  return sql`exists (select 1 from jsonb_array_elements(${experiences.dates}) d where d->>'date' between ${bounds[0]} and ${bounds[1]})`;
+}
+
+const firstDate = sql<string>`(select min(d->>'date') from jsonb_array_elements(${experiences.dates}) d where d->>'date' >= to_char(now(), 'YYYY-MM-DD'))`;
+
+export async function listExperiences(f: ExperienceFilter = {}) {
+  const where: SQL[] = [];
+  if (f.inclusion) where.push(eq(experiences.inclusion, f.inclusion));
+  if (f.genre === 'none') where.push(sql`${experiences.genre} is null`);
+  else if (f.genre) where.push(eq(experiences.genre, f.genre));
+  if (f.providerId) where.push(eq(experiences.providerId, f.providerId));
+  if (f.occurrences) where.push(inArray(experiences.occurrence, [...f.occurrences]));
+  if (f.q) where.push(or(ilike(experiences.title, `%${f.q}%`), ilike(providers.name, `%${f.q}%`))!);
+  const month = f.month ? onInMonth(f.month) : null;
+  if (month) where.push(month);
+  return db
+    .select({ experience: experiences, provider: providers, firstDate })
+    .from(experiences)
+    .leftJoin(providers, eq(providers.id, experiences.providerId))
+    .where(where.length ? and(...where) : undefined)
+    .orderBy(sql`${firstDate} asc nulls last`, asc(experiences.title));
+}
+
+export async function getExperience(slug: string) {
+  const [row] = await db
+    .select({ experience: experiences, provider: providers })
+    .from(experiences)
+    .leftJoin(providers, eq(providers.id, experiences.providerId))
+    .where(eq(experiences.slug, slug));
+  return row ?? null;
+}
+
+export async function listProviders() {
+  const total = sql<number>`(select count(*) from ${experiences} where ${experiences.providerId} = ${providers.id})::int`;
+  const included = sql<number>`(select count(*) from ${experiences} where ${experiences.providerId} = ${providers.id} and ${experiences.inclusion} = 'included')::int`;
+  return db.select({ provider: providers, total, included }).from(providers).orderBy(sql`${providers.code} asc nulls last`, asc(providers.name));
+}
+
+export async function includedExperiences() {
+  return db
+    .select({ experience: experiences, provider: providers })
+    .from(experiences)
+    .leftJoin(providers, eq(providers.id, experiences.providerId))
+    .where(eq(experiences.inclusion, 'included'));
 }

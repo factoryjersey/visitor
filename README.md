@@ -82,10 +82,35 @@ venue set by hand is locked.
 - `/whats-on/[slug]` — details, venue, our copy, source freshness
 - `/venues` — places hosting events (or every listing), include or leave out
 - `/venues/[slug]` — contact, months open, rates, facilities, events held there
+- `/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
+- `/tours/providers` — provider codes for the guide's key
 - `/guide` — the selection for an edition's dates, set as the printed guide
   sets it (115 × 165mm pages, the printed field order), with the InDesign
   exports
 - `/map` — event venues, green for those in the guide
+
+## Unique first: events and tours
+
+Providers list everything the same way, so the dates decide what kind of
+thing a listing is (`lib/domain/occurrence.ts`):
+
+| Kind | Looks like | Events | Tours |
+|---|---|---|---|
+| One-off | 1–3 dates, or a run of up to a week | dated listings | dated listings |
+| Specific dates | a handful of irregular dates (tide walks) | dated listings | dated listings |
+| Regular | a weekly rhythm (parkrun) | "On all season" block | on demand, by genre |
+| Ongoing | most days for three weeks or more; for a tour, a week of daily dates | "On all season" block | on demand, by genre |
+
+What's On and Tours list the unique kinds by default, with ticks to show
+regular and ongoing ones. A person can change a listing's kind and a
+tour's genre; both are then locked against the next import.
+
+Tour genres (On foot, Active, On the water, Motorised, Foodie, Classes &
+crafts) are suggested from each listing's title first and its tags second.
+Providers get the short codes the guide's key prints. Codes are ours:
+`pnpm seed:provider-codes` fills empty ones from the autumn 2026 key
+(`data/provider-codes-2026-3.json`), matching by website then name, and
+`/tours/providers` edits them.
 
 ## Into InDesign
 

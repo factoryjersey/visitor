@@ -16,18 +16,19 @@ const BASE = 'https://www.jersey.com/wp-json/wp/v2';
 /** A real contact, as asked of any API consumer. */
 const USER_AGENT = 'Factory visitor guide (ben@factory.je)';
 
+/** Listing types that are places: somewhere with a front door. */
 export const PLACE_TYPES = [
   'accommodation',
   'food-and-drink',
   'attractions',
   'activities',
   'shopping-and-markets',
-  'tours-and-activities',
   'tour-operators',
   'points-of-interest',
 ] as const;
 
-export type PlaceType = (typeof PLACE_TYPES)[number];
+export type PlaceType = (typeof PLACE_TYPES)[number] | 'tours-and-activities';
+/** Tours are experiences, not places: a provider's product, on dates or on demand. */
 export type ListingType = PlaceType | 'events';
 
 export type RawItem = {

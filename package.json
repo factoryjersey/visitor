@@ -14,7 +14,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "import:visit-jersey": "tsx scripts/import-visit-jersey.ts",
     "seed:sample": "tsx scripts/import-visit-jersey.ts --fixture tests/fixtures/visit-jersey-listings.json",
-    "auth:create-user": "tsx scripts/auth-create-user.ts"
+    "auth:create-user": "tsx scripts/auth-create-user.ts",
+    "seed:provider-codes": "tsx scripts/seed-provider-codes.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.5.2",

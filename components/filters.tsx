@@ -7,7 +7,7 @@ export function Filters(props: {
   action: string;
   values: Record<string, string | undefined>;
   selects: { name: string; label: string; options: Option[] }[];
-  checkbox?: { name: string; label: string };
+  checkboxes?: { name: string; label: string }[];
 }) {
   return (
     <form action={props.action} className="no-print mb-4 flex flex-wrap items-end gap-3 rounded border border-stone-200 bg-white p-3 text-sm">
@@ -24,12 +24,12 @@ export function Filters(props: {
           </select>
         </label>
       ))}
-      {props.checkbox && (
-        <label className="flex items-center gap-1 pb-1">
-          <input type="checkbox" name={props.checkbox.name} value="1" defaultChecked={props.values[props.checkbox.name] === '1'} />
-          {props.checkbox.label}
+      {props.checkboxes?.map((c) => (
+        <label key={c.name} className="flex items-center gap-1 pb-1">
+          <input type="checkbox" name={c.name} value="1" defaultChecked={props.values[c.name] === '1'} />
+          {c.label}
         </label>
-      )}
+      ))}
       <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Filter</button>
       <Link href={props.action} className="pb-1 text-stone-500 hover:underline">Clear</Link>
     </form>

@@ -4,6 +4,7 @@ import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { EventPrintForm } from '@/components/event-print-form';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
+import { OccurrenceControl } from '@/components/occurrence';
 import { SourcePanel } from '@/components/source-panel';
 import { VenuePicker } from '@/components/venue-picker';
 import { getEvent, placesNear } from '@/lib/db/queries';
@@ -65,6 +66,9 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
           <InclusionControl kind="event" id={e.id} inclusion={e.inclusion} />
           <DecidedBy inclusion={e.inclusion} by={e.inclusionSetBy} at={e.inclusionSetAt} editedBy={e.editedBy} editedAt={e.editedAt} />
+        </div>
+        <div className="rounded border border-stone-200 bg-white p-3">
+          <OccurrenceControl kind="event" id={e.id} occurrence={e.occurrence} locked={e.lockedFields.includes('occurrence')} />
         </div>
         {(options.length > 0 || venue) && (
           <div className="rounded border border-stone-200 bg-white p-3">

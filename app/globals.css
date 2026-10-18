@@ -25,13 +25,15 @@ body { @apply bg-stone-50 text-stone-900 antialiased; }
 .guide-area { font-weight: 700; font-size: 8.5pt; margin: 3mm 0 1.5mm; }
 .guide-columns { column-count: 2; column-gap: 4mm; }
 .guide-entry { break-inside: avoid; margin-bottom: 2.5mm; }
-.guide-when { font-weight: 700; text-transform: uppercase; }
+.guide-when { font-weight: 700; }
 .guide-when span { margin-left: 2.5mm; font-weight: 400; }
 .guide-title { font-weight: 700; font-size: 8pt; }
 .guide-venue { font-weight: 700; margin-top: 0.8mm; }
 .guide-web { text-transform: uppercase; font-weight: 600; }
 .guide-label { display: inline-block; border: 0.25mm solid currentColor; padding: 0 1mm; font-size: 6pt; font-weight: 600; letter-spacing: 0.05em; margin: 0.5mm 0; }
 .guide-empty { font-size: 10pt; }
+.guide-key { column-count: 3; column-gap: 3mm; font-size: 6.5pt; margin-bottom: 2mm; }
+.guide-key p { break-inside: avoid; }
 
 @media print {
   @page guide { size: 115mm 165mm; margin: 0; }

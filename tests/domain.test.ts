@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { isSamePlace } from '@/lib/domain/same-place';
 import { uniqueSlug } from '@/lib/domain/slug';
-import { openMonthsText, rateRange } from '@/lib/domain/format';
+import { eventDatesText, openMonthsText, rateRange } from '@/lib/domain/format';
+import { matchVenue, tidyVenue } from '@/lib/domain/venue-match';
+import { matchCodes } from '@/lib/domain/provider-codes';
 import { webImage } from '@/lib/domain/images';
 
 const stamp = { source: 'visit_jersey', ref: 'accommodation/1', at: '2026-10-18T00:00:00Z' };
@@ -88,7 +90,6 @@ describe('format', () => {
   });
 });
 
-import { eventDatesText } from '@/lib/domain/format';
 
 describe('eventDatesText', () => {
   it('prints one, a few, and many dates', () => {
@@ -100,7 +101,6 @@ describe('eventDatesText', () => {
   });
 });
 
-import { matchVenue, tidyVenue } from '@/lib/domain/venue-match';
 
 describe('matchVenue', () => {
   const museum = { id: 'm', name: 'Hamptonne Country Life Museum', lat: 49.2290, lon: -2.1350 };
@@ -118,5 +118,24 @@ describe('matchVenue', () => {
 
   it('tidies venue text', () => {
     expect(tidyVenue('Elizabeth Marina, Elizabeth Marina, Castle Street, Saint Helier, Jersey')).toBe('Elizabeth Marina, Castle Street, St Helier');
+  });
+});
+
+
+describe('matchCodes', () => {
+  const providers = [
+    { id: '1', name: "Let's Go! Jersey Tours", website: 'https://www.letsgojerseytours.com/', code: null },
+    { id: '2', name: 'Intertidal Walks', website: 'https://seaharephotography.com/intertidal-walks', code: null },
+    { id: '3', name: 'Kalimukti', website: null, code: 'KM' },
+  ];
+
+  it('matches by website domain before name, and never overwrites a code', () => {
+    const { assigned, unmatched } = matchCodes([
+      { code: 'LE', name: 'Letsgojerseytours', website: 'letsgojerseytours.com' },
+      { code: 'S', name: 'Seahare Photography', website: 'seaharephotography.com' },
+      { code: 'K', name: 'Kalimukti', website: 'kalimukti.com' },
+    ], providers);
+    expect(Object.fromEntries(assigned)).toEqual({ 1: 'LE', 2: 'S' });
+    expect(unmatched.map((u) => u.code)).toEqual(['K']);
   });
 });

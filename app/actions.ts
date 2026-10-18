@@ -5,9 +5,13 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
-import { INCLUSIONS, LISTING_SIZES, events, places } from '@/lib/db/schema';
+import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers } from '@/lib/db/schema';
+import { GENRES } from '@/lib/domain/genre';
+import { OCCURRENCES } from '@/lib/domain/occurrence';
 
-const kindSchema = z.enum(['event', 'venue']);
+const kindSchema = z.enum(['event', 'venue', 'experience']);
+
+const TABLES = { event: events, venue: places, experience: experiences } as const;
 
 const inclusionSchema = z.object({
   kind: kindSchema,
@@ -19,7 +23,7 @@ const inclusionSchema = z.object({
 export async function setInclusion(form: FormData) {
   const user = await requireUser();
   const { kind, id, inclusion } = inclusionSchema.parse(Object.fromEntries(form));
-  const table = kind === 'event' ? events : places;
+  const table = TABLES[kind];
   const now = new Date();
   await db
     .update(table)
@@ -39,7 +43,7 @@ const editorialSchema = z.object({
 export async function saveEditorial(form: FormData) {
   const user = await requireUser();
   const { kind, id, guideCopy, inclusionNote } = editorialSchema.parse(Object.fromEntries(form));
-  const table = kind === 'event' ? events : places;
+  const table = TABLES[kind];
   const now = new Date();
   await db
     .update(table)
@@ -132,5 +136,68 @@ export async function saveVenueGuide(form: FormData) {
       updatedAt: now,
     })
     .where(eq(places.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
+/** Lock a source-derived field after a person sets it, so the next import keeps their answer. */
+async function lockAndSet(table: typeof events | typeof experiences, id: string, field: string, value: Record<string, unknown>, email: string) {
+  const [row] = await db.select({ locked: table.lockedFields }).from(table).where(eq(table.id, id));
+  if (!row) return;
+  const now = new Date();
+  await db
+    .update(table)
+    .set({ ...value, lockedFields: [...new Set([...row.locked, field])], editedBy: email, editedAt: now, updatedAt: now })
+    .where(eq(table.id, id));
+}
+
+const occurrenceSchema = z.object({
+  kind: z.enum(['event', 'experience']),
+  id: z.string().uuid(),
+  occurrence: z.enum(OCCURRENCES),
+});
+
+/** Correct the one-off / specific dates / regular / ongoing call. Locked against the next import. */
+export async function setOccurrence(form: FormData) {
+  const user = await requireUser();
+  const { kind, id, occurrence } = occurrenceSchema.parse(Object.fromEntries(form));
+  await lockAndSet(kind === 'event' ? events : experiences, id, 'occurrence', { occurrence }, user.email);
+  revalidatePath('/', 'layout');
+}
+
+const genreSchema = z.object({ id: z.string().uuid(), genre: z.union([z.enum(GENRES), z.literal('')]) });
+
+/** Which genre a tour prints under. Locked against the next import. */
+export async function setGenre(form: FormData) {
+  const user = await requireUser();
+  const { id, genre } = genreSchema.parse(Object.fromEntries(form));
+  await lockAndSet(experiences, id, 'genre', { genre: genre || null }, user.email);
+  revalidatePath('/', 'layout');
+}
+
+const tourPrintSchema = z.object({ id: z.string().uuid(), printDates: z.string().max(200), printTimes: z.string().max(200) });
+
+export async function saveTourPrint(form: FormData) {
+  const user = await requireUser();
+  const v = tourPrintSchema.parse(Object.fromEntries(form));
+  const now = new Date();
+  await db
+    .update(experiences)
+    .set({ printDates: v.printDates.trim() || null, printTimes: v.printTimes.trim() || null, editedBy: user.email, editedAt: now, updatedAt: now })
+    .where(eq(experiences.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
+const codeSchema = z.object({ id: z.string().uuid(), code: z.string().max(8).regex(/^[A-Za-z]*$/) });
+
+/** A provider's key code. Ours, kept between editions; blank clears it. */
+export async function setProviderCode(form: FormData): Promise<void> {
+  await requireUser();
+  const { id, code } = codeSchema.parse(Object.fromEntries(form));
+  const clean = code.trim().toUpperCase() || null;
+  if (clean) {
+    const [clash] = await db.select({ id: providers.id }).from(providers).where(eq(providers.code, clean));
+    if (clash && clash.id !== id) return;
+  }
+  await db.update(providers).set({ code: clean, updatedAt: new Date() }).where(eq(providers.id, id));
   revalidatePath('/', 'layout');
 }
