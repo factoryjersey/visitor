@@ -1,20 +1,9 @@
 import Link from 'next/link';
-import { guideSelection } from '@/lib/db/queries';
-import { address, eventDatesText, openMonthsText, priceRange } from '@/lib/domain/format';
-import { printImage } from '@/lib/domain/images';
-import { CATEGORY_LABEL } from '@/lib/params';
-import type { Event, Place } from '@/lib/db/schema';
+import type { GuideEvent, GuideVenue } from '@/lib/domain/guide-entry';
+import { buildGuide, windowFrom } from '@/lib/guide';
+import { one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
-
-/** First month an event is on, as a heading: "November 2026". */
-function monthOf(e: Event): string {
-  if (!e.startsOn) return 'Dates to be confirmed';
-  const today = new Date().toISOString().slice(0, 10);
-  // A long-running exhibition already open goes under this month, not the month it opened.
-  const from = e.startsOn < today ? today : e.startsOn;
-  return new Date(`${from.slice(0, 7)}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-}
 
 function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
   const m = new Map<string, T[]>();
@@ -23,79 +12,85 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
 }
 
 /**
- * The selection as it will print: everything marked "In the guide",
- * events by month and venues by section. Print from the browser to A4;
- * images print from the original upload.
+ * The selection as the guide prints it: the pocket page (115 × 165mm),
+ * entries in the printed field order, built by the same code as the
+ * InDesign export. This is the proof; the export is what gets merged.
  */
-export default async function Guide() {
-  const { events, venues } = await guideSelection();
+export default async function Guide({ searchParams }: { searchParams: SearchParams }) {
+  const sp = await searchParams;
+  const window = windowFrom({ from: one(sp.from), to: one(sp.to) });
+  const { events, venues } = await buildGuide(window);
+  const qs = `from=${window.from}&to=${window.to}`;
 
   return (
-    <article className="mx-auto max-w-[190mm] bg-white p-8 print:p-0">
-      <div className="no-print mb-6 flex items-center justify-between rounded bg-stone-100 p-3 text-sm">
-        <span>{events.length} events and {venues.length} venues selected.</span>
-        <span className="text-stone-500">Print to A4 from the browser to proof.</span>
-      </div>
+    <>
+      <form action="/guide" className="no-print mb-6 flex flex-wrap items-end gap-3 rounded border border-stone-200 bg-white p-3 text-sm">
+        <label className="flex flex-col">
+          <span className="text-xs text-stone-500">Edition from</span>
+          <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-xs text-stone-500">to</span>
+          <input type="date" name="to" defaultValue={window.to} className="rounded border border-stone-300 px-2 py-1" />
+        </label>
+        <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
+        <span className="ml-auto text-stone-600">{events.length} events · {venues.length} venues</span>
+        <a href={`/guide/export/whats-on.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">What&apos;s On for InDesign</a>
+        <a href={`/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues for InDesign</a>
+      </form>
 
-      <h1 className="font-serif text-4xl">What&apos;s on</h1>
-      {events.length === 0 && (
-        <p className="mt-4 text-stone-500">Nothing selected yet. Choose events on <Link href="/whats-on" className="underline">What&apos;s on</Link>.</p>
-      )}
-      {group(events, (r) => monthOf(r.event)).map(([month, rows]) => (
-        <section key={month} className="mt-6">
-          <h2 className="mb-3 border-b border-stone-300 pb-1 font-serif text-2xl">{month}</h2>
-          <div className="space-y-4">
-            {rows.map(({ event: e, venue }) => <EventEntry key={e.id} e={e} venue={venue} />)}
+      <div className="guide-pages">
+        <section className="guide-page">
+          <h2 className="guide-tab">Events this season</h2>
+          {events.length === 0 && (
+            <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/whats-on">What&apos;s on</Link>.</p>
+          )}
+          <div className="guide-columns">
+            {events.map((e) => <EventEntry key={e.title + e.sortKey} e={e} />)}
           </div>
         </section>
-      ))}
 
-      {venues.length > 0 && (
-        <div className="page-break mt-10">
-          <h1 className="font-serif text-4xl">Venues</h1>
-          {group(venues, (p) => CATEGORY_LABEL[p.category]).map(([section, ps]) => (
-            <section key={section} className="mt-6">
-              <h2 className="mb-3 border-b border-stone-300 pb-1 font-serif text-2xl">{section}</h2>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                {ps.map((p) => <VenueEntry key={p.id} p={p} />)}
+        {group(venues, (v) => v.section).map(([section, inSection]) => (
+          <section key={section} className="guide-page">
+            <h2 className="guide-tab">{section}</h2>
+            {group(inSection, (v) => v.area).map(([area, inArea]) => (
+              <div key={area}>
+                {area && <h3 className="guide-area">{section} {area}</h3>}
+                <div className="guide-columns">
+                  {inArea.map((v) => <VenueEntry key={v.name} v={v} />)}
+                </div>
               </div>
-            </section>
-          ))}
-        </div>
-      )}
+            ))}
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function EventEntry({ e }: { e: GuideEvent }) {
+  return (
+    <article className="guide-entry">
+      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
+      <h4 className="guide-title">{e.title}</h4>
+      <p>{e.copy} {e.price && <strong>{e.price}</strong>}</p>
+      <p className="guide-venue">{e.venue}</p>
+      {e.address && <p>{e.address}</p>}
+      {e.contact && <p>{e.contact}</p>}
+      {e.website && <p className="guide-web">{e.website}</p>}
     </article>
   );
 }
 
-function EventEntry({ e, venue }: { e: Event; venue: Place | null }) {
+function VenueEntry({ v }: { v: GuideVenue }) {
   return (
-    <div className="avoid-break grid grid-cols-[1fr_45mm] gap-4">
-      <div>
-        <h3 className="font-serif text-lg font-semibold">{e.title}</h3>
-        <p className="text-sm font-medium">{eventDatesText(e.dates)}</p>
-        <p className="text-sm text-stone-600">
-          {venue?.name ?? e.venue}
-          {priceRange(e.fromPricePence, e.toPricePence) && ` · ${priceRange(e.fromPricePence, e.toPricePence)}`}
-        </p>
-        {(e.guideCopy ?? e.summary) && <p className="mt-1 text-sm">{e.guideCopy ?? e.summary}</p>}
-      </div>
-      {e.headerImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={printImage(e.headerImage)} alt="" className="h-[30mm] w-[45mm] object-cover" />
-      )}
-    </div>
-  );
-}
-
-function VenueEntry({ p }: { p: Place }) {
-  return (
-    <div className="avoid-break text-sm">
-      <h3 className="font-serif text-base font-semibold">{p.name}</h3>
-      <p className="text-stone-600">{address(p)}</p>
-      {(p.guideCopy ?? p.summary) && <p className="mt-1">{p.guideCopy ?? p.summary}</p>}
-      <p className="mt-1 text-stone-600">
-        {[p.phone, p.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), openMonthsText(p.openMonths)].filter(Boolean).join(' · ')}
-      </p>
-    </div>
+    <article className="guide-entry">
+      <h4 className="guide-title">{v.name}</h4>
+      {v.label && <p className="guide-label">{v.label}</p>}
+      {v.copy && <p>{v.copy}</p>}
+      {v.address && <p>{v.address}</p>}
+      {v.phone && <p>{v.phone}</p>}
+      {v.size !== 'directory' && v.website && <p className="guide-web">{v.website}</p>}
+    </article>
   );
 }

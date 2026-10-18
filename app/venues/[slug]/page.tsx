@@ -4,6 +4,8 @@ import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
 import { SourcePanel } from '@/components/source-panel';
+import { VenueGuideForm } from '@/components/venue-guide-form';
+import { guideVenue } from '@/lib/domain/guide-entry';
 import { getVenue } from '@/lib/db/queries';
 import { address, eventDatesText, openMonthsText, rateRange } from '@/lib/domain/format';
 import { webImage } from '@/lib/domain/images';
@@ -73,6 +75,9 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
           <EditorialForm kind="venue" id={p.id} guideCopy={p.guideCopy} inclusionNote={p.inclusionNote} sourceCopy={p.summary} />
+        </div>
+        <div className="rounded border border-stone-200 bg-white p-3">
+          <VenueGuideForm id={p.id} section={p.guideSection} defaultSection={guideVenue({ ...p, guideSection: null }).section} area={p.guideArea} label={p.guideLabel} size={p.listingSize} />
         </div>
         <SourcePanel sourceLink={p.sourceLink} sourceModifiedAt={p.sourceModifiedAt} fieldSources={p.fieldSources} />
       </aside>

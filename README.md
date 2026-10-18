@@ -82,8 +82,39 @@ venue set by hand is locked.
 - `/whats-on/[slug]` — details, venue, our copy, source freshness
 - `/venues` — places hosting events (or every listing), include or leave out
 - `/venues/[slug]` — contact, months open, rates, facilities, events held there
-- `/guide` — what is selected, laid out for A4; print from the browser to proof
+- `/guide` — the selection for an edition's dates, set as the printed guide
+  sets it (115 × 165mm pages, the printed field order), with the InDesign
+  exports
 - `/map` — event venues, green for those in the guide
+
+## Into InDesign
+
+The guide's What's On pages are already built by InDesign Data Merge
+(`whatson_merge_events_*.indd`). `/guide` exports the selection as that
+merge source: one row per event, the fields in printed order.
+
+| Column | Example |
+|---|---|
+| Dates | `1 SEP UNTIL 29 OCT`, `1 - 5 SEP`, `1 SEP & 15 SEP`, `4 SEP, 2 OCT, 6 NOV` |
+| Times | `10:00-16:00`, `15:00, 19:30` |
+| Title, Copy | our copy if written, otherwise the listing's summary |
+| Price | `£11.45 - £24.50`, `Free entry` |
+| Venue, Address | `Elizabeth Castle`, `St Aubin's Bay, St. Helier` |
+| Contact | phone, or the email when there is no phone |
+| Website | `JERSEYHERITAGE.ORG` |
+
+The rules are in `lib/domain/house-style.ts`, each tested against an entry
+from the printed autumn 2026 edition. Dates outside the edition are dropped
+before formatting. Where the computed dates, times or price are wrong for
+print, the event page takes an override, and the preview beside it shows
+the entry as it will print.
+
+The files are UTF-16 with a byte-order mark: from UTF-8, InDesign garbles
+every curly apostrophe and accent. The venues export carries section, area,
+label (`CASUAL`, `SPANISH`), listing size and copy, set on each venue page.
+
+The proof page lays entries out in two columns but does not paginate them;
+InDesign does that.
 
 ## Not built yet
 

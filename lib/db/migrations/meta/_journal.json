@@ -15,6 +15,13 @@
       "when": 1792327505270,
       "tag": "0001_sign_in_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792329667027,
+      "tag": "0002_guide_fields",
+      "breakpoints": true
     }
   ]
 }

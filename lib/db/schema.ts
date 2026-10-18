@@ -36,6 +36,14 @@ export type Category = (typeof CATEGORIES)[number];
 
 /** Whether a place goes in the guide. A person sets it; an import never does. */
 export const INCLUSIONS = ['candidate', 'included', 'excluded'] as const;
+
+/**
+ * How much room a venue gets, as the guide sells it: a line in the
+ * area directory, a listing with its category label, or a 2/3 or full
+ * entry with copy and a photo.
+ */
+export const LISTING_SIZES = ['directory', 'listing', 'two-thirds', 'full'] as const;
+export type ListingSize = (typeof LISTING_SIZES)[number];
 export type Inclusion = (typeof INCLUSIONS)[number];
 
 export const places = pgTable('places', {
@@ -61,6 +69,11 @@ export const places = pgTable('places', {
   description: text('description'),
   /** Our copy. Never touched by an import. */
   guideCopy: text('guide_copy'),
+  /** Where it sits in the guide: section "Eat", area "West", label "CASUAL". Ours. */
+  guideSection: text('guide_section'),
+  guideArea: text('guide_area'),
+  guideLabel: text('guide_label'),
+  listingSize: text('listing_size').$type<ListingSize>().notNull().default('listing'),
 
   facilities: text('facilities').array().notNull().default([]),
   accessibility: text('accessibility').array().notNull().default([]),
@@ -106,6 +119,15 @@ export const events = pgTable('events', {
   guideCopy: text('guide_copy'),
 
   venue: text('venue'),
+  venueName: text('venue_name'),
+  addressLine1: text('address_line_1'),
+  parish: text('parish'),
+  postcode: text('postcode'),
+  phone: text('phone'),
+  email: text('email'),
+  website: text('website'),
+  eventTypes: text('event_types').array().notNull().default([]),
+  free: boolean('free').notNull().default(false),
   placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
   lat: doublePrecision('lat'),
   lon: doublePrecision('lon'),
@@ -115,6 +137,15 @@ export const events = pgTable('events', {
   endsOn: date('ends_on'),
   fromPricePence: integer('from_price_pence'),
   toPricePence: integer('to_price_pence'),
+
+  /**
+   * What the guide prints instead of the computed dates, times or price,
+   * when the computed one is wrong for print ("Every Saturday"). Ours;
+   * an import never writes them.
+   */
+  printDates: text('print_dates'),
+  printTimes: text('print_times'),
+  printPrice: text('print_price'),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),

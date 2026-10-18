@@ -2,12 +2,16 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
+import { EventPrintForm } from '@/components/event-print-form';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
 import { SourcePanel } from '@/components/source-panel';
 import { VenuePicker } from '@/components/venue-picker';
 import { getEvent, placesNear } from '@/lib/db/queries';
-import { dayText, eventDatesText, priceRange } from '@/lib/domain/format';
+import { dayText, eventDatesText } from '@/lib/domain/format';
 import { webImage } from '@/lib/domain/images';
+import { guideEvent } from '@/lib/domain/guide-entry';
+import { printDates, printPrice, printTimes } from '@/lib/domain/house-style';
+import { windowFrom } from '@/lib/guide';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +19,14 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const row = await getEvent((await params).slug);
   if (!row) notFound();
   const { event: e, venue } = row;
+  // The coming edition, so the preview prints the dates the guide would.
+  const window = windowFrom({});
+  const entry = guideEvent(e, venue, window);
+  const computed = {
+    dates: printDates(e.dates, window),
+    times: printTimes(e.dates),
+    price: printPrice(e.fromPricePence, e.toPricePence, { free: e.free }),
+  };
   const nearby = e.lat !== null && e.lon !== null ? await placesNear(e.lat, e.lon) : [];
   // Keep the current venue selectable even if it is not among the nearest.
   const options = venue && !nearby.some((n) => n.id === venue.id) ? [{ id: venue.id, name: venue.name, metres: NaN }, ...nearby] : nearby;
@@ -35,7 +47,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <dt className="text-stone-500">When</dt><dd>{eventDatesText(e.dates) ?? '—'}</dd>
           <dt className="text-stone-500">Where</dt>
           <dd>{venue ? <Link href={`/venues/${venue.slug}`} className="hover:underline">{venue.name}</Link> : e.venue ?? '—'}</dd>
-          <dt className="text-stone-500">Price</dt><dd>{priceRange(e.fromPricePence, e.toPricePence) ?? '—'}</dd>
+          <dt className="text-stone-500">Price</dt><dd>{printPrice(e.fromPricePence, e.toPricePence, { free: e.free }) ?? '—'}</dd>
         </dl>
         {e.summary && <p className="text-stone-700">{e.summary}</p>}
         {e.description && <div className="whitespace-pre-line text-sm text-stone-600">{e.description}</div>}
@@ -61,6 +73,9 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
         )}
         <div className="rounded border border-stone-200 bg-white p-3">
           <EditorialForm kind="event" id={e.id} guideCopy={e.guideCopy} inclusionNote={e.inclusionNote} sourceCopy={e.summary} />
+        </div>
+        <div className="rounded border border-stone-200 bg-white p-3">
+          <EventPrintForm id={e.id} entry={entry} computed={computed} current={{ dates: e.printDates, times: e.printTimes, price: e.printPrice }} />
         </div>
         <SourcePanel sourceLink={e.sourceLink} sourceModifiedAt={e.sourceModifiedAt} fieldSources={e.fieldSources} />
       </aside>

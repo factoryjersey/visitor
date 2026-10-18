@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
-import { INCLUSIONS, events, places } from '@/lib/db/schema';
+import { INCLUSIONS, LISTING_SIZES, events, places } from '@/lib/db/schema';
 
 const kindSchema = z.enum(['event', 'venue']);
 
@@ -78,5 +78,59 @@ export async function setEventVenue(form: FormData) {
       updatedAt: new Date(),
     })
     .where(eq(events.id, id));
+  revalidatePath('/', 'layout');
+}
+
+const eventPrintSchema = z.object({
+  id: z.string().uuid(),
+  printDates: z.string().max(200),
+  printTimes: z.string().max(200),
+  printPrice: z.string().max(200),
+});
+
+/** What the guide prints instead of the computed dates, times or price. Blank means use the computed one. */
+export async function saveEventPrint(form: FormData) {
+  const user = await requireUser();
+  const v = eventPrintSchema.parse(Object.fromEntries(form));
+  const now = new Date();
+  await db
+    .update(events)
+    .set({
+      printDates: v.printDates.trim() || null,
+      printTimes: v.printTimes.trim() || null,
+      printPrice: v.printPrice.trim() || null,
+      editedBy: user.email,
+      editedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(events.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
+const venueGuideSchema = z.object({
+  id: z.string().uuid(),
+  guideSection: z.string().max(60),
+  guideArea: z.string().max(60),
+  guideLabel: z.string().max(40),
+  listingSize: z.enum(LISTING_SIZES),
+});
+
+/** Where a venue sits in the guide, under which label, and how much room it gets. */
+export async function saveVenueGuide(form: FormData) {
+  const user = await requireUser();
+  const v = venueGuideSchema.parse(Object.fromEntries(form));
+  const now = new Date();
+  await db
+    .update(places)
+    .set({
+      guideSection: v.guideSection.trim() || null,
+      guideArea: v.guideArea.trim() || null,
+      guideLabel: v.guideLabel.trim() || null,
+      listingSize: v.listingSize,
+      editedBy: user.email,
+      editedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(places.id, v.id));
   revalidatePath('/', 'layout');
 }

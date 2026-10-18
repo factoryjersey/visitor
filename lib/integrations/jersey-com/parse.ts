@@ -46,6 +46,18 @@ export type VjEvent = {
   summary: string | null;
   description: string | null;
   venue: string | null;
+  /** The venue as the listing names it, and its street, parish and postcode. */
+  venueName: string | null;
+  addressLine1: string | null;
+  parish: string | null;
+  postcode: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  /** Their event types: "Music", "Arts & cultural". */
+  eventTypes: string[];
+  /** The listing says it costs nothing, rather than saying nothing. */
+  free: boolean;
   lat: number | null;
   lon: number | null;
   dates: EventDate[];
@@ -253,12 +265,14 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
   };
 }
 
-/** "20261231" to "2026-12-31". */
-function isoDate(v: unknown): string | null {
+/** "20261231" or "31/12/2026" to "2026-12-31": event_dates and event_dates_start disagree. */
+export function isoDate(v: unknown): string | null {
   const s = str(v);
   if (s === null) return null;
-  const m = /^(\d{4})-?(\d{2})-?(\d{2})$/.exec(s);
-  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+  const ymd = /^(\d{4})-?(\d{2})-?(\d{2})$/.exec(s);
+  if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  const dmy = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+  return dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : null;
 }
 
 export function toEvent(raw: RawItem): VjEvent {
@@ -274,6 +288,10 @@ export function toEvent(raw: RawItem): VjEvent {
   }
   dates.sort((x, y) => x.date.localeCompare(y.date));
   const loc = acf.map_location as { address?: unknown } | undefined;
+  const a = (acf.address ?? {}) as Record<string, unknown>;
+  const parishLabel = labelOf(acf.parish);
+  const fromRaw = acf.from_price;
+  const free = (fromRaw === 0 || fromRaw === '0' || fromRaw === '0.00') && !pence(acf.price_to);
 
   return {
     externalId: String(raw.id),
@@ -281,6 +299,15 @@ export function toEvent(raw: RawItem): VjEvent {
     summary: htmlToText(acf.short_description),
     description: htmlToText(acf.long_description),
     venue: tidyVenue(str(loc?.address) === null ? null : decodeEntities(str(loc?.address)!)),
+    venueName: str(a.place_name) === null ? null : decodeEntities(str(a.place_name)!),
+    addressLine1: addressLine(a.address_line_1),
+    parish: parishLabel === null ? null : tidyParish(parishLabel),
+    postcode: str(a.postcode)?.toUpperCase() ?? null,
+    phone: phoneOf(acf.telephone_number),
+    email: str(acf.email_address),
+    website: str(acf.website),
+    eventTypes: labels(acf.type),
+    free,
     ...pin(acf),
     dates,
     startsOn: isoDate(acf.event_dates_start) ?? dates[0]?.date ?? null,
