@@ -25,7 +25,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <img src="/visitor-logo-white.svg" alt="Visitor" width={95} height={24} className="h-6 w-auto opacity-90" />
             <p>Published by Factory with Visit Jersey.</p>
           </div>
-          <p>Listings from <a href="https://www.jersey.com" className="underline hover:text-white">jersey.com</a>. Check with the organiser before you travel.</p>
+          <p>Check with the organiser before you travel.</p>
         </div>
       </footer>
     </div>
