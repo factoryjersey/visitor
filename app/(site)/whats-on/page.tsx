@@ -43,7 +43,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       tag={UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing'}
       highlight={highlight}
       wide={wide}
-      summary={e.guideCopy ?? e.summary}
+      summary={wide ? (e.guideCopy ?? e.summary) : (e.summary ?? e.guideCopy)}
     />
   );
 

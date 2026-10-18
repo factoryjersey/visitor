@@ -45,7 +45,7 @@ export default async function Home() {
         {otherHighlights.length > 0 && (
           <section className="mb-14 grid gap-6 md:grid-cols-2">
             {otherHighlights.map(({ event: e, venue }) => (
-              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={cardWhen(e.dates, e.occurrence, today)} location={cardLocation(e.venueName ?? venue?.name, e.parish ?? venue?.parish)} image={e.headerImage} highlight />
+              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={cardWhen(e.dates, e.occurrence, today)} location={cardLocation(e.venueName ?? venue?.name, e.parish ?? venue?.parish)} image={e.headerImage} summary={e.summary ?? e.guideCopy} highlight />
             ))}
           </section>
         )}
@@ -65,6 +65,7 @@ export default async function Home() {
                 location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
                 price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
                 image={e.headerImage}
+                summary={e.summary ?? e.guideCopy}
               />
             ))}
           </div>
@@ -87,6 +88,7 @@ export default async function Home() {
                   where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
                   price={printPrice(t.fromPricePence, t.toPricePence)}
                   image={t.headerImage}
+                  summary={t.summary ?? t.guideCopy}
                   tag={t.genre}
                 />
               ))}

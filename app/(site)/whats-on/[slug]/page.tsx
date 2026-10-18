@@ -142,6 +142,7 @@ export default async function EventPage({ params }: Props) {
                   location={cardLocation(r.venueName ?? v?.name ?? r.venue, r.parish ?? v?.parish)}
                   price={printPrice(r.fromPricePence, r.toPricePence, { free: r.free })}
                   image={r.headerImage}
+                  summary={r.summary ?? r.guideCopy}
                 />
               ))}
             </div>
