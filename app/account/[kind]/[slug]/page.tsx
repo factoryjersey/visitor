@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 const PUBLIC_PATH = { venue: null, event: '/whats-on', experience: '/tours' } as const;
 
-export default async function EditListingPage({ params, searchParams }: { params: Promise<{ kind: string; slug: string }>; searchParams: Promise<{ created?: string }> }) {
+export default async function EditListingPage({ params, searchParams }: { params: Promise<{ kind: string; slug: string }>; searchParams: Promise<{ created?: string; rewritten?: string }> }) {
   const { kind: segment, slug } = await params;
   const kind = kindFromPath(segment);
   if (!kind) notFound();
@@ -29,7 +29,7 @@ export default async function EditListingPage({ params, searchParams }: { params
   // Edit the pending version, so a second edit builds on the first rather than losing it.
   const defaults = formDefaults(kind, { ...row, ...(change?.changes ?? {}) });
   const publicPath = PUBLIC_PATH[kind];
-  const { created } = await searchParams;
+  const { created, rewritten } = await searchParams;
 
   return (
     <div className="space-y-4">
@@ -40,6 +40,7 @@ export default async function EditListingPage({ params, searchParams }: { params
       </div>
 
       {created && <Notice tone="ok">Sent. We will check it and it will appear once approved; until then you can keep editing it here.</Notice>}
+      {created && rewritten && <Notice>We have put your description in the guide’s voice and written the one-line summary shown on listing cards. Check both below and change anything we got wrong.</Notice>}
       {row.review === 'pending' && !created && <Notice>We have not checked this yet. Edits save straight away.</Notice>}
       {row.review === 'rejected' && (
         <Notice tone="bad">

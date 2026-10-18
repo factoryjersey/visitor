@@ -14,6 +14,7 @@ import {
 import { canEditListing, type Actor } from '@/lib/auth/roles';
 import { PROVIDER_FIELDS, changedFields, derivedFromDates, type ListingValues } from '@/lib/domain/listing-form';
 import { slugify, uniqueSlug } from '@/lib/domain/slug';
+import { rewriteListing } from '@/lib/integrations/claude/rewrite';
 
 /**
  * Providers' listings, and staff review of them.
@@ -73,7 +74,23 @@ function withDerived(kind: ListingKind, values: Record<string, unknown>, locked:
   return { ...values, ...derivedFromDates(kind, values.dates as never, locked) };
 }
 
-export type SaveResult = { ok: true; slug: string; outcome: 'created' | 'saved' | 'submitted' | 'unchanged' } | { ok: false; error: string };
+export type SaveResult =
+  | { ok: true; slug: string; outcome: 'created' | 'saved' | 'submitted' | 'unchanged'; rewritten: boolean }
+  | { ok: false; error: string };
+
+/**
+ * The provider's description in the guide's third person, and the card's
+ * one sentence as the summary. Only when what they wrote is new to us: text
+ * already rewritten, sent back untouched, is left alone, so an edit to the
+ * price alone does not turn into a change of wording.
+ */
+async function inGuideVoice(kind: ListingKind, v: Record<string, unknown>, current?: Record<string, unknown>) {
+  const summary = (v.summary as string | null) ?? null;
+  const description = (v.description as string | null) ?? null;
+  if (current && summary === current.summary && description === current.description) return { values: v, rewritten: false };
+  const r = await rewriteListing({ kind, name: String(v.name ?? v.title), summary, description });
+  return r ? { values: { ...v, description: r.description, summary: r.snippet }, rewritten: true } : { values: v, rewritten: false };
+}
 
 export async function createListing<K extends ListingKind>(
   kind: K,
@@ -88,9 +105,10 @@ export async function createListing<K extends ListingKind>(
   const fields = PROVIDER_FIELDS[kind];
   const table = TABLES[kind];
   const slug = await freeSlug(table, String(v.name ?? v.title));
+  const { values: worded, rewritten } = await inGuideVoice(kind, v);
   const now = new Date();
   const row = {
-    ...withDerived(kind, v, []),
+    ...withDerived(kind, worded, []),
     slug,
     businessId: business.id,
     review: 'pending' as const,
@@ -101,7 +119,7 @@ export async function createListing<K extends ListingKind>(
     ...(kind === 'experience' ? { providerId: await providerFor(business) } : {}),
   };
   await db.insert(table).values(row as never);
-  return { ok: true, slug, outcome: 'created' };
+  return { ok: true, slug, outcome: 'created', rewritten };
 }
 
 /**
@@ -118,10 +136,12 @@ export async function updateListing<K extends ListingKind>(
   const table = TABLES[kind];
   const [row] = (await db.select().from(table).where(eq(table.id, id))) as Record<string, unknown>[];
   if (!row || !canEditListing(user, { businessId: row.businessId as string | null })) return { ok: false, error: 'Not found' };
-  const v = values as Record<string, unknown>;
-  if (kind === 'event' && !(await checkVenue((v.placeId as string | null) ?? null, user.businessId))) return { ok: false, error: 'Not your venue' };
+  if (kind === 'event' && !(await checkVenue(((values as Record<string, unknown>).placeId as string | null) ?? null, user.businessId))) return { ok: false, error: 'Not your venue' };
   const slug = row.slug as string;
   const locked = row.lockedFields as string[];
+  // Against what the provider last saw: the open change's wording if there is one, else the row's.
+  const open = row.review === 'approved' ? await openChange(kind, id) : null;
+  const { values: v, rewritten } = await inGuideVoice(kind, values as Record<string, unknown>, { ...row, ...(open?.changes ?? {}) });
 
   if (row.review !== 'approved') {
     const fields = PROVIDER_FIELDS[kind];
@@ -139,7 +159,7 @@ export async function updateListing<K extends ListingKind>(
         updatedAt: now,
       } as never)
       .where(eq(table.id, id));
-    return { ok: true, slug, outcome: 'saved' };
+    return { ok: true, slug, outcome: 'saved', rewritten };
   }
 
   const changes = changedFields(row, v);
@@ -149,7 +169,7 @@ export async function updateListing<K extends ListingKind>(
       await tx.insert(listingChanges).values({ kind, listingId: id, businessId: user.businessId, changes, submittedBy: user.email });
     }
   });
-  return { ok: true, slug, outcome: Object.keys(changes).length ? 'submitted' : 'unchanged' };
+  return { ok: true, slug, outcome: Object.keys(changes).length ? 'submitted' : 'unchanged', rewritten };
 }
 
 export async function openChange(kind: ListingKind, listingId: string) {

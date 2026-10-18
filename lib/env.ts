@@ -23,6 +23,10 @@ const envSchema = z.object({
   // Comma-separated addresses that become superadmin on first sign-in,
   // so the first account needs no invite. Everyone else is invited.
   SUPERADMIN_EMAILS: z.string().optional(),
+
+  // Claude, for putting providers' own words into the guide's voice. Without
+  // it their text is saved as they wrote it.
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

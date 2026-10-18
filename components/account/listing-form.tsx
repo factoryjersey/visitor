@@ -23,8 +23,8 @@ const CONTACT: Field[] = [
 ];
 
 const COPY: Field[] = [
-  { name: 'summary', label: 'Summary', type: 'textarea', rows: 3, hint: 'A sentence or two for listings.', wide: true },
-  { name: 'description', label: 'Description', type: 'textarea', rows: 8, wide: true },
+  { name: 'summary', label: 'Summary', type: 'textarea', rows: 3, hint: 'One sentence for listing cards. We write it from your description if you leave it blank.', wide: true },
+  { name: 'description', label: 'Description', type: 'textarea', rows: 8, hint: 'Write it however you like: we put it in the guide’s voice (the third person) when you save.', wide: true },
 ];
 
 const DATES: Field = {

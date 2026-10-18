@@ -19,6 +19,7 @@
     "seed:provider-codes": "tsx scripts/seed-provider-codes.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "2.45.4",
     "drizzle-orm": "0.36.4",

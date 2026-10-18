@@ -22,6 +22,8 @@ const OUTCOME = {
   unchanged: 'Nothing had changed.',
 } as const;
 
+const REWRITTEN = ' We have put your description in the guide’s voice and written the one-line summary shown on listing cards: check both below and change anything we got wrong.';
+
 /** Add or edit one of the business's listings. Which fields count is decided by parseListingForm, never the form. */
 export async function saveListingAction(_prev: SaveState, form: FormData): Promise<SaveState> {
   const user = await requireProvider();
@@ -41,8 +43,8 @@ export async function saveListingAction(_prev: SaveState, form: FormData): Promi
   if (!result.ok) return { ok: false, at, errors: {}, message: result.error, values };
 
   revalidatePath('/account');
-  if (result.outcome === 'created') redirect(`/account/${KIND_PATH[kind]}/${result.slug}?created=1`);
-  return { ok: true, at, message: OUTCOME[result.outcome] };
+  if (result.outcome === 'created') redirect(`/account/${KIND_PATH[kind]}/${result.slug}?created=1${result.rewritten ? '&rewritten=1' : ''}`);
+  return { ok: true, at, message: OUTCOME[result.outcome] + (result.rewritten ? REWRITTEN : '') };
 }
 
 type InviteState = { error?: string; link?: string; email?: string } | null;
