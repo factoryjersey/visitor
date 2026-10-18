@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
@@ -19,7 +19,7 @@ const inclusionSchema = z.object({
   inclusion: z.enum(INCLUSIONS),
 });
 
-/** Include, exclude or reset one entry. Inclusion is only ever set by a person. */
+/** Include, exclude or reset one entry. Inclusion is only ever set by a person, and only on an approved listing. */
 export async function setInclusion(form: FormData) {
   const user = await requireStaff();
   const { kind, id, inclusion } = inclusionSchema.parse(Object.fromEntries(form));
@@ -28,7 +28,7 @@ export async function setInclusion(form: FormData) {
   await db
     .update(table)
     .set({ inclusion, inclusionSetBy: user.email, inclusionSetAt: now, updatedAt: now })
-    .where(eq(table.id, id));
+    .where(and(eq(table.id, id), eq(table.review, 'approved')));
   revalidatePath('/', 'layout');
 }
 

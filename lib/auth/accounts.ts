@@ -57,13 +57,22 @@ export const inviteLink = (token: string) => `${env.NEXT_PUBLIC_APP_URL.replace(
 /**
  * Make an account for somebody and a link for them to set a password.
  * The account exists from now, so signing in with Google as that address
- * works without the link. A second invite replaces the first link.
+ * works without the link. Inviting the same person again replaces the
+ * link; an address with an account as anything else is refused, so an
+ * invite can never move somebody to another business or role.
  */
-export async function createInvite(input: { email: string; role: Role; businessId: string | null; name?: string | null; invitedBy: string }) {
+export async function createInvite(input: { email: string; role: Role; businessId: string | null; name?: string | null; invitedBy: string }): Promise<
+  { ok: true; email: string; link: string } | { ok: false; error: string }
+> {
   const email = input.email.trim().toLowerCase();
+  const [existing] = await db.select().from(users).where(eq(users.email, email));
+  if (existing && (existing.role !== input.role || existing.businessId !== input.businessId)) {
+    return { ok: false, error: `${email} already has an account here.` };
+  }
+  if (existing?.disabledAt) return { ok: false, error: `${email} has been switched off. Switch it back on first.` };
+
   const token = randomBytes(32).toString('base64url');
   await db.transaction(async (tx) => {
-    const [existing] = await tx.select().from(users).where(eq(users.email, email));
     if (!existing) {
       await tx.insert(users).values({ email, role: input.role, businessId: input.businessId, name: input.name || null, invitedBy: input.invitedBy });
     }
@@ -77,7 +86,7 @@ export async function createInvite(input: { email: string; role: Role; businessI
       expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000),
     });
   });
-  return { email, link: inviteLink(token) };
+  return { ok: true, email, link: inviteLink(token) };
 }
 
 /** The open invite a link refers to, or null if it is unknown, used or expired. */

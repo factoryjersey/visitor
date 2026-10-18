@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { BusinessControl } from '@/components/business-control';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
@@ -70,7 +71,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
       <aside className="space-y-4">
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
-          <InclusionControl kind="venue" id={p.id} inclusion={p.inclusion} />
+          {p.review === 'approved' ? <InclusionControl kind="venue" id={p.id} inclusion={p.inclusion} /> : <p className="text-xs text-stone-500">Once approved in Review.</p>}
           <DecidedBy inclusion={p.inclusion} by={p.inclusionSetBy} at={p.inclusionSetAt} editedBy={p.editedBy} editedAt={p.editedAt} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
@@ -79,6 +80,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
         <div className="rounded border border-stone-200 bg-white p-3">
           <VenueGuideForm id={p.id} section={p.guideSection} defaultSection={guideVenue({ ...p, guideSection: null }).section} area={p.guideArea} label={p.guideLabel} size={p.listingSize} />
         </div>
+        <BusinessControl kind="venue" id={p.id} businessId={p.businessId} review={p.review} />
         <SourcePanel sourceLink={p.sourceLink} sourceModifiedAt={p.sourceModifiedAt} fieldSources={p.fieldSources} />
       </aside>
     </div>

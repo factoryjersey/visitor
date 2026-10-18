@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getUser } from '@/lib/auth/session';
+import { requireStaff } from '@/lib/auth/session';
+import { reviewCount } from '@/lib/listings';
 
 export const metadata: Metadata = { title: 'Visitor Guide admin', robots: { index: false } };
 
@@ -10,26 +11,31 @@ const NAV = [
   { href: '/admin/venues', label: 'Venues' },
   { href: '/admin/guide', label: 'Guide' },
   { href: '/admin/map', label: 'Map' },
+  { href: '/admin/people', label: 'People' },
 ];
 
-/** The editing side. Middleware keeps everything under /admin behind sign-in. */
+/** The editing side, for staff. Middleware keeps it behind sign-in; this keeps providers out. */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUser();
+  const user = await requireStaff();
+  const waiting = await reviewCount();
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="no-print border-b border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Link href="/admin" className="font-serif text-lg font-semibold">Visitor Guide</Link>
           {user && (
             <>
-              <nav className="flex gap-4 text-sm">
+              <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                <Link href="/admin/review" className="text-stone-600 hover:text-stone-900">
+                  Review{waiting > 0 && <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800">{waiting}</span>}
+                </Link>
                 {NAV.map((n) => (
                   <Link key={n.href} href={n.href} className="text-stone-600 hover:text-stone-900">{n.label}</Link>
                 ))}
                 <Link href="/" className="text-stone-400 hover:text-stone-900">Public site ↗</Link>
               </nav>
               <form action="/logout" method="post" className="ml-auto flex items-center gap-3 text-sm text-stone-500">
-                <span>{user.email}</span>
+                <Link href="/account/password" className="hidden hover:text-stone-900 sm:inline">{user.email}</Link>
                 <button type="submit" className="hover:text-stone-900 hover:underline">Sign out</button>
               </form>
             </>

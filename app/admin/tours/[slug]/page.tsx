@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { saveTourPrint } from '@/app/actions';
+import { BusinessControl } from '@/components/business-control';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { GenreControl } from '@/components/genre-control';
@@ -53,7 +54,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
       <aside className="space-y-4">
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
-          <InclusionControl kind="experience" id={x.id} inclusion={x.inclusion} />
+          {x.review === 'approved' ? <InclusionControl kind="experience" id={x.id} inclusion={x.inclusion} /> : <p className="text-xs text-stone-500">Once approved in Review.</p>}
           <div className="my-3 border-t border-stone-100 pt-3"><HighlightControl kind="experience" id={x.id} highlight={x.highlight} /></div>
           <DecidedBy inclusion={x.inclusion} by={x.inclusionSetBy} at={x.inclusionSetAt} editedBy={x.editedBy} editedAt={x.editedAt} />
         </div>
@@ -90,6 +91,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
         <div className="rounded border border-stone-200 bg-white p-3">
           <EditorialForm kind="experience" id={x.id} guideCopy={x.guideCopy} inclusionNote={x.inclusionNote} sourceCopy={x.summary} />
         </div>
+        <BusinessControl kind="experience" id={x.id} businessId={x.businessId} review={x.review} />
         <SourcePanel sourceLink={x.sourceLink} sourceModifiedAt={x.sourceModifiedAt} fieldSources={x.fieldSources} />
       </aside>
     </div>

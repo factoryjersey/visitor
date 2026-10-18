@@ -13,7 +13,7 @@ Matches factoryOS so the two can be joined later:
 
 - Next.js 15 (App Router), TypeScript strict
 - Postgres via Drizzle ORM (Supabase in production, like factoryOS)
-- Supabase Auth: Google or password, limited to allowed email domains
+- Supabase Auth (Google or password); who may sign in, and as what, is a `users` table here
 - Tailwind, Zod, Vitest
 - Leaflet on OpenStreetMap tiles for the map
 
@@ -33,31 +33,56 @@ for working without network access. It is not real data.
 Behind a proxy, Node's `fetch` needs `NODE_USE_ENV_PROXY=1` to use
 `HTTPS_PROXY`.
 
-## Signing in
+## Accounts and roles
 
-The same as factoryOS: every page under `/admin` needs a Supabase session,
-signed-out requests go to `/login`, and only addresses in `ALLOWED_EMAIL_DOMAINS` are
-admitted, checked at sign-in and again on every request. Each server action
-checks for itself as well, since a form POST can be replayed from anywhere.
+Supabase proves who somebody is; the `users` table decides whether they get
+in, and as what (`lib/auth/roles.ts`):
 
-Point `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at
-factoryOS's Supabase project and the same accounts work in both. On that
-project:
+| Role | Can |
+|---|---|
+| superadmin | everything, and is the only one who makes staff |
+| staff | the editing side under `/admin`: review, inclusion, the guide and its exports, provider accounts |
+| provider | their own business's listings under `/account`, and its team |
+
+Accounts are invite only. An invite (`/admin/people`, or a provider's
+`/account/team`) makes the account and a link to set a password, shown once
+to whoever made it to pass on; we send no email. Signing in with Google as
+the invited address works without the link. The first superadmin is whoever
+signs in as an address in `SUPERADMIN_EMAILS`, or
+`pnpm auth:create-user --email=… --password='…'`.
+
+Middleware sends anyone signed out of `/admin` or `/account` to `/login`.
+Every page and server action checks the role for itself; a provider who
+finds an `/admin` URL gets a 404. An address Supabase has not confirmed
+never matches an account, so a self-made sign-up with somebody else's
+address gets nothing. Forgotten passwords go by Supabase's own email.
+
+Visitor has its own Supabase project, separate from factoryOS. On it:
 
 - add `<NEXT_PUBLIC_APP_URL>/auth/callback` to Auth → URL Configuration →
-  Redirect URLs, or Google sign-in returns to the wrong place;
-- set `ALLOWED_EMAIL_DOMAINS=factory.je` in production. Unset, anyone with
-  an account on the project gets in.
+  Redirect URLs, or Google sign-in and password reset return to the wrong place;
+- for Google sign-in, enable Google under Auth → Providers.
 
-Google sign-in needs no setup per person. For a password account:
-
-```bash
-pnpm auth:create-user --email=someone@factory.je --password='...'
-```
-
-There are no roles: everyone signed in can include, leave out and edit.
 Who included or left out each entry, and who last edited it, is recorded
 and shown on its page.
+
+## Providers' listings
+
+A business (`businesses`) looks after listings: venues, events, tours. Its
+people add them under `/account`, and staff can hand an imported listing to
+a business on its admin page ("Looked after by").
+
+- A new listing arrives as `review = pending`: hidden from the site, the
+  guide and the admin lists, waiting in `/admin/review`. Its business can
+  keep editing it until staff approve or turn it down (with a note they see).
+- Once approved, a provider's edit no longer writes the listing. It waits in
+  `listing_changes`, one open change per listing, and `/admin/review` shows
+  it field by field against the live version.
+- Whatever a provider wrote is locked, so the next import keeps their answer.
+- Providers write only what the listing is (`PROVIDER_FIELDS` in
+  `lib/domain/listing-form.ts`). Our copy, the guide section, inclusion,
+  highlights and print overrides stay with staff.
+- A business that lists a tour becomes a tour provider for the guide's key.
 
 ## How it fits together
 
@@ -93,13 +118,23 @@ is the edited selection), only what is still to come, and highlights
 always, whatever the tick. Filters are a GET form, so every view is a link
 and works without JavaScript; the tick submits itself when it can.
 
+## Pages (providers)
+
+- `/account` — the business's listings and where each stands
+- `/account/{venues,events,tours}/new`, `…/[slug]` — add and edit
+- `/account/team` — colleagues, and inviting more
+- `/account/password` — set a new one (staff use it too)
+
 ## Highlights
 
 A highlight gets a full page in the guide (the extended listing and a large
 image, exported separately for its own InDesign template) and leads the
 public listings. Set it on the event or tour page in the admin.
 
-## Pages (admin, signed in)
+## Pages (admin, staff)
+
+- `/admin/review` — providers' new listings and changes, to approve or turn down
+- `/admin/people` — invite providers and staff, businesses, switch accounts off
 
 - `/admin/whats-on` — every event, filter by month and status, include or leave out
 - `/admin/whats-on/[slug]` — details, venue, our copy, source freshness
@@ -169,6 +204,8 @@ InDesign does that.
 - Editions: a dated, signed-off snapshot of the selection.
 - factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
 - A scheduled import. Agree the schedule with Visit Jersey first.
+- Emailing invites and review outcomes. Invite links are copied and sent by hand.
+- Images on providers' listings: they need somewhere to upload to.
 
 ## Checks
 

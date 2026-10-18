@@ -164,6 +164,8 @@ export const places = pgTable('places', {
   /** The business that looks after it, when one does. */
   businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
   review: text('review').$type<Review>().notNull().default('approved'),
+  /** Why staff turned a provider's listing down, shown to them. */
+  reviewNote: text('review_note'),
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
@@ -235,6 +237,8 @@ export const events = pgTable('events', {
   /** The business that looks after it, when one does. */
   businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
   review: text('review').$type<Review>().notNull().default('approved'),
+  /** Why staff turned a provider's listing down, shown to them. */
+  reviewNote: text('review_note'),
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
@@ -337,6 +341,8 @@ export const experiences = pgTable('experiences', {
   /** The business that looks after it, when one does. */
   businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
   review: text('review').$type<Review>().notNull().default('approved'),
+  /** Why staff turned a provider's listing down, shown to them. */
+  reviewNote: text('review_note'),
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),

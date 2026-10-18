@@ -8,7 +8,8 @@ import type { Genre } from '@/lib/domain/genre';
 /**
  * What the public site shows. Everything not left out — the site is the
  * whole picture, the guide is the edited selection — and only what is
- * still to come. Unique events and dated tours by default; ongoing and
+ * still to come, and nothing a provider sent us that we have not yet
+ * approved. Unique events and dated tours by default; ongoing and
  * on-demand ones when the visitor ticks for them. Highlights always.
  */
 
@@ -27,7 +28,7 @@ function inMonth(col: typeof events.dates | typeof experiences.dates, month: str
 export type PublicEventFilter = { showOngoing?: boolean; month?: string; type?: string; q?: string };
 
 export async function publicEvents(f: PublicEventFilter = {}) {
-  const where: SQL[] = [ne(events.inclusion, 'excluded'), hasUpcoming(events.dates)];
+  const where: SQL[] = [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
   if (!f.showOngoing) where.push(or(inArray(events.occurrence, [...UNIQUE]), eq(events.highlight, true))!);
   if (f.type) where.push(sql`${f.type} = any(${events.eventTypes})`);
   if (f.q) where.push(sql`(${events.title} ilike ${`%${f.q}%`} or ${events.venueName} ilike ${`%${f.q}%`})`);
@@ -50,14 +51,14 @@ export async function publicEvent(slug: string) {
     .select({ event: events, venue: places })
     .from(events)
     .leftJoin(places, eq(places.id, events.placeId))
-    .where(and(eq(events.slug, slug), ne(events.inclusion, 'excluded')));
+    .where(and(eq(events.slug, slug), ne(events.inclusion, 'excluded'), eq(events.review, 'approved')));
   return row ?? null;
 }
 
 /** The event types in use, for the filter: "Music", "Arts & cultural". */
 export async function publicEventTypes(): Promise<string[]> {
   const rows = await db.execute<{ t: string }>(
-    sql`select distinct unnest(${events.eventTypes}) as t from ${events} where ${events.inclusion} <> 'excluded' order by 1`,
+    sql`select distinct unnest(${events.eventTypes}) as t from ${events} where ${events.inclusion} <> 'excluded' and ${events.review} = 'approved' order by 1`,
   );
   return rows.map((r) => r.t);
 }
@@ -65,7 +66,7 @@ export async function publicEventTypes(): Promise<string[]> {
 export type PublicTourFilter = { showOnDemand?: boolean; genre?: Genre; month?: string; q?: string };
 
 export async function publicTours(f: PublicTourFilter = {}) {
-  const where: SQL[] = [ne(experiences.inclusion, 'excluded'), hasUpcoming(experiences.dates)];
+  const where: SQL[] = [ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)];
   if (!f.showOnDemand) where.push(or(inArray(experiences.occurrence, [...UNIQUE]), eq(experiences.highlight, true))!);
   if (f.genre) where.push(eq(experiences.genre, f.genre));
   if (f.q) where.push(sql`(${experiences.title} ilike ${`%${f.q}%`} or ${providers.name} ilike ${`%${f.q}%`})`);
@@ -94,6 +95,6 @@ export async function publicTour(slug: string) {
     .select({ tour: experiences, provider: providers })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
-    .where(and(eq(experiences.slug, slug), ne(experiences.inclusion, 'excluded')));
+    .where(and(eq(experiences.slug, slug), ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved')));
   return row ?? null;
 }

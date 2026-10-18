@@ -1,5 +1,5 @@
 {
-  "id": "2781fc49-75a6-44b5-90ce-c6dbcea4a133",
+  "id": "e9a6c0f3-605e-4acf-9ab5-02b15d334a46",
   "prevId": "09e3893c-c5cf-453a-aaa2-c2626d198439",
   "version": "7",
   "dialect": "postgresql",
@@ -290,6 +290,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'approved'"
+        },
+        "review_note": {
+          "name": "review_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "inclusion": {
           "name": "inclusion",
@@ -583,6 +589,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'approved'"
+        },
+        "review_note": {
+          "name": "review_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "inclusion": {
           "name": "inclusion",
@@ -1112,6 +1124,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'approved'"
+        },
+        "review_note": {
+          "name": "review_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "inclusion": {
           "name": "inclusion",

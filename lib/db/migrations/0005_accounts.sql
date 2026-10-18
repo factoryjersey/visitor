@@ -54,10 +54,13 @@ CREATE TABLE IF NOT EXISTS "users" (
 --> statement-breakpoint
 ALTER TABLE "events" ADD COLUMN "business_id" uuid;--> statement-breakpoint
 ALTER TABLE "events" ADD COLUMN "review" text DEFAULT 'approved' NOT NULL;--> statement-breakpoint
+ALTER TABLE "events" ADD COLUMN "review_note" text;--> statement-breakpoint
 ALTER TABLE "experiences" ADD COLUMN "business_id" uuid;--> statement-breakpoint
 ALTER TABLE "experiences" ADD COLUMN "review" text DEFAULT 'approved' NOT NULL;--> statement-breakpoint
+ALTER TABLE "experiences" ADD COLUMN "review_note" text;--> statement-breakpoint
 ALTER TABLE "places" ADD COLUMN "business_id" uuid;--> statement-breakpoint
 ALTER TABLE "places" ADD COLUMN "review" text DEFAULT 'approved' NOT NULL;--> statement-breakpoint
+ALTER TABLE "places" ADD COLUMN "review_note" text;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "businesses" ADD CONSTRAINT "businesses_provider_id_providers_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
