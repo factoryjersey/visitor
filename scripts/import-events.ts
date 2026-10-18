@@ -14,8 +14,12 @@
  * straight on the site. Anyone can post on Eventbrite, and the charities'
  * diary carries the odd restaurant offer, so theirs wait in /admin/review
  * until staff approve them.
+ *
+ * Every event's copy is put in the guide's third person by Claude when its
+ * words change, with ANTHROPIC_API_KEY set; without it, as the organiser wrote it.
  */
 import '@/lib/load-env';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { and, eq, notInArray } from 'drizzle-orm';
@@ -27,6 +31,7 @@ import { mergeFromSource } from '@/lib/domain/merge';
 import { normaliseName } from '@/lib/domain/same-place';
 import { uniqueSlug } from '@/lib/domain/slug';
 import { matchVenue } from '@/lib/domain/venue-match';
+import { rewriteListing, type Rewrite } from '@/lib/integrations/claude/rewrite';
 import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
@@ -150,7 +155,47 @@ async function loadCharities(): Promise<Item[]> {
   return out;
 }
 
-const counts = { created: 0, linked: 0, updated: 0, unchanged: 0 };
+const counts = { created: 0, linked: 0, updated: 0, unchanged: 0, rewritten: 0 };
+
+/** Which words a rewrite was made from: a new one only when these change. */
+const wordsKey = (v: VjEvent) => createHash('sha1').update([v.title, v.summary ?? '', v.description ?? ''].join('\u0000')).digest('hex');
+type KeptRewrite = Rewrite & { key: string };
+
+/**
+ * Organisers write "join us", "we", "our": each event's copy in the guide's
+ * third person, and its card sentence, as providers' own listings get.
+ * Kept with the source record, so a day's run asks Claude only about the
+ * events whose words changed. A few at a time; one that fails keeps the
+ * organiser's words and is tried again tomorrow.
+ */
+async function guideVoice(source: string, items: Item[]): Promise<Map<string, KeptRewrite>> {
+  const kept = new Map<string, KeptRewrite>();
+  for (const r of await db
+    .select({ id: sourceRecords.externalId, payload: sourceRecords.payload })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, source), eq(sourceRecords.externalType, 'events')))) {
+    const rw = (r.payload as { rewrite?: KeptRewrite } | null)?.rewrite;
+    if (rw) kept.set(r.id, rw);
+  }
+  const out = new Map<string, KeptRewrite>();
+  const todo: Item[] = [];
+  for (const i of items) {
+    const old = kept.get(i.v.externalId);
+    if (old?.key === wordsKey(i.v)) out.set(i.v.externalId, old);
+    else if (i.v.summary || i.v.description) todo.push(i);
+  }
+  for (let n = 0; n < todo.length; n += 4) {
+    await Promise.all(
+      todo.slice(n, n + 4).map(async ({ v }) => {
+        const r = await rewriteListing({ kind: 'event', name: v.title, summary: v.summary, description: v.description });
+        if (r) out.set(v.externalId, { ...r, key: wordsKey(v) });
+      }),
+    );
+    process.stdout.write(`\r${source}: rewording ${Math.min(n + 4, todo.length)} of ${todo.length}   `);
+  }
+  counts.rewritten += todo.filter((i) => out.has(i.v.externalId)).length;
+  return out;
+}
 
 /** The source's own fields for the events table. */
 function eventFields(v: VjEvent, venue: Place | null) {
@@ -160,9 +205,17 @@ function eventFields(v: VjEvent, venue: Place | null) {
 
 async function importSource(source: string, items: Item[], review: Review, allPlaces: Place[], existing: Event[]) {
   const taken = new Set(existing.map((e) => e.slug));
-  for (const { v: given, raw } of items) {
-    // The source's own types, and what the event's words add.
-    const v = { ...given, eventTypes: withCategories(given.eventTypes, given, source) };
+  const rewrites = await guideVoice(source, items);
+  for (const { v: given, raw: fetched } of items) {
+    const rw = rewrites.get(given.externalId);
+    // The source's own types, and what the event's own words add; then the copy in the guide's voice.
+    const v = {
+      ...given,
+      eventTypes: withCategories(given.eventTypes, given, source),
+      ...(rw ? { summary: rw.snippet, description: rw.description } : {}),
+    };
+    // The organiser's words stay in the record as they gave them; the rewrite sits beside them.
+    const raw = rw ? { ...(fetched as object), rewrite: rw } : fetched;
     const [record] = await db
       .insert(sourceRecords)
       .values({ source, externalType: 'events', externalId: v.externalId, payload: raw })
@@ -243,7 +296,7 @@ for (const s of SOURCES.filter((s) => !values.only || s.source === values.only))
     await importSource(s.source, items, s.review, allPlaces, existing);
     console.log(
       `\r${s.source}: ${items.length} events; created ${counts.created - before.created}, linked to one we had ${counts.linked - before.linked}, ` +
-        `updated ${counts.updated - before.updated}, unchanged ${counts.unchanged - before.unchanged}`,
+        `updated ${counts.updated - before.updated}, unchanged ${counts.unchanged - before.unchanged}, rewritten ${counts.rewritten - before.rewritten}`,
     );
   } catch (e) {
     failed += 1;
