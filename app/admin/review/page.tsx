@@ -2,9 +2,9 @@ import Link from 'next/link';
 import type { EventDate, ListingKind } from '@/lib/db/schema';
 import { requireStaff } from '@/lib/auth/session';
 import { PROVIDER_FIELDS, datesText } from '@/lib/domain/listing-form';
-import { KIND_LABEL, reviewQueue, titleOf } from '@/lib/listings';
+import { KIND_LABEL, SOURCE_LABEL, reviewQueue, sourceOf, titleOf } from '@/lib/listings';
 import { CATEGORY_LABEL } from '@/lib/params';
-import { reviewChangeAction, reviewListingAction } from './actions';
+import { approveAllAction, reviewChangeAction, reviewListingAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +28,15 @@ function show(field: string, v: unknown): string {
 export default async function ReviewPage() {
   await requireStaff();
   const { listings, changes } = await reviewQueue();
+  // Imported listings, by source, for approving in one go. A provider's are looked at one by one.
+  const tally = new Map<string, { kind: ListingKind; source: string; n: number }>();
+  for (const { kind, row, business } of listings) {
+    const source = sourceOf(row);
+    if (business || !source || source === 'provider') continue;
+    const key = `${kind}:${source}`;
+    tally.set(key, { kind, source, n: (tally.get(key)?.n ?? 0) + 1 });
+  }
+  const imported = [...tally.values()];
 
   return (
     <div className="space-y-8">
@@ -39,6 +48,16 @@ export default async function ReviewPage() {
       <section className="space-y-3">
         <h2 className="font-serif text-xl">New listings <span className="text-stone-400">{listings.length}</span></h2>
         {!listings.length && <p className="text-sm text-stone-500">Nothing waiting.</p>}
+        {imported.map(({ kind, source, n }) => (
+          <form key={`${kind}:${source}`} action={approveAllAction} className="flex flex-wrap items-center gap-3 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
+            <input type="hidden" name="kind" value={kind} />
+            <input type="hidden" name="source" value={source} />
+            <span className="flex-1">
+              {n} {KIND_LABEL[kind].toLowerCase()}s from {SOURCE_LABEL[source] ?? source} are waiting. Turn down any that aren’t for visitors, then approve the rest at once.
+            </span>
+            <button type="submit" className="rounded border border-emerald-600 bg-white px-3 py-1.5 text-emerald-700 hover:bg-emerald-50">Approve all {n}</button>
+          </form>
+        ))}
         {listings.map(({ kind, row, business }) => (
           <article key={row.id} className="rounded border border-stone-200 bg-white p-4">
             <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
@@ -46,7 +65,10 @@ export default async function ReviewPage() {
                 <span className="mr-2 rounded bg-stone-100 px-1.5 py-0.5 text-xs text-stone-600">{KIND_LABEL[kind]}</span>
                 <Link href={`${ADMIN_PATH[kind]}/${row.slug}`} className="hover:underline">{titleOf(row as never)}</Link>
               </h3>
-              <span className="text-sm text-stone-500">{business?.name ?? 'No business'} · sent by {String(row.editedBy ?? '')}</span>
+              <span className="text-sm text-stone-500">
+                {business ? <>{business.name} · sent by {String(row.editedBy ?? '')}</> : <>From {SOURCE_LABEL[sourceOf(row) ?? ''] ?? sourceOf(row) ?? 'an import'}</>}
+                {typeof row.sourceLink === 'string' && <> · <a href={row.sourceLink} target="_blank" rel="noreferrer" className="underline">their page</a></>}
+              </span>
             </header>
             <dl className="grid grid-cols-[120px_1fr] gap-x-3 gap-y-1 text-sm">
               {PROVIDER_FIELDS[kind].filter((f) => !['name', 'title', 'placeId'].includes(f) && show(f, row[f]) !== '—').map((f) => (

@@ -17,6 +17,7 @@ import { and, eq, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
 import { normaliseName } from '@/lib/domain/same-place';
+import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { isSamePlace } from '@/lib/domain/same-place';
 import { matchVenue } from '@/lib/domain/venue-match';
@@ -129,7 +130,17 @@ async function importEvents(raws: RawItem[], allPlaces: Place[]) {
     const record = await upsertRecord('events', raw, v.modifiedAt, v.portalSyncedAt);
     const stamp = { source: SOURCE, ref: `events/${v.externalId}`, at: new Date().toISOString() };
     const venue = matchVenue(v.venue, v, allPlaces);
-    const current = record.eventId ? existing.find((e) => e.id === record.eventId) : undefined;
+    let current = record.eventId ? existing.find((e) => e.id === record.eventId) : undefined;
+    // Listed first by another source (scripts/import-events.ts): link it, and since
+    // Visit Jersey lists it too, it no longer waits for review.
+    if (!current) {
+      current = findSameEvent({ title: v.title, dates: v.dates, placeId: venue?.id ?? null }, existing) ?? undefined;
+      if (current) {
+        await db.update(sourceRecords).set({ eventId: current.id }).where(eq(sourceRecords.id, record.id));
+        if (current.review === 'pending') await db.update(events).set({ review: 'approved' }).where(eq(events.id, current.id));
+        counts.linked += 1;
+      }
+    }
 
     if (!current) {
       const slug = uniqueSlug(`${v.title} ${v.startsOn?.slice(0, 4) ?? ''}`, (s) => taken.has(s));

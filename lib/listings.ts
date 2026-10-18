@@ -275,3 +275,27 @@ export async function reviewCount() {
     (select count(*) from ${listingChanges} where ${listingChanges.status} = 'pending') as n`);
   return Number(row?.n ?? 0);
 }
+
+/** Where an imported listing came from, for people: the source that wrote its title. */
+export const SOURCE_LABEL: Record<string, string> = {
+  'visit-jersey': 'Visit Jersey',
+  eventbrite: 'Eventbrite',
+  'ticketsolve-artscentre': 'Jersey Arts Centre',
+  'ticketsolve-operahouse': 'Jersey Opera House',
+  provider: 'Its business',
+};
+
+export function sourceOf(row: Record<string, unknown>): string | null {
+  return (row.fieldSources as FieldSources | undefined)?.title?.source ?? null;
+}
+
+/** Approve every waiting listing a source brought in: the end of a review pass, not a substitute for one. */
+export async function approveAllFrom(kind: ListingKind, source: string) {
+  const table = TABLES[kind];
+  const done = await db
+    .update(table)
+    .set({ review: 'approved', reviewNote: null, updatedAt: new Date() } as never)
+    .where(and(eq(table.review, 'pending'), sql`${table.fieldSources}->'title'->>'source' = ${source}`))
+    .returning({ id: table.id });
+  return done.length;
+}

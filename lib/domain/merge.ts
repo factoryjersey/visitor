@@ -5,6 +5,9 @@ import type { FieldSource, FieldSources } from '@/lib/db/schema';
  *
  * Three rules, in order:
  *  1. A locked field is a person's correction and is never written.
+ *     With `fillOnly`, so is a field another source has already filled:
+ *     a second source for the same event adds what the first left out
+ *     rather than the two taking turns.
  *  2. A source that has nothing to say about a field leaves it alone,
  *     unless the current value came from that same source record, in
  *     which case the source has withdrawn it and the field is cleared.
@@ -42,7 +45,7 @@ function same(a: unknown, b: unknown): boolean {
 export function mergeFromSource<T extends Record<string, unknown>>(
   current: Partial<T> | null,
   incoming: Partial<T>,
-  opts: { locked: readonly string[]; fieldSources: FieldSources; stamp: FieldSource },
+  opts: { locked: readonly string[]; fieldSources: FieldSources; stamp: FieldSource; fillOnly?: boolean },
 ): MergeResult<T> {
   const patch: Partial<T> = {};
   const fieldSources: FieldSources = { ...opts.fieldSources };
@@ -54,6 +57,7 @@ export function mergeFromSource<T extends Record<string, unknown>>(
     if (opts.locked.includes(key)) continue;
     const next = incoming[key];
     const now = current?.[key];
+    if (opts.fillOnly && !isEmpty(now) && !fromThisRecord(key)) continue;
 
     if (isEmpty(next)) {
       if (!isEmpty(now) && fromThisRecord(key)) {

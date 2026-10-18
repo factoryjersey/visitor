@@ -101,6 +101,28 @@ alone links Hamptonne Museum's events to the holiday flat in its stable
 block. Anything else is left for a person to set on the event page, and a
 venue set by hand is locked.
 
+## Other event sources
+
+Visit Jersey misses much of what is on, the smaller one-off nights above
+all, so `pnpm import:events` adds events from elsewhere after it:
+
+| Source | How | Goes on the site |
+|---|---|---|
+| Jersey Arts Centre | Ticketsolve's public feed, `artscentre.ticketsolve.com/shows.xml` | straight away |
+| Jersey Opera House | the same, `jerseyoperahouse.ticketsolve.com/shows.xml` | straight away |
+| Eventbrite | the schema.org Event data on its Jersey listing pages and each event's page | after review in `/admin/review` |
+
+An event another source already gave us (a date in common and most of the
+title, `lib/domain/event-match.ts`) is linked to it, not repeated, and the
+second source only fills what the first left empty; Visit Jersey links an
+event the same way when it lists one Eventbrite had first, and approves
+it. Each source's own records are kept in `source_records`. Anybody can
+post on Eventbrite, so its events wait for staff; `/admin/review` approves
+them one by one or all at once.
+
+Railway's `import` service runs `pnpm import:visit-jersey`, then
+`pnpm seed:provider-codes`, then `pnpm import:events`, daily at 05:17 UTC.
+
 ## Public site
 
 The site visitors see is at the root, with no sign-in:
@@ -203,7 +225,6 @@ InDesign does that.
 
 - Editions: a dated, signed-off snapshot of the selection.
 - factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
-- A scheduled import. Agree the schedule with Visit Jersey first.
 - Emailing invites and review outcomes. Invite links are copied and sent by hand.
 - Images on providers' listings: they need somewhere to upload to.
 
