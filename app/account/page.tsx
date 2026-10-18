@@ -38,7 +38,7 @@ export default async function AccountHome() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl">Your listings</h1>
+        <h1 className="font-display text-3xl">Your listings</h1>
         <p className="mt-1 max-w-2xl text-sm text-stone-600">
           New listings and changes to live ones are checked by the Visitor Guide team before they appear. Being listed online does not by itself put you in the printed guide.
         </p>
@@ -46,7 +46,7 @@ export default async function AccountHome() {
       {sections.map((s) => (
         <section key={s.kind}>
           <div className="mb-2 flex items-center justify-between gap-4">
-            <h2 className="font-serif text-xl">{s.title}</h2>
+            <h2 className="font-display text-xl">{s.title}</h2>
             <Link href={`/account/${KIND_PATH[s.kind]}/new`} className="rounded border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100">{s.add}</Link>
           </div>
           {s.items.length ? (

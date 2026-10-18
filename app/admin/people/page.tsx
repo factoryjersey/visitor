@@ -24,10 +24,10 @@ export default async function PeoplePage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="font-serif text-3xl">People</h1>
+      <h1 className="font-display text-3xl">People</h1>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">Invite a provider</h2>
+        <h2 className="font-display text-xl">Invite a provider</h2>
         <InviteForm action={inviteAction}>
           <input type="hidden" name="role" value="provider" />
           <label className="block">
@@ -49,7 +49,7 @@ export default async function PeoplePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">Businesses <span className="text-stone-400">{bizRows.length}</span></h2>
+        <h2 className="font-display text-xl">Businesses <span className="text-stone-400">{bizRows.length}</span></h2>
         {!bizRows.length && <p className="text-sm text-stone-500">None yet. Inviting a provider to a new business makes one.</p>}
         {bizRows.map(({ business: b, venues, events: evs, tours }) => (
           <details key={b.id} className="rounded border border-stone-200 bg-white">
@@ -77,7 +77,7 @@ export default async function PeoplePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">Staff</h2>
+        <h2 className="font-display text-xl">Staff</h2>
         <People people={staff} actor={user} showRole />
         {user.role === 'superadmin' && (
           <div className="space-y-2 pt-2">

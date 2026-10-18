@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center bg-stone-50 px-4">
       <div className="rounded border border-stone-200 bg-white p-8">
-        <h1 className="mb-1 font-serif text-2xl">Forgotten password</h1>
+        <h1 className="mb-1 font-display text-2xl">Forgotten password</h1>
         {state?.sent ? (
           <p className="text-sm text-stone-600">
             If there is an account for that address, we have emailed it a link to set a new password. Open the link in this browser.

@@ -3,7 +3,7 @@ import Link from 'next/link';
 /** The public site: what visitors see. No sign-in, no editing. */
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-sand text-harbour">
+    <div className="flex min-h-screen flex-col bg-white text-harbour">
       <header className="border-b border-harbour/10 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-4">
           <Link href="/" aria-label="Visitor, Jersey's official visitor guide: home">

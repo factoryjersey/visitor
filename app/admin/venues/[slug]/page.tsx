@@ -37,7 +37,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
       <div className="space-y-4">
         <Link href="/admin/venues" className="text-sm text-stone-500 hover:underline">← Venues</Link>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="font-serif text-3xl">{p.name}</h1>
+          <h1 className="font-display text-3xl">{p.name}</h1>
           <InclusionBadge inclusion={p.inclusion} />
         </div>
         {p.headerImage && (
@@ -53,7 +53,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
         {p.description && <div className="whitespace-pre-line text-sm text-stone-600">{p.description}</div>}
         {events.length > 0 && (
           <section>
-            <h2 className="mb-2 font-serif text-xl">Events here</h2>
+            <h2 className="mb-2 font-display text-xl">Events here</h2>
             <ul className="divide-y divide-stone-200 rounded border border-stone-200 bg-white text-sm">
               {events.map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-3 p-2">

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ListingCard } from '@/components/site/listing-card';
+import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
@@ -28,7 +28,7 @@ export default async function Home() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-harbour via-harbour/40 to-transparent" />
           <div className="mx-auto flex min-h-[460px] max-w-6xl flex-col justify-end px-4 pb-12 pt-24">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/80">{lead.event.highlight ? 'Highlight' : 'Coming up'}</p>
-            <h1 className="mt-2 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">{lead.event.title}</h1>
+            <h1 className="mt-2 max-w-3xl font-display text-4xl font-bold leading-tight md:text-6xl">{lead.event.title}</h1>
             <p className="mt-3 text-lg text-white/90">
               {webWhen(lead.event.dates, lead.event.occurrence, today)}
               {(lead.event.venueName ?? lead.venue?.name) && ` · ${lead.event.venueName ?? lead.venue?.name}`}
@@ -44,14 +44,14 @@ export default async function Home() {
         {otherHighlights.length > 0 && (
           <section className="mb-14 grid gap-6 md:grid-cols-2">
             {otherHighlights.map(({ event: e, venue }) => (
-              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={webWhen(e.dates, e.occurrence, today)} where={e.venueName ?? venue?.name ?? null} image={e.headerImage} highlight />
+              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={webWhen(e.dates, e.occurrence, today)} location={cardLocation(e.venueName ?? venue?.name, e.parish ?? venue?.parish)} image={e.headerImage} highlight />
             ))}
           </section>
         )}
 
         <section className="mb-14">
           <div className="mb-5 flex items-baseline justify-between gap-4">
-            <h2 className="font-serif text-3xl font-semibold">Coming up</h2>
+            <h2 className="font-display text-3xl font-semibold">Coming up</h2>
             <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-coral">Everything on →</Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,7 +61,7 @@ export default async function Home() {
                 href={`/whats-on/${e.slug}`}
                 title={e.title}
                 when={webWhen(e.dates, e.occurrence, today)}
-                where={e.venueName ?? venue?.name ?? e.venue}
+                location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
                 price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
                 image={e.headerImage}
               />
@@ -72,7 +72,7 @@ export default async function Home() {
         {datedTours.length > 0 && (
           <section>
             <div className="mb-5 flex items-baseline justify-between gap-4">
-              <h2 className="font-serif text-3xl font-semibold">Tours on particular dates</h2>
+              <h2 className="font-display text-3xl font-semibold">Tours on particular dates</h2>
               <Link href="/tours" className="text-sm font-medium text-sea hover:text-coral">All tours &amp; experiences →</Link>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -82,6 +82,7 @@ export default async function Home() {
                   href={`/tours/${t.slug}`}
                   title={t.title}
                   when={webWhen(t.dates, t.occurrence, today)}
+                  location={cardLocation(t.meetingPoint, t.parish)}
                   where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
                   price={printPrice(t.fromPricePence, t.toPricePence)}
                   image={t.headerImage}

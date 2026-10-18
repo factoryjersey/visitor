@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { FilterBar, monthOptions } from '@/components/site/filter-bar';
-import { ListingCard } from '@/components/site/listing-card';
+import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicTours, todayIso } from '@/lib/db/public';
 import { GENRES, type Genre } from '@/lib/domain/genre';
 import { printPrice } from '@/lib/domain/house-style';
@@ -30,6 +30,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       href={`/tours/${t.slug}`}
       title={t.title}
       when={UNIQUE.includes(t.occurrence) ? webWhen(t.dates, t.occurrence, today) : 'Book any day'}
+      location={cardLocation(t.meetingPoint, t.parish)}
       where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
       price={printPrice(t.fromPricePence, t.toPricePence)}
       image={t.headerImage}
@@ -40,7 +41,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="mb-2 font-serif text-4xl font-bold">Tours &amp; experiences</h1>
+      <h1 className="mb-2 font-display text-4xl font-bold">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
       <FilterBar
         action="/tours"
@@ -53,13 +54,13 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       />
       {dated.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-serif text-2xl font-semibold">On these dates</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">On these dates</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{dated.map(card)}</div>
         </section>
       )}
       {onDemand.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-serif text-2xl font-semibold">Book any day</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">Book any day</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{onDemand.map(card)}</div>
         </section>
       )}

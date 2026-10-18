@@ -36,7 +36,7 @@ export async function publicEvents(f: PublicEventFilter = {}) {
   if (month) where.push(month);
 
   const rows = await db
-    .select({ event: events, venue: { name: places.name, slug: places.slug } })
+    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
     .from(events)
     .leftJoin(places, eq(places.id, events.placeId))
     .where(and(...where));
@@ -78,7 +78,7 @@ export async function publicRelatedEvents(e: Pick<Event, 'eventTypes'>, exclude:
   const types = e.eventTypes.filter((t) => !STAFF_ONLY_TYPES.has(t));
   if (!types.length) return [];
   const rows = await db
-    .select({ event: events, venue: { name: places.name, slug: places.slug } })
+    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
     .from(events)
     .leftJoin(places, eq(places.id, events.placeId))
     .where(

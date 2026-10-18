@@ -15,7 +15,7 @@ export default async function Providers() {
   return (
     <>
       <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl">Tour providers</h1>
+        <h1 className="font-display text-2xl">Tour providers</h1>
         <p className="text-sm text-stone-500">
           {rows.length} providers{missing > 0 && <span className="text-amber-700"> · {missing} in the guide without a code</span>}
         </p>

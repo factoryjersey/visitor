@@ -39,7 +39,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
       <div className="space-y-4">
         <Link href="/admin/whats-on" className="text-sm text-stone-500 hover:underline">← What&apos;s on</Link>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="font-serif text-3xl">{e.title}</h1>
+          <h1 className="font-display text-3xl">{e.title}</h1>
           <InclusionBadge inclusion={e.inclusion} />
         </div>
         {e.headerImage && (

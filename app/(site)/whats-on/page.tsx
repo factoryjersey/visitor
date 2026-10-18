@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
-import { ListingCard } from '@/components/site/listing-card';
+import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventTypes, publicEvents, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -37,7 +37,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       href={`/whats-on/${e.slug}`}
       title={e.title}
       when={webWhen(e.dates, e.occurrence, today)}
-      where={e.venueName ?? venue?.name ?? e.venue}
+      location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
       price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
       image={e.headerImage}
       tag={UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing'}
@@ -49,7 +49,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="mb-2 font-serif text-4xl font-bold">What&apos;s on</h1>
+      <h1 className="mb-2 font-display text-4xl font-bold">What&apos;s on</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
       <FilterBar
         action="/whats-on"
@@ -74,7 +74,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
       {group(rest, (r) => r.next.slice(0, 7)).map(([month, items]) => (
         <section key={month} className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-serif text-2xl font-semibold">{monthHeading(month)}</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">{monthHeading(month)}</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((r) => card(r))}</div>
         </section>
       ))}

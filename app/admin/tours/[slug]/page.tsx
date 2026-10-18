@@ -31,7 +31,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
       <div className="space-y-4">
         <Link href="/admin/tours" className="text-sm text-stone-500 hover:underline">← Tours &amp; experiences</Link>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="font-serif text-3xl">{x.title}</h1>
+          <h1 className="font-display text-3xl">{x.title}</h1>
           <InclusionBadge inclusion={x.inclusion} />
         </div>
         {x.headerImage && (

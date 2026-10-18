@@ -23,7 +23,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link href={isStaff(user.role) ? '/admin' : '/account'} className="font-serif text-lg font-semibold">
+          <Link href={isStaff(user.role) ? '/admin' : '/account'} className="font-display text-lg font-semibold">
             Visitor Guide{business && <span className="font-sans text-sm font-normal text-stone-500"> · {business.name}</span>}
           </Link>
           <nav className="flex gap-4 text-sm">

@@ -37,7 +37,7 @@ export default async function TourPage({ params }: Props) {
       <Link href="/tours" className="text-sm text-harbour/60 hover:text-coral">← Tours &amp; experiences</Link>
       <header className="mb-6 mt-3">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">{t.highlight ? 'Highlight' : t.genre ?? 'Experience'}</p>
-        <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">{t.title}</h1>
+        <h1 className="font-display text-4xl font-bold leading-tight md:text-5xl">{t.title}</h1>
         <p className="mt-2 text-lg font-medium text-sea">{dated ? webWhen(t.dates, t.occurrence, today) : 'Book any day'}{provider && <span className="text-harbour/60"> · with {provider.name}</span>}</p>
       </header>
       <Hero image={t.headerImage} title={t.title} />

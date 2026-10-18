@@ -21,7 +21,7 @@ export default async function Venues({ searchParams }: { searchParams: SearchPar
   return (
     <>
       <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl">Venues</h1>
+        <h1 className="font-display text-2xl">Venues</h1>
         <p className="text-sm text-stone-500">{rows.length} {values.all === '1' ? 'listings' : 'venues hosting events'}</p>
       </div>
       <Filters

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
-import { ListingCard } from '@/components/site/listing-card';
+import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
 import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
@@ -51,9 +51,9 @@ export default async function EventPage({ params }: Props) {
   const atVenue = await publicVenueEvents(e);
   // Not what the sidebar already lists.
   const related = await publicRelatedEvents(e, [e.id, ...atVenue.map((o) => o.event.id)]);
-  const tickets = e.website;
-  // The page the listing came from, when it is somewhere other than the ticket link.
-  const external = e.sourceLink && e.sourceLink !== e.website ? e.sourceLink : null;
+  // The organiser's own link from the feed. jersey.com's page about the listing is not one: it only sends people on again.
+  const ownLink = (u: string | null) => (u && !/(^|\.)jersey\.com$/i.test(printWebsite(u) ?? '') ? u : null);
+  const tickets = ownLink(e.website) ?? ownLink(e.sourceLink);
   const venueSite = venue?.website && venue.website !== e.website ? venue.website : null;
   const contact = e.phone
     ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{e.phone}</a>
@@ -67,7 +67,7 @@ export default async function EventPage({ params }: Props) {
           <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-coral">← What&apos;s on</Link>
           <header className="mb-6 mt-3">
             {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlight</p>}
-            <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">{e.title}</h1>
+            <h1 className="font-display text-4xl font-bold leading-tight md:text-5xl">{e.title}</h1>
             <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
           </header>
           <Hero image={e.headerImage} title={e.title} />
@@ -90,11 +90,11 @@ export default async function EventPage({ params }: Props) {
                 ]}
               />
               <div className="mt-4 flex flex-col gap-2">
-                {tickets && <a href={tickets} target="_blank" rel="noopener" className={primaryButton}>{e.free ? 'Details & booking' : 'Book tickets'}</a>}
-                {external && (
-                  <a href={external} target="_blank" rel="noopener" className={tickets ? secondaryButton : primaryButton}>
-                    More on {printWebsite(external)?.toLowerCase() ?? 'the organiser’s site'} ↗
-                  </a>
+                {tickets && (
+                  <>
+                    <a href={tickets} target="_blank" rel="noopener" className={primaryButton}>{e.free ? 'Details & booking' : 'Tickets & information'} ↗</a>
+                    <p className="text-center text-xs text-harbour/50">on {printWebsite(tickets)?.toLowerCase()}</p>
+                  </>
                 )}
               </div>
             </SideSection>
@@ -131,7 +131,7 @@ export default async function EventPage({ params }: Props) {
       {related.length > 0 && (
         <section className="border-t border-harbour/10">
           <div className="mx-auto max-w-6xl px-4 py-10">
-            <h2 className="mb-5 font-serif text-2xl font-semibold">You might also like</h2>
+            <h2 className="mb-5 font-display text-2xl font-semibold">You might also like</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {related.map(({ event: r, venue: v }) => (
                 <ListingCard
@@ -139,7 +139,7 @@ export default async function EventPage({ params }: Props) {
                   href={`/whats-on/${r.slug}`}
                   title={r.title}
                   when={webWhen(r.dates, r.occurrence, today)}
-                  where={r.venueName ?? v?.name ?? r.venue}
+                  location={cardLocation(r.venueName ?? v?.name ?? r.venue, r.parish ?? v?.parish)}
                   price={printPrice(r.fromPricePence, r.toPricePence, { free: r.free })}
                   image={r.headerImage}
                 />

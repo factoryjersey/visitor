@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="no-print border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link href="/admin" className="font-serif text-lg font-semibold">Visitor Guide</Link>
+          <Link href="/admin" className="font-display text-lg font-semibold">Visitor Guide</Link>
           {user && (
             <>
               <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

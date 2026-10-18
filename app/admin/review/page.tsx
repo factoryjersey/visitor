@@ -41,12 +41,12 @@ export default async function ReviewPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl">Review</h1>
+        <h1 className="font-display text-3xl">Review</h1>
         <p className="mt-1 text-sm text-stone-600">What providers have sent. Nothing here is on the site until approved. Approving puts a new listing on the site as undecided for the guide.</p>
       </div>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">New listings <span className="text-stone-400">{listings.length}</span></h2>
+        <h2 className="font-display text-xl">New listings <span className="text-stone-400">{listings.length}</span></h2>
         {!listings.length && <p className="text-sm text-stone-500">Nothing waiting.</p>}
         {imported.map(({ kind, source, n }) => (
           <form key={`${kind}:${source}`} action={approveAllAction} className="flex flex-wrap items-center gap-3 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
@@ -81,7 +81,7 @@ export default async function ReviewPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">Changes to live listings <span className="text-stone-400">{changes.length}</span></h2>
+        <h2 className="font-display text-xl">Changes to live listings <span className="text-stone-400">{changes.length}</span></h2>
         {!changes.length && <p className="text-sm text-stone-500">Nothing waiting.</p>}
         {changes.map(({ change, business, listing }) => (
           <article key={change.id} className="rounded border border-stone-200 bg-white p-4">

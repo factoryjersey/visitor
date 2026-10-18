@@ -34,7 +34,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   return (
     <>
       <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl">What&apos;s on</h1>
+        <h1 className="font-display text-2xl">What&apos;s on</h1>
         <p className="text-sm text-stone-500">{rows.length} events · {included} in the guide</p>
       </div>
       <Filters

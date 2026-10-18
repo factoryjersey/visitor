@@ -22,7 +22,7 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ ne
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center bg-stone-50 px-4">
       <div className="rounded border border-stone-200 bg-white p-8">
-        <h1 className="mb-1 font-serif text-2xl">Sign in</h1>
+        <h1 className="mb-1 font-display text-2xl">Sign in</h1>
         <p className="mb-6 text-sm text-stone-600">With Google, or the password you set from your invite.</p>
 
         {oauthError && <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{oauthError}</p>}

@@ -51,7 +51,7 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center bg-stone-50 px-4">
       <div className="rounded border border-stone-200 bg-white p-8">
-        <h1 className="mb-3 font-serif text-2xl">{title}</h1>
+        <h1 className="mb-3 font-display text-2xl">{title}</h1>
         {children}
       </div>
     </div>

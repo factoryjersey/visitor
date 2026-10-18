@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import '@fontsource-variable/josefin-sans';
+import '@fontsource-variable/mulish';
 import './globals.css';
 
 export const metadata: Metadata = {
