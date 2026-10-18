@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
-body { @apply bg-stone-50 text-stone-900 antialiased; }
+body { @apply bg-white text-stone-900 antialiased; }
 
 @media print {
   @page { size: A4; margin: 14mm; }
@@ -32,6 +32,10 @@ body { @apply bg-stone-50 text-stone-900 antialiased; }
 .guide-web { text-transform: uppercase; font-weight: 600; }
 .guide-label { display: inline-block; border: 0.25mm solid currentColor; padding: 0 1mm; font-size: 6pt; font-weight: 600; letter-spacing: 0.05em; margin: 0.5mm 0; }
 .guide-empty { font-size: 10pt; }
+.guide-highlight-image { width: calc(100% + 14mm); max-width: none; margin: -2mm -7mm 3mm; height: 78mm; object-fit: cover; }
+.guide-highlight-title { font-weight: 700; font-size: 14pt; line-height: 1.1; margin: 1mm 0 2mm; }
+.guide-highlight-copy { font-size: 8pt; line-height: 1.35; column-count: 2; column-gap: 4mm; }
+.guide-highlight-copy p + p { margin-top: 1.5mm; }
 .guide-key { column-count: 3; column-gap: 3mm; font-size: 6.5pt; margin-bottom: 2mm; }
 .guide-key p { break-inside: avoid; }
 

@@ -4,6 +4,7 @@ import { saveTourPrint } from '@/app/actions';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { GenreControl } from '@/components/genre-control';
+import { HighlightControl } from '@/components/highlight-control';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
 import { OccurrenceControl } from '@/components/occurrence';
 import { SourcePanel } from '@/components/source-panel';
@@ -27,7 +28,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
       <div className="space-y-4">
-        <Link href="/tours" className="text-sm text-stone-500 hover:underline">← Tours &amp; experiences</Link>
+        <Link href="/admin/tours" className="text-sm text-stone-500 hover:underline">← Tours &amp; experiences</Link>
         <div className="flex items-start justify-between gap-4">
           <h1 className="font-serif text-3xl">{x.title}</h1>
           <InclusionBadge inclusion={x.inclusion} />
@@ -53,6 +54,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
           <InclusionControl kind="experience" id={x.id} inclusion={x.inclusion} />
+          <div className="my-3 border-t border-stone-100 pt-3"><HighlightControl kind="experience" id={x.id} highlight={x.highlight} /></div>
           <DecidedBy inclusion={x.inclusion} by={x.inclusionSetBy} at={x.inclusionSetAt} editedBy={x.editedBy} editedAt={x.editedAt} />
         </div>
         <div className="space-y-3 rounded border border-stone-200 bg-white p-3">

@@ -201,3 +201,15 @@ export async function setProviderCode(form: FormData): Promise<void> {
   await db.update(providers).set({ code: clean, updatedAt: new Date() }).where(eq(providers.id, id));
   revalidatePath('/', 'layout');
 }
+
+const highlightSchema = z.object({ kind: z.enum(['event', 'experience']), id: z.string().uuid(), highlight: z.enum(['true', 'false']) });
+
+/** Make something a highlight: a full page in the guide, featured first online. */
+export async function setHighlight(form: FormData) {
+  const user = await requireUser();
+  const { kind, id, highlight } = highlightSchema.parse(Object.fromEntries(form));
+  const table = kind === 'event' ? events : experiences;
+  const now = new Date();
+  await db.update(table).set({ highlight: highlight === 'true', editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(table.id, id));
+  revalidatePath('/', 'layout');
+}

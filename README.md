@@ -35,8 +35,8 @@ Behind a proxy, Node's `fetch` needs `NODE_USE_ENV_PROXY=1` to use
 
 ## Signing in
 
-The same as factoryOS: every page needs a Supabase session, signed-out
-requests go to `/login`, and only addresses in `ALLOWED_EMAIL_DOMAINS` are
+The same as factoryOS: every page under `/admin` needs a Supabase session,
+signed-out requests go to `/login`, and only addresses in `ALLOWED_EMAIL_DOMAINS` are
 admitted, checked at sign-in and again on every request. Each server action
 checks for itself as well, since a form POST can be replayed from anywhere.
 
@@ -76,18 +76,41 @@ alone links Hamptonne Museum's events to the holiday flat in its stable
 block. Anything else is left for a person to set on the event page, and a
 venue set by hand is locked.
 
-## Pages
+## Public site
 
-- `/whats-on` — every event, filter by month and status, include or leave out
-- `/whats-on/[slug]` — details, venue, our copy, source freshness
-- `/venues` — places hosting events (or every listing), include or leave out
-- `/venues/[slug]` — contact, months open, rates, facilities, events held there
-- `/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
-- `/tours/providers` — provider codes for the guide's key
-- `/guide` — the selection for an edition's dates, set as the printed guide
+The site visitors see is at the root, with no sign-in:
+
+- `/` — the lead highlight, what's coming up, tours on particular dates
+- `/whats-on` — events: one-off and dated by default; the "Include ongoing
+  events" tick adds exhibitions, daily attractions and weekly sessions
+- `/tours` — tours on particular dates by default; the tick adds those
+  bookable any day
+- `/whats-on/[slug]`, `/tours/[slug]` — the listing, all its dates,
+  booking and directions; events carry schema.org Event data
+
+It shows everything not left out (the site is the whole picture; the guide
+is the edited selection), only what is still to come, and highlights
+always, whatever the tick. Filters are a GET form, so every view is a link
+and works without JavaScript; the tick submits itself when it can.
+
+## Highlights
+
+A highlight gets a full page in the guide (the extended listing and a large
+image, exported separately for its own InDesign template) and leads the
+public listings. Set it on the event or tour page in the admin.
+
+## Pages (admin, signed in)
+
+- `/admin/whats-on` — every event, filter by month and status, include or leave out
+- `/admin/whats-on/[slug]` — details, venue, our copy, source freshness
+- `/admin/venues` — places hosting events (or every listing), include or leave out
+- `/admin/venues/[slug]` — contact, months open, rates, facilities, events held there
+- `/admin/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
+- `/admin/tours/providers` — provider codes for the guide's key
+- `/admin/guide` — the selection for an edition's dates, set as the printed guide
   sets it (115 × 165mm pages, the printed field order), with the InDesign
   exports
-- `/map` — event venues, green for those in the guide
+- `/admin/map` — event venues, green for those in the guide
 
 ## Unique first: events and tours
 
@@ -110,12 +133,12 @@ crafts) are suggested from each listing's title first and its tags second.
 Providers get the short codes the guide's key prints. Codes are ours:
 `pnpm seed:provider-codes` fills empty ones from the autumn 2026 key
 (`data/provider-codes-2026-3.json`), matching by website then name, and
-`/tours/providers` edits them.
+`/admin/tours/providers` edits them.
 
 ## Into InDesign
 
 The guide's What's On pages are already built by InDesign Data Merge
-(`whatson_merge_events_*.indd`). `/guide` exports the selection as that
+(`whatson_merge_events_*.indd`). `/admin/guide` exports the selection as that
 merge source: one row per event, the fields in printed order.
 
 | Column | Example |

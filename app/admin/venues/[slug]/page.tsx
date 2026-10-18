@@ -34,7 +34,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
       <div className="space-y-4">
-        <Link href="/venues" className="text-sm text-stone-500 hover:underline">← Venues</Link>
+        <Link href="/admin/venues" className="text-sm text-stone-500 hover:underline">← Venues</Link>
         <div className="flex items-start justify-between gap-4">
           <h1 className="font-serif text-3xl">{p.name}</h1>
           <InclusionBadge inclusion={p.inclusion} />
@@ -57,7 +57,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
               {events.map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-3 p-2">
                   <div>
-                    <Link href={`/whats-on/${e.slug}`} className="hover:underline">{e.title}</Link>
+                    <Link href={`/admin/whats-on/${e.slug}`} className="hover:underline">{e.title}</Link>
                     <div className="text-stone-500">{eventDatesText(e.dates)}</div>
                   </div>
                   <InclusionBadge inclusion={e.inclusion} />

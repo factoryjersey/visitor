@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { isEmailDomainAllowed, safeNext } from '@/lib/auth/permissions';
-import { isPublicPath } from '@/lib/auth/public-paths';
+import { isProtectedPath } from '@/lib/auth/public-paths';
 
-describe('isPublicPath', () => {
-  it('opens only the sign-in flow', () => {
-    expect(isPublicPath('/login')).toBe(true);
-    expect(isPublicPath('/auth/callback')).toBe(true);
-    expect(isPublicPath('/logout')).toBe(true);
-    expect(isPublicPath('/loginx')).toBe(false);
-    expect(isPublicPath('/guide')).toBe(false);
-    expect(isPublicPath('/')).toBe(false);
+describe('isProtectedPath', () => {
+  it('protects the editing side and nothing else', () => {
+    expect(isProtectedPath('/admin')).toBe(true);
+    expect(isProtectedPath('/admin/guide/export/whats-on.csv')).toBe(true);
+    expect(isProtectedPath('/administrator')).toBe(false);
+    expect(isProtectedPath('/whats-on')).toBe(false);
+    expect(isProtectedPath('/login')).toBe(false);
+    expect(isProtectedPath('/')).toBe(false);
   });
 });
 

@@ -26,6 +26,8 @@ export function windowFrom(params: { from?: string; to?: string }): Window {
 export type GuideProvider = { code: string; name: string; contact: string; website: string };
 
 export type Guide = {
+  /** Highlights, each a full page, ahead of the listings and not repeated in them. */
+  highlights: GuideEvent[];
   events: GuideEvent[];
   tours: GuideTour[];
   providers: GuideProvider[];
@@ -46,9 +48,12 @@ const genreOrder = (g: string) => {
 export async function buildGuide(window: Window): Promise<Guide> {
   const [selection, tourRows] = await Promise.all([guideSelection(), includedExperiences()]);
 
-  const events = selection.events
+  const all = selection.events
     .map(({ event, venue }) => guideEvent(event, venue, window))
-    .filter((g): g is GuideEvent => g !== null)
+    .filter((g): g is GuideEvent => g !== null);
+  const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  const events = all
+    .filter((e) => !e.highlight)
     .sort((a, b) =>
       (a.block === b.block ? 0 : a.block === 'all season' ? -1 : 1)
       || (a.block === 'all season' ? a.title.localeCompare(b.title) : a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)));
@@ -77,10 +82,12 @@ export async function buildGuide(window: Window): Promise<Guide> {
     .map(guideVenue)
     .sort((a, b) => a.section.localeCompare(b.section) || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
 
-  return { events, tours, providers, venues };
+  return { highlights, events, tours, providers, venues };
 }
 
 export const EVENT_COLUMNS = ['Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
+/** Highlights merge into their own full-page template. */
+export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL'] as const;
 export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
 export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Copy', 'Address', 'Phone', 'Website', 'Image URL'] as const;

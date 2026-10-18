@@ -1,13 +1,11 @@
 /**
- * Which paths skip the signed-in check: only the sign-in flow itself.
- * Its own module so it can be tested — a path wrongly missing from it
- * fails as a quiet redirect to /login, and one wrongly on it is public.
+ * Which paths need a signed-in user: the editing side under /admin.
+ * Everything else is the public site, or the sign-in flow itself.
+ * Its own module so it can be tested — a protected path that slips out
+ * of this rule is public, so the rule is a prefix, not a list.
  *
  * Runs in the edge runtime, so no Node APIs in here.
  */
-export const PUBLIC_PATHS = ['/login', '/logout', '/auth/callback'] as const;
-
-/** Exact match, or a segment beneath one: `/login/x` yes, `/loginx` no. */
-export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+export function isProtectedPath(pathname: string): boolean {
+  return pathname === '/admin' || pathname.startsWith('/admin/');
 }

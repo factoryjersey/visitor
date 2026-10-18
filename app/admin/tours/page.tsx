@@ -40,11 +40,11 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       <div className="mb-4 flex items-baseline justify-between">
         <h1 className="font-serif text-2xl">Tours &amp; experiences</h1>
         <p className="text-sm text-stone-500">
-          {rows.length} shown · <Link href="/tours/providers" className="hover:underline">Providers and codes</Link>
+          {rows.length} shown · <Link href="/admin/tours/providers" className="hover:underline">Providers and codes</Link>
         </p>
       </div>
       <Filters
-        action="/tours"
+        action="/admin/tours"
         values={values}
         selects={[
           { name: 'month', label: 'On during', options: monthOptions() },
@@ -62,7 +62,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
           return (
             <li key={x.id} className="flex items-start gap-4 p-3">
               <div className="min-w-0 flex-1">
-                <Link href={`/tours/${x.slug}`} className="font-medium hover:underline">{x.title}</Link>{' '}
+                <Link href={`/admin/tours/${x.slug}`} className="font-medium hover:underline">{x.title}</Link>{' '}
                 <OccurrenceBadge occurrence={x.occurrence} onDemand />
                 <div className="text-sm text-stone-600">
                   {provider ? <>{provider.code && <strong className="mr-1">{provider.code}</strong>}{provider.name}</> : <span className="italic">No provider</span>}

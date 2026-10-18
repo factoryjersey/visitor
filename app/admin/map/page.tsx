@@ -16,7 +16,7 @@ export default async function MapPage({ searchParams }: { searchParams: SearchPa
     <>
       <div className="mb-4 flex items-baseline justify-between">
         <h1 className="font-serif text-2xl">Map</h1>
-        <Link href={includedOnly ? '/map' : '/map?included=1'} className="text-sm text-stone-600 hover:underline">
+        <Link href={includedOnly ? '/admin/map' : '/admin/map?included=1'} className="text-sm text-stone-600 hover:underline">
           {includedOnly ? 'Show every event venue' : 'Show only venues in the guide'}
         </Link>
       </div>

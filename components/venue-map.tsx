@@ -27,7 +27,7 @@ export function VenueMap({ points }: { points: MapPoint[] }) {
           fillOpacity: 0.7,
           weight: 1,
         })
-          .bindPopup(`<a href="/venues/${p.slug}"><strong>${escapeHtml(p.name)}</strong></a><br>${p.eventCount} event${p.eventCount === 1 ? '' : 's'}`)
+          .bindPopup(`<a href="/admin/venues/${p.slug}"><strong>${escapeHtml(p.name)}</strong></a><br>${p.eventCount} event${p.eventCount === 1 ? '' : 's'}`)
           .addTo(map);
       }
     })();

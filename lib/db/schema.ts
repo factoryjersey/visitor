@@ -150,6 +150,8 @@ export const events = pgTable('events', {
   printDates: text('print_dates'),
   printTimes: text('print_times'),
   printPrice: text('print_price'),
+  /** A highlight: a full page in the guide with the extended listing and a large image, featured first online. Ours. */
+  highlight: boolean('highlight').notNull().default(false),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
@@ -248,6 +250,7 @@ export const experiences = pgTable('experiences', {
 
   printDates: text('print_dates'),
   printTimes: text('print_times'),
+  highlight: boolean('highlight').notNull().default(false),
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
 

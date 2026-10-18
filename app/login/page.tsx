@@ -15,11 +15,11 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next: nextParam, error: errorParam } = use(searchParams);
   const [state, formAction, pending] = useActionState<SignInState, FormData>(signInAction, null);
-  const next = nextParam ?? '/';
+  const next = nextParam ?? '/admin';
   const oauthError = errorParam ? ERROR_MESSAGES[errorParam] ?? null : null;
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center">
+    <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center bg-stone-50 px-4">
       <div className="rounded border border-stone-200 bg-white p-8">
         <h1 className="mb-1 font-serif text-2xl">Sign in</h1>
         <p className="mb-6 text-sm text-stone-600">Use your Factory Google account.</p>

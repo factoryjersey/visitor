@@ -38,7 +38,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
         <p className="text-sm text-stone-500">{rows.length} events · {included} in the guide</p>
       </div>
       <Filters
-        action="/whats-on"
+        action="/admin/whats-on"
         values={values}
         selects={[
           { name: 'month', label: 'On during', options: monthOptions() },
@@ -57,10 +57,11 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
               <img src={webImage(e.headerImage, 160, 120)} alt="" className="h-[60px] w-[80px] shrink-0 rounded object-cover" />
             ) : <div className="h-[60px] w-[80px] shrink-0 rounded bg-stone-100" />}
             <div className="min-w-0 flex-1">
-              <Link href={`/whats-on/${e.slug}`} className="font-medium hover:underline">{e.title}</Link>{' '}
+              <Link href={`/admin/whats-on/${e.slug}`} className="font-medium hover:underline">{e.title}</Link>{' '}
               <OccurrenceBadge occurrence={e.occurrence} />
+              {e.highlight && <span className="ml-1 text-xs font-semibold text-amber-700">★ Highlight</span>}
               <div className="text-sm text-stone-600">
-                {venue ? <Link href={`/venues/${venue.slug}`} className="hover:underline">{venue.name}</Link> : e.venue ?? <span className="italic">No venue given</span>}
+                {venue ? <Link href={`/admin/venues/${venue.slug}`} className="hover:underline">{venue.name}</Link> : e.venue ?? <span className="italic">No venue given</span>}
               </div>
               <div className="text-sm text-stone-500">
                 {eventDatesText(e.dates)}

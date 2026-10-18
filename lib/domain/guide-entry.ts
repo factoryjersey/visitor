@@ -28,6 +28,10 @@ export type GuideEvent = {
   imageUrl: string;
   /** Unique events print in date order; ongoing and regular ones in their own block first. */
   block: 'dated' | 'all season';
+  /** A full page of its own: the extended listing and a large image. */
+  highlight: boolean;
+  /** The long copy a highlight prints: ours, else the listing's full description. */
+  extendedCopy: string;
   /** The first date inside the edition, for ordering. Not printed. */
   sortKey: string;
 };
@@ -56,6 +60,8 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     website: printWebsite(e.website ?? venue?.website ?? null) ?? '',
     imageUrl: e.headerImage?.url ?? '',
     block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',
+    highlight: e.highlight,
+    extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
     sortKey: inside[0]?.date ?? e.startsOn ?? '',
   };
 }

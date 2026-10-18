@@ -36,7 +36,7 @@ export default async function Providers() {
               </td>
               <td className="p-2">{p.name}</td>
               <td className="p-2 text-stone-500">{[p.phone, p.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '')].filter(Boolean).join(' · ')}</td>
-              <td className="p-2 text-right"><Link href={`/tours?q=${encodeURIComponent(p.name)}&regular=1&ongoing=1`} className="hover:underline">{total}</Link></td>
+              <td className="p-2 text-right"><Link href={`/admin/tours?q=${encodeURIComponent(p.name)}&regular=1&ongoing=1`} className="hover:underline">{total}</Link></td>
               <td className="p-2 text-right">{included || ''}</td>
             </tr>
           ))}

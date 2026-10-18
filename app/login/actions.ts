@@ -12,7 +12,7 @@ type SignInState = { error?: string } | null;
 export async function signInAction(_prev: SignInState, formData: FormData): Promise<SignInState> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
-  const next = safeNext(String(formData.get('next') ?? '/'));
+  const next = safeNext(String(formData.get('next') ?? '/admin'));
 
   if (!email || !password) return { error: 'Email and password required' };
 
@@ -38,7 +38,7 @@ export async function signInAction(_prev: SignInState, formData: FormData): Prom
  * checked in /auth/callback, after the fact.
  */
 export async function signInWithGoogleAction(formData: FormData) {
-  const next = safeNext(String(formData.get('next') ?? '/'));
+  const next = safeNext(String(formData.get('next') ?? '/admin'));
   const supabase = await getSupabaseServer();
   // Pre-select the workspace account for people signed in to several.
   const hd = env.ALLOWED_EMAIL_DOMAINS?.split(',')[0]?.trim();

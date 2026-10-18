@@ -25,7 +25,7 @@ export default async function Venues({ searchParams }: { searchParams: SearchPar
         <p className="text-sm text-stone-500">{rows.length} {values.all === '1' ? 'listings' : 'venues hosting events'}</p>
       </div>
       <Filters
-        action="/venues"
+        action="/admin/venues"
         values={values}
         selects={[
           { name: 'category', label: 'Section', options: CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] })) },
@@ -37,7 +37,7 @@ export default async function Venues({ searchParams }: { searchParams: SearchPar
         {rows.map(({ place: p, eventCount }) => (
           <li key={p.id} className="flex items-center gap-4 p-3">
             <div className="min-w-0 flex-1">
-              <Link href={`/venues/${p.slug}`} className="font-medium hover:underline">{p.name}</Link>
+              <Link href={`/admin/venues/${p.slug}`} className="font-medium hover:underline">{p.name}</Link>
               <div className="text-sm text-stone-500">
                 {CATEGORY_LABEL[p.category]}{p.parish && ` · ${p.parish}`}
                 {eventCount > 0 && ` · ${eventCount} event${eventCount === 1 ? '' : 's'}`}

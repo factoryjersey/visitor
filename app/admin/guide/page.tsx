@@ -19,7 +19,7 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
 export default async function Guide({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const window = windowFrom({ from: one(sp.from), to: one(sp.to) });
-  const { events, tours, providers, venues } = await buildGuide(window);
+  const { highlights, events, tours, providers, venues } = await buildGuide(window);
   const allSeason = events.filter((e) => e.block === 'all season');
   const dated = events.filter((e) => e.block === 'dated');
   const datedTours = tours.filter((t) => t.kind === 'dated');
@@ -28,7 +28,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
 
   return (
     <>
-      <form action="/guide" className="no-print mb-6 flex flex-wrap items-end gap-3 rounded border border-stone-200 bg-white p-3 text-sm">
+      <form action="/admin/guide" className="no-print mb-6 flex flex-wrap items-end gap-3 rounded border border-stone-200 bg-white p-3 text-sm">
         <label className="flex flex-col">
           <span className="text-xs text-stone-500">Edition from</span>
           <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
@@ -38,21 +38,23 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <input type="date" name="to" defaultValue={window.to} className="rounded border border-stone-300 px-2 py-1" />
         </label>
         <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
-        <span className="ml-auto text-stone-600">{events.length} events · {tours.length} tours · {venues.length} venues</span>
+        <span className="ml-auto text-stone-600">{highlights.length} highlights · {events.length} events · {tours.length} tours · {venues.length} venues</span>
         <span className="flex w-full flex-wrap justify-end gap-2">
           <span className="self-center text-xs text-stone-500">For InDesign:</span>
-          <a href={`/guide/export/whats-on.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">What&apos;s On</a>
-          <a href={`/guide/export/tours.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tours</a>
-          <a href={`/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
-          <a href={`/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
+          <a href={`/admin/guide/export/highlights.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Highlights</a>
+          <a href={`/admin/guide/export/whats-on.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">What&apos;s On</a>
+          <a href={`/admin/guide/export/tours.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tours</a>
+          <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
+          <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
         </span>
       </form>
 
       <div className="guide-pages">
+        {highlights.map((e) => <HighlightPage key={e.title} e={e} />)}
         <section className="guide-page">
           <h2 className="guide-tab">Events this season</h2>
           {events.length === 0 && (
-            <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/whats-on">What&apos;s on</Link>.</p>
+            <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>.</p>
           )}
           {allSeason.length > 0 && (
             <>
@@ -121,6 +123,29 @@ function EventEntry({ e }: { e: GuideEvent }) {
       {e.contact && <p>{e.contact}</p>}
       {e.website && <p className="guide-web">{e.website}</p>}
     </article>
+  );
+}
+
+/** A highlight's full page: the large image, then the extended listing. Images print from the original upload. */
+function HighlightPage({ e }: { e: GuideEvent }) {
+  return (
+    <section className="guide-page guide-highlight">
+      <h2 className="guide-tab">Highlight</h2>
+      {e.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={e.imageUrl} alt="" className="guide-highlight-image" />
+      )}
+      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
+      <h3 className="guide-highlight-title">{e.title}</h3>
+      <div className="guide-highlight-copy">
+        {e.extendedCopy.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
+      </div>
+      <p className="mt-2">{e.price && <strong>{e.price}</strong>}</p>
+      <p className="guide-venue">{e.venue}</p>
+      {e.address && <p>{e.address}</p>}
+      {e.contact && <p>{e.contact}</p>}
+      {e.website && <p className="guide-web">{e.website}</p>}
+    </section>
   );
 }
 

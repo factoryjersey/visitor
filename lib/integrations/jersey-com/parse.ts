@@ -386,7 +386,8 @@ export function toExperience(raw: RawItem): VjExperience {
     providerListingId: linked?.ID === undefined ? null : String(linked.ID),
     summary: htmlToText(acf.short_description),
     description: htmlToText(acf.long_description),
-    duration: labelOf(acf.duration),
+    // "3-5 hrs," arrives with a trailing comma on some listings.
+    duration: labelOf(acf.duration)?.replace(/[,\s]+$/, '') ?? null,
     tags,
     genre: suggestGenre(title, tags),
     dates,
