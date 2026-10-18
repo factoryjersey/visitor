@@ -16,7 +16,7 @@ One Railway project, `visitor`, with:
 | `NEXT_PUBLIC_SUPABASE_URL` | visitor's own Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | its anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | its service role key; needed to accept an invite with a password. Secret. |
-| `NEXT_PUBLIC_APP_URL` | the public URL, e.g. `https://visitor-production.up.railway.app` or the custom domain |
+| `NEXT_PUBLIC_APP_URL` | the public URL: `https://visitor.je` (www.visitor.je redirects there) |
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
 
 Railway no longer reads `railway.json` (config as code is deprecated), so

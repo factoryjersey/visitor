@@ -39,7 +39,7 @@ import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fr
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
 
-const UA = 'VisitorGuideJersey/1.0 (+https://visitor-production-bdb2.up.railway.app; events listing for the Jersey visitor guide)';
+const UA = 'VisitorGuideJersey/1.0 (+https://visitor.je; events listing for the Jersey visitor guide)';
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchText(url: string): Promise<string> {
