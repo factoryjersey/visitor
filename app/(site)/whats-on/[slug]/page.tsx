@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
-import { publicEvent, todayIso } from '@/lib/db/public';
-import { printAddress, printPrice, printTimes } from '@/lib/domain/house-style';
+import { ListingCard } from '@/components/site/listing-card';
+import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
+import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { upcomingDates, webWhen } from '@/lib/domain/web-dates';
 
@@ -47,37 +48,115 @@ export default async function EventPage({ params }: Props) {
     offers: e.fromPricePence !== null ? { '@type': 'Offer', price: (e.fromPricePence / 100).toFixed(2), priceCurrency: 'GBP', url: e.website ?? undefined } : undefined,
   };
 
+  const atVenue = await publicVenueEvents(e);
+  // Not what the sidebar already lists.
+  const related = await publicRelatedEvents(e, [e.id, ...atVenue.map((o) => o.event.id)]);
+  const tickets = e.website;
+  // The page the listing came from, when it is somewhere other than the ticket link.
+  const external = e.sourceLink && e.sourceLink !== e.website ? e.sourceLink : null;
+  const venueSite = venue?.website && venue.website !== e.website ? venue.website : null;
+  const contact = e.phone
+    ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{e.phone}</a>
+    : e.email && <a href={`mailto:${e.email}`} className="hover:text-coral">{e.email}</a>;
+
   return (
-    <article className="mx-auto max-w-6xl px-4 py-8">
+    <article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-coral">← What&apos;s on</Link>
-      <header className="mb-6 mt-3">
-        {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlight</p>}
-        <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">{e.title}</h1>
-        <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
-      </header>
-      <Hero image={e.headerImage} title={e.title} />
-      <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
-          <Copy lead={e.guideCopy ?? e.summary} body={e.description} />
-          <DateList dates={e.dates} today={today} />
+      <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
+        <div className="min-w-0 px-4 py-8 md:pr-10">
+          <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-coral">← What&apos;s on</Link>
+          <header className="mb-6 mt-3">
+            {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlight</p>}
+            <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">{e.title}</h1>
+            <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
+          </header>
+          <Hero image={e.headerImage} title={e.title} />
+          <div className="mt-8 space-y-6">
+            <Copy lead={e.guideCopy ?? e.summary} body={e.description} />
+            <DateList dates={e.dates} today={today} />
+          </div>
         </div>
-        <Facts
-          rows={[
-            ['When', webWhen(e.dates, e.occurrence, today)],
-            ['Times', timesSummary(printTimes(e.dates.filter((d) => d.date >= today)))],
-            ['Price', price],
-            ['Where', venueName && <>{venueName}{address && <span className="block text-harbour/60">{address}</span>}</>],
-            ['Contact', e.phone ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{e.phone}</a> : e.email && <a href={`mailto:${e.email}`} className="hover:text-coral">{e.email}</a>],
-          ]}
-          actions={
-            <>
-              {e.website && <a href={e.website} target="_blank" rel="noopener" className={primaryButton}>Tickets &amp; information</a>}
-              {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
-            </>
-          }
-        />
+
+        {/* The whole height of the page, so what to do next is always beside what it is. */}
+        <aside className="border-t border-harbour/10 bg-white px-4 py-8 md:border-l md:border-t-0 md:px-6">
+          <div className="space-y-8 md:sticky md:top-6">
+            <SideSection title="Tickets">
+              <Facts
+                rows={[
+                  ['When', webWhen(e.dates, e.occurrence, today)],
+                  ['Times', timesSummary(printTimes(e.dates.filter((d) => d.date >= today)))],
+                  ['Price', price],
+                  ['Contact', contact],
+                ]}
+              />
+              <div className="mt-4 flex flex-col gap-2">
+                {tickets && <a href={tickets} target="_blank" rel="noopener" className={primaryButton}>{e.free ? 'Details & booking' : 'Book tickets'}</a>}
+                {external && (
+                  <a href={external} target="_blank" rel="noopener" className={tickets ? secondaryButton : primaryButton}>
+                    More on {printWebsite(external)?.toLowerCase() ?? 'the organiser’s site'} ↗
+                  </a>
+                )}
+              </div>
+            </SideSection>
+
+            {venueName && (
+              <SideSection title="Venue">
+                <p className="font-medium">{venueName}</p>
+                {address && <p className="text-sm text-harbour/60">{address}</p>}
+                {(venue?.guideCopy ?? venue?.summary) && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-harbour/80">{venue?.guideCopy ?? venue?.summary}</p>}
+                <ul className="mt-3 space-y-1 text-sm">
+                  {venue?.phone && <li><a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{venue.phone}</a></li>}
+                  {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-coral">{printWebsite(venueSite)?.toLowerCase()} ↗</a></li>}
+                </ul>
+                {directions && <a href={directions} target="_blank" rel="noopener" className={`${secondaryButton} mt-4 block`}>Directions</a>}
+              </SideSection>
+            )}
+
+            {atVenue.length > 0 && (
+              <SideSection title={`Also at ${venueName ?? 'this venue'}`}>
+                <ul className="divide-y divide-harbour/10 text-sm">
+                  {atVenue.map(({ event: o }) => (
+                    <li key={o.id} className="py-2">
+                      <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-coral">{o.title}</Link>
+                      <span className="block text-xs text-harbour/60">{webWhen(o.dates, o.occurrence, today)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SideSection>
+            )}
+          </div>
+        </aside>
       </div>
+
+      {related.length > 0 && (
+        <section className="border-t border-harbour/10">
+          <div className="mx-auto max-w-6xl px-4 py-10">
+            <h2 className="mb-5 font-serif text-2xl font-semibold">You might also like</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {related.map(({ event: r, venue: v }) => (
+                <ListingCard
+                  key={r.id}
+                  href={`/whats-on/${r.slug}`}
+                  title={r.title}
+                  when={webWhen(r.dates, r.occurrence, today)}
+                  where={r.venueName ?? v?.name ?? r.venue}
+                  price={printPrice(r.fromPricePence, r.toPricePence, { free: r.free })}
+                  image={r.headerImage}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </article>
+  );
+}
+
+function SideSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-coral">{title}</h2>
+      {children}
+    </section>
   );
 }

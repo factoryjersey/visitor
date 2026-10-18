@@ -1,6 +1,6 @@
-import { and, asc, eq, ne, or, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, ne, or, inArray, notInArray, sql, type SQL } from 'drizzle-orm';
 import { db } from './index';
-import { events, experiences, places, providers } from './schema';
+import { events, experiences, places, providers, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
@@ -53,6 +53,46 @@ export async function publicEvent(slug: string) {
     .leftJoin(places, eq(places.id, events.placeId))
     .where(and(eq(events.slug, slug), ne(events.inclusion, 'excluded'), eq(events.review, 'approved')));
   return row ?? null;
+}
+
+const upcomingPublic = () => [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
+
+const byNextDate = <T extends { event: { dates: Event['dates'] } }>(rows: T[]) => {
+  const today = todayIso();
+  return rows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })).sort((a, b) => a.next.localeCompare(b.next));
+};
+
+/** What else is on at the venue: by its place, or by name when the event has no place. */
+export async function publicVenueEvents(e: Pick<Event, 'id' | 'placeId' | 'venueName'>, limit = 8) {
+  const at = e.placeId ? eq(events.placeId, e.placeId) : e.venueName ? sql`lower(${events.venueName}) = lower(${e.venueName})` : null;
+  if (!at) return [];
+  const rows = await db
+    .select({ event: { id: events.id, slug: events.slug, title: events.title, dates: events.dates, occurrence: events.occurrence } })
+    .from(events)
+    .where(and(...upcomingPublic(), at, ne(events.id, e.id)));
+  return byNextDate(rows).slice(0, limit);
+}
+
+/** Events of the same kinds, the closest match first, then the soonest. Unique events only: they are what a visitor plans around. */
+export async function publicRelatedEvents(e: Pick<Event, 'eventTypes'>, exclude: string[], limit = 4) {
+  const types = e.eventTypes.filter((t) => !STAFF_ONLY_TYPES.has(t));
+  if (!types.length) return [];
+  const rows = await db
+    .select({ event: events, venue: { name: places.name, slug: places.slug } })
+    .from(events)
+    .leftJoin(places, eq(places.id, events.placeId))
+    .where(
+      and(
+        ...upcomingPublic(),
+        inArray(events.occurrence, [...UNIQUE]),
+        sql`${events.eventTypes} && ${sql`array[${sql.join(types.map((t) => sql`${t}`), sql`, `)}]::text[]`}`,
+        exclude.length ? notInArray(events.id, exclude) : undefined,
+      ),
+    );
+  const shared = (r: (typeof rows)[number]) => r.event.eventTypes.filter((t) => types.includes(t)).length;
+  return byNextDate(rows)
+    .sort((a, b) => shared(b) - shared(a) || a.next.localeCompare(b.next))
+    .slice(0, limit);
 }
 
 /** Types for staff, not visitors: a filter for them would only lead to what review turned down. */

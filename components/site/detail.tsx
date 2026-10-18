@@ -39,18 +39,22 @@ export function DateList({ dates, today }: { dates: readonly EventDate[]; today:
   );
 }
 
-/** The practical box: when, price, where, how to book. */
-export function Facts({ rows, actions }: { rows: [string, React.ReactNode][]; actions: React.ReactNode }) {
+/** The practical box: when, price, where, how to book. Without actions, just the facts, for a panel that has its own. */
+export function Facts({ rows, actions }: { rows: [string, React.ReactNode][]; actions?: React.ReactNode }) {
+  const list = (
+    <dl className="space-y-3 text-sm">
+      {rows.filter(([, v]) => v).map(([k, v]) => (
+        <div key={k}>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-harbour/50">{k}</dt>
+          <dd className="mt-0.5">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+  if (actions === undefined) return list;
   return (
     <aside className="space-y-4 rounded-lg bg-white p-5 shadow-sm ring-1 ring-harbour/5">
-      <dl className="space-y-3 text-sm">
-        {rows.filter(([, v]) => v).map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-harbour/50">{k}</dt>
-            <dd className="mt-0.5">{v}</dd>
-          </div>
-        ))}
-      </dl>
+      {list}
       <div className="flex flex-col gap-2">{actions}</div>
     </aside>
   );
