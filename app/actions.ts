@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { requireUser } from '@/lib/auth/session';
+import { requireStaff } from '@/lib/auth/session';
 import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers } from '@/lib/db/schema';
 import { GENRES } from '@/lib/domain/genre';
 import { OCCURRENCES } from '@/lib/domain/occurrence';
@@ -21,7 +21,7 @@ const inclusionSchema = z.object({
 
 /** Include, exclude or reset one entry. Inclusion is only ever set by a person. */
 export async function setInclusion(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { kind, id, inclusion } = inclusionSchema.parse(Object.fromEntries(form));
   const table = TABLES[kind];
   const now = new Date();
@@ -41,7 +41,7 @@ const editorialSchema = z.object({
 
 /** Our copy and our note. Neither is a source field, so an import never touches them. */
 export async function saveEditorial(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { kind, id, guideCopy, inclusionNote } = editorialSchema.parse(Object.fromEntries(form));
   const table = TABLES[kind];
   const now = new Date();
@@ -68,7 +68,7 @@ const venueSchema = z.object({
  * import keeps a person's answer instead of its own guess.
  */
 export async function setEventVenue(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { id, placeId } = venueSchema.parse(Object.fromEntries(form));
   const [current] = await db.select({ locked: events.lockedFields }).from(events).where(eq(events.id, id));
   if (!current) return;
@@ -94,7 +94,7 @@ const eventPrintSchema = z.object({
 
 /** What the guide prints instead of the computed dates, times or price. Blank means use the computed one. */
 export async function saveEventPrint(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const v = eventPrintSchema.parse(Object.fromEntries(form));
   const now = new Date();
   await db
@@ -121,7 +121,7 @@ const venueGuideSchema = z.object({
 
 /** Where a venue sits in the guide, under which label, and how much room it gets. */
 export async function saveVenueGuide(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const v = venueGuideSchema.parse(Object.fromEntries(form));
   const now = new Date();
   await db
@@ -158,7 +158,7 @@ const occurrenceSchema = z.object({
 
 /** Correct the one-off / specific dates / regular / ongoing call. Locked against the next import. */
 export async function setOccurrence(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { kind, id, occurrence } = occurrenceSchema.parse(Object.fromEntries(form));
   await lockAndSet(kind === 'event' ? events : experiences, id, 'occurrence', { occurrence }, user.email);
   revalidatePath('/', 'layout');
@@ -168,7 +168,7 @@ const genreSchema = z.object({ id: z.string().uuid(), genre: z.union([z.enum(GEN
 
 /** Which genre a tour prints under. Locked against the next import. */
 export async function setGenre(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { id, genre } = genreSchema.parse(Object.fromEntries(form));
   await lockAndSet(experiences, id, 'genre', { genre: genre || null }, user.email);
   revalidatePath('/', 'layout');
@@ -177,7 +177,7 @@ export async function setGenre(form: FormData) {
 const tourPrintSchema = z.object({ id: z.string().uuid(), printDates: z.string().max(200), printTimes: z.string().max(200) });
 
 export async function saveTourPrint(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const v = tourPrintSchema.parse(Object.fromEntries(form));
   const now = new Date();
   await db
@@ -191,7 +191,7 @@ const codeSchema = z.object({ id: z.string().uuid(), code: z.string().max(8).reg
 
 /** A provider's key code. Ours, kept between editions; blank clears it. */
 export async function setProviderCode(form: FormData): Promise<void> {
-  await requireUser();
+  await requireStaff();
   const { id, code } = codeSchema.parse(Object.fromEntries(form));
   const clean = code.trim().toUpperCase() || null;
   if (clean) {
@@ -206,7 +206,7 @@ const highlightSchema = z.object({ kind: z.enum(['event', 'experience']), id: z.
 
 /** Make something a highlight: a full page in the guide, featured first online. */
 export async function setHighlight(form: FormData) {
-  const user = await requireUser();
+  const user = await requireStaff();
   const { kind, id, highlight } = highlightSchema.parse(Object.fromEntries(form));
   const table = kind === 'event' ? events : experiences;
   const now = new Date();

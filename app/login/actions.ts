@@ -1,56 +1,65 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { recordSignIn, resolveAccount } from '@/lib/auth/accounts';
+import { safeNext } from '@/lib/auth/permissions';
+import { homeFor } from '@/lib/auth/roles';
 import { getSupabaseServer } from '@/lib/auth/supabase-server';
-import { isEmailDomainAllowed, safeNext } from '@/lib/auth/permissions';
 import { env } from '@/lib/env';
 
 // Cannot `export` non-function values from a 'use server' file. The page
 // re-declares this type.
-type SignInState = { error?: string } | null;
+type SignInState = { error?: string; sent?: boolean } | null;
+
+const NO_ACCOUNT = 'There is no account for that address. Ask whoever invited you to send the invite again.';
+
+const appUrl = () => env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
 
 export async function signInAction(_prev: SignInState, formData: FormData): Promise<SignInState> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
-  const next = safeNext(String(formData.get('next') ?? '/admin'));
+  const next = String(formData.get('next') ?? '');
 
   if (!email || !password) return { error: 'Email and password required' };
 
-  // Before Supabase, so which accounts exist is not leaked by a different error.
-  if (!isEmailDomainAllowed(email, env.ALLOWED_EMAIL_DOMAINS)) {
-    const allowed = env.ALLOWED_EMAIL_DOMAINS ?? '';
-    return {
-      error: allowed
-        ? `Sign-in is restricted to ${allowed.split(',').map((d) => '@' + d.trim()).join(', ')} addresses.`
-        : 'Sign-in not permitted for this email address.',
-    };
-  }
-
   const supabase = await getSupabaseServer();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
 
-  redirect(next);
+  const account = await resolveAccount(data.user);
+  if (!account) {
+    await supabase.auth.signOut();
+    return { error: NO_ACCOUNT };
+  }
+  await recordSignIn(account);
+  redirect(next ? safeNext(next) : homeFor(account.role));
 }
 
-/**
- * Start Google sign-in. Google may sign in any account, so the domain is
- * checked in /auth/callback, after the fact.
- */
+/** Start Google sign-in. Whether the address has an account is checked in /auth/callback. */
 export async function signInWithGoogleAction(formData: FormData) {
-  const next = safeNext(String(formData.get('next') ?? '/admin'));
+  const next = String(formData.get('next') ?? '');
   const supabase = await getSupabaseServer();
-  // Pre-select the workspace account for people signed in to several.
-  const hd = env.ALLOWED_EMAIL_DOMAINS?.split(',')[0]?.trim();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/auth/callback?next=${encodeURIComponent(next)}`,
-      queryParams: hd ? { hd } : undefined,
+      redirectTo: `${appUrl()}/auth/callback${next ? `?next=${encodeURIComponent(safeNext(next))}` : ''}`,
+      queryParams: { prompt: 'select_account' },
     },
   });
 
   if (error || !data.url) redirect('/login?error=oauth_start');
   redirect(data.url);
+}
+
+/**
+ * Email a link to set a new password. Says the same whether or not the
+ * address has an account, so the form cannot be used to find out.
+ */
+export async function forgotPasswordAction(_prev: SignInState, formData: FormData): Promise<SignInState> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  if (!email) return { error: 'Email required' };
+  const supabase = await getSupabaseServer();
+  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl()}/auth/callback?next=/account/password` });
+  return { sent: true };
 }

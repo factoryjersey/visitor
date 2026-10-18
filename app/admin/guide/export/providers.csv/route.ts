@@ -1,9 +1,11 @@
 import { type NextRequest } from 'next/server';
+import { requireStaff } from '@/lib/auth/session';
 import { toCsv, utf16le } from '@/lib/domain/csv';
 import { PROVIDER_COLUMNS, buildGuide, windowFrom } from '@/lib/guide';
 
 /** The provider key for the tours pages: only providers with a tour in this edition. */
 export async function GET(request: NextRequest) {
+  await requireStaff();
   const sp = request.nextUrl.searchParams;
   const window = windowFrom({ from: sp.get('from') ?? undefined, to: sp.get('to') ?? undefined });
   const { providers } = await buildGuide(window);

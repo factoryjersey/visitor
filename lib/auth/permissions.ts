@@ -1,20 +1,12 @@
-/**
- * Whether an address may sign in. Supabase will authenticate any Google
- * account, so the domain is checked by us, after the fact.
- *
- * Edge-safe: middleware calls it too.
- */
-export function isEmailDomainAllowed(email: string, allowedRaw: string | undefined): boolean {
-  if (!allowedRaw || !allowedRaw.trim()) return true; // no restriction configured
-  const at = email.lastIndexOf('@');
-  if (at < 0) return false;
-  const domain = email.slice(at + 1).trim().toLowerCase();
-  if (!domain) return false;
-  return allowedRaw
+/** Whether an address is in a comma-separated list, case-insensitively. */
+export function isEmailListed(email: string, listRaw: string | undefined): boolean {
+  if (!listRaw) return false;
+  const e = email.trim().toLowerCase();
+  return listRaw
     .split(',')
-    .map((d) => d.trim().toLowerCase())
+    .map((x) => x.trim().toLowerCase())
     .filter(Boolean)
-    .includes(domain);
+    .includes(e);
 }
 
 /** Only same-origin relative paths: a crafted `next` must not redirect off-site. */

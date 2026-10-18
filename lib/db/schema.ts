@@ -1,6 +1,7 @@
 import type { Genre } from '@/lib/domain/genre';
 import type { Occurrence } from '@/lib/domain/occurrence';
 import {
+  type AnyPgColumn,
   boolean,
   date,
   doublePrecision,
@@ -12,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * The canonical record. One row per front door, separate from every
@@ -47,6 +49,76 @@ export const INCLUSIONS = ['candidate', 'included', 'excluded'] as const;
 export const LISTING_SIZES = ['directory', 'listing', 'two-thirds', 'full'] as const;
 export type ListingSize = (typeof LISTING_SIZES)[number];
 export type Inclusion = (typeof INCLUSIONS)[number];
+
+/**
+ * Whether a listing may be shown at all. Imported ones arrive approved;
+ * one a provider adds waits for staff, hidden from the site and the
+ * guide until then. Separate from inclusion, which is about the guide.
+ */
+export const REVIEWS = ['pending', 'approved', 'rejected'] as const;
+export type Review = (typeof REVIEWS)[number];
+
+/**
+ * A business that lists with us: a hotel, a venue, a tour operator. Its
+ * people sign in and look after its listings. Not the same as a tour
+ * `provider`, which is what the guide prints in its key; a business that
+ * runs tours gets one, linked here.
+ */
+export const businesses = pgTable('businesses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  website: text('website'),
+  providerId: uuid('provider_id').references((): AnyPgColumn => providers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * superadmin  everything, including who else is staff
+ * staff       the editing side: review, inclusion, the guide, provider accounts
+ * provider    their own business's listings, and its team
+ */
+export const ROLES = ['superadmin', 'staff', 'provider'] as const;
+export type Role = (typeof ROLES)[number];
+
+/**
+ * Who may sign in, and as what. Supabase only proves who somebody is;
+ * an account here is what lets them in. Keyed by email, because an
+ * invite exists before the person has ever signed in; `authId` is filled
+ * on their first sign-in.
+ */
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  authId: uuid('auth_id').unique(),
+  name: text('name'),
+  role: text('role').$type<Role>().notNull(),
+  /** Required for a provider, empty for staff. */
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'restrict' }),
+  invitedBy: text('invited_by'),
+  lastSignInAt: timestamp('last_sign_in_at', { withTimezone: true }),
+  /** Set to stop somebody signing in without losing who they were. */
+  disabledAt: timestamp('disabled_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * A link that makes an account. Only its hash is stored: the link is
+ * shown once, to whoever sent the invite.
+ */
+export const invites = pgTable('invites', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  role: text('role').$type<Role>().notNull(),
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  invitedBy: text('invited_by').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const places = pgTable('places', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -88,6 +160,10 @@ export const places = pgTable('places', {
   headerImage: jsonb('header_image').$type<Image | null>(),
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
   sourceLink: text('source_link'),
+
+  /** The business that looks after it, when one does. */
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  review: text('review').$type<Review>().notNull().default('approved'),
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
@@ -155,6 +231,10 @@ export const events = pgTable('events', {
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
+
+  /** The business that looks after it, when one does. */
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  review: text('review').$type<Review>().notNull().default('approved'),
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
@@ -254,6 +334,10 @@ export const experiences = pgTable('experiences', {
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
 
+  /** The business that looks after it, when one does. */
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  review: text('review').$type<Review>().notNull().default('approved'),
+
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
   inclusionSetBy: text('inclusion_set_by'),
@@ -268,9 +352,39 @@ export const experiences = pgTable('experiences', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const LISTING_KINDS = ['venue', 'event', 'experience'] as const;
+export type ListingKind = (typeof LISTING_KINDS)[number];
+
+/**
+ * A provider's edit to a listing that is already public. It waits here
+ * for staff instead of changing the listing; approving writes it and
+ * locks the fields, so an import keeps the provider's answer. One open
+ * change per listing: a second edit replaces the first.
+ */
+export const listingChanges = pgTable('listing_changes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  kind: text('kind').$type<ListingKind>().notNull(),
+  listingId: uuid('listing_id').notNull(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  changes: jsonb('changes').$type<Record<string, unknown>>().notNull(),
+  status: text('status').$type<Review>().notNull().default('pending'),
+  submittedBy: text('submitted_by').notNull(),
+  reviewedBy: text('reviewed_by'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewNote: text('review_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  oneOpen: uniqueIndex('listing_changes_one_open').on(t.kind, t.listingId).where(sql`${t.status} = 'pending'`),
+}));
+
 export type Place = typeof places.$inferSelect;
 export type NewPlace = typeof places.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Provider = typeof providers.$inferSelect;
 export type Experience = typeof experiences.$inferSelect;
+export type Business = typeof businesses.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Invite = typeof invites.$inferSelect;
+export type ListingChange = typeof listingChanges.$inferSelect;

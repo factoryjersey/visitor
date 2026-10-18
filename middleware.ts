@@ -1,14 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { isEmailDomainAllowed } from '@/lib/auth/permissions';
 import { isProtectedPath } from '@/lib/auth/public-paths';
 
 /**
- * Refreshes the Supabase session and sends anyone under /admin who is not
- * signed in, or signed in from outside the allowed domains, to /login.
- * The public site needs no session.
- * As factoryOS does; the allowlist is checked here too because a shared
- * Supabase project may hold accounts this app should not admit.
+ * Refreshes the Supabase session and sends anyone under /admin or
+ * /account who is not signed in to /login. The public site needs no
+ * session. Whether the person has an account here, and which role, is
+ * checked by the pages: this runs at the edge, without the database.
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,9 +29,7 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const allowed = !!user?.email && isEmailDomainAllowed(user.email, process.env.ALLOWED_EMAIL_DOMAINS);
-
-  if (!allowed && isProtectedPath(request.nextUrl.pathname)) {
+  if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.search = '';
@@ -46,8 +42,8 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Only the editing side and the sign-in flow need the session. The public
+// Only the editing side, a provider's pages and the sign-in flow need the session. The public
 // site skips middleware entirely, so it can be cached.
 export const config = {
-  matcher: ['/admin/:path*', '/admin', '/login', '/logout', '/auth/:path*'],
+  matcher: ['/admin/:path*', '/admin', '/account/:path*', '/account', '/login/:path*', '/login', '/logout', '/auth/:path*', '/invite/:path*'],
 };

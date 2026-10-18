@@ -1,32 +1,36 @@
 /**
- * Create a password sign-in for somebody, or reset theirs, through the
- * Supabase Auth admin API. Google sign-in needs nothing creating.
+ * Make somebody staff or superadmin from the command line, with a
+ * password, or reset theirs. For the first account, when nobody can sign
+ * in to invite anybody (SUPERADMIN_EMAILS does the same for Google
+ * sign-in). Providers are invited from the admin, with a business.
  *
- *   pnpm auth:create-user --email=ben@factory.je --password='...'
+ *   pnpm auth:create-user --email=ben@factory.je --password='...' [--role=staff]
  *
- * Idempotent: an existing account just gets the new password. If the
- * Supabase project is shared with factoryOS, so is the account.
+ * Idempotent: an existing Supabase account just gets the new password,
+ * and an existing account here keeps its role.
  */
 import '@/lib/load-env';
 import { parseArgs } from 'node:util';
 import { createClient } from '@supabase/supabase-js';
-import { isEmailDomainAllowed } from '@/lib/auth/permissions';
+import { client, db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
 import { env } from '@/lib/env';
 
-const { values } = parseArgs({ options: { email: { type: 'string' }, password: { type: 'string' } } });
+const { values } = parseArgs({ options: { email: { type: 'string' }, password: { type: 'string' }, role: { type: 'string' } } });
 const email = values.email?.trim().toLowerCase();
 const password = values.password;
+const role = values.role ?? 'superadmin';
 
 if (!email || !password) {
-  console.error("Usage: pnpm auth:create-user --email=X --password='Y'");
+  console.error("Usage: pnpm auth:create-user --email=X --password='Y' [--role=superadmin|staff]");
+  process.exit(1);
+}
+if (role !== 'superadmin' && role !== 'staff') {
+  console.error('--role is superadmin or staff. Invite providers from the admin, with their business.');
   process.exit(1);
 }
 if (!env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error('SUPABASE_SERVICE_ROLE_KEY is not set.');
-  process.exit(1);
-}
-if (!isEmailDomainAllowed(email, env.ALLOWED_EMAIL_DOMAINS)) {
-  console.error(`${email} is outside ALLOWED_EMAIL_DOMAINS and could not sign in.`);
   process.exit(1);
 }
 
@@ -45,5 +49,9 @@ if (existing) {
 } else {
   const { error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) throw error;
-  console.log(`${email}: created`);
+  console.log(`${email}: created in Supabase`);
 }
+
+const [made] = await db.insert(users).values({ email, role, invitedBy: 'auth:create-user' }).onConflictDoNothing().returning();
+console.log(made ? `${email}: ${role} account made` : `${email}: account already here, role unchanged`);
+await client.end();

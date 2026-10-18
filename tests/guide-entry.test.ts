@@ -13,7 +13,7 @@ const base: Event = {
   dates: Array.from({ length: 59 }, (_, i) => ({ date: new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10), start: '10:00', end: '16:00' })),
   startsOn: '2026-09-01', endsOn: '2026-10-29', fromPricePence: 1145, toPricePence: 2450,
   printDates: null, printTimes: null, printPrice: null, highlight: false,
-  headerImage: null, sourceLink: null, inclusion: 'included', inclusionNote: null,
+  headerImage: null, sourceLink: null, businessId: null, review: 'approved', inclusion: 'included', inclusionNote: null,
   inclusionSetBy: null, inclusionSetAt: null, editedBy: null, editedAt: null,
   fieldSources: {}, lockedFields: [], sourceModifiedAt: null, createdAt: new Date(), updatedAt: new Date(),
 };
@@ -61,7 +61,7 @@ const tour: Experience = {
   dates: ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06'].map((date) => ({ date, start: null, end: null })),
   occurrence: 'dates', fromPricePence: null, toPricePence: null, meetingPoint: null, parish: null,
   phone: null, email: null, website: null, lat: null, lon: null, printDates: null, printTimes: null, highlight: false,
-  headerImage: null, sourceLink: null, inclusion: 'included', inclusionNote: null, inclusionSetBy: null,
+  headerImage: null, sourceLink: null, businessId: null, review: 'approved', inclusion: 'included', inclusionNote: null, inclusionSetBy: null,
   inclusionSetAt: null, editedBy: null, editedAt: null, fieldSources: {}, lockedFields: [], sourceModifiedAt: null,
   createdAt: new Date(), updatedAt: new Date(),
 };
