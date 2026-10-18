@@ -4,7 +4,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventTypes, publicEvents, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { webWhen } from '@/lib/domain/web-dates';
+import { cardWhen } from '@/lib/domain/web-dates';
 import { one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       key={e.id}
       href={`/whats-on/${e.slug}`}
       title={e.title}
-      when={webWhen(e.dates, e.occurrence, today)}
+      when={cardWhen(e.dates, e.occurrence, today)}
       location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
       price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
       image={e.headerImage}

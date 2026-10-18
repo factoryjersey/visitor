@@ -5,7 +5,7 @@ import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, webWhen } from '@/lib/domain/web-dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +45,7 @@ export default async function Home() {
         {otherHighlights.length > 0 && (
           <section className="mb-14 grid gap-6 md:grid-cols-2">
             {otherHighlights.map(({ event: e, venue }) => (
-              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={webWhen(e.dates, e.occurrence, today)} location={cardLocation(e.venueName ?? venue?.name, e.parish ?? venue?.parish)} image={e.headerImage} highlight />
+              <ListingCard key={e.id} href={`/whats-on/${e.slug}`} title={e.title} when={cardWhen(e.dates, e.occurrence, today)} location={cardLocation(e.venueName ?? venue?.name, e.parish ?? venue?.parish)} image={e.headerImage} highlight />
             ))}
           </section>
         )}
@@ -61,7 +61,7 @@ export default async function Home() {
                 key={e.id}
                 href={`/whats-on/${e.slug}`}
                 title={e.title}
-                when={webWhen(e.dates, e.occurrence, today)}
+                when={cardWhen(e.dates, e.occurrence, today)}
                 location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
                 price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
                 image={e.headerImage}
@@ -73,7 +73,7 @@ export default async function Home() {
         {datedTours.length > 0 && (
           <section>
             <div className="mb-5 flex items-baseline justify-between gap-4">
-              <h2 className="font-display text-2xl font-semibold text-ink">Tours on particular dates</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink">Tours &amp; experiences</h2>
               <Link href="/tours" className="text-sm font-medium text-sea hover:text-coral">All tours &amp; experiences →</Link>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -82,7 +82,7 @@ export default async function Home() {
                   key={t.id}
                   href={`/tours/${t.slug}`}
                   title={t.title}
-                  when={webWhen(t.dates, t.occurrence, today)}
+                  when={cardWhen(t.dates, t.occurrence, today)}
                   location={cardLocation(t.meetingPoint, t.parish)}
                   where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
                   price={printPrice(t.fromPricePence, t.toPricePence)}

@@ -6,7 +6,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
 import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
-import { upcomingDates, webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,7 +118,7 @@ export default async function EventPage({ params }: Props) {
                   {atVenue.map(({ event: o }) => (
                     <li key={o.id} className="py-2">
                       <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-coral">{o.title}</Link>
-                      <span className="block text-xs text-harbour/60">{webWhen(o.dates, o.occurrence, today)}</span>
+                      <span className="block text-xs text-harbour/60">{cardWhen(o.dates, o.occurrence, today)}</span>
                     </li>
                   ))}
                 </ul>
@@ -138,7 +138,7 @@ export default async function EventPage({ params }: Props) {
                   key={r.id}
                   href={`/whats-on/${r.slug}`}
                   title={r.title}
-                  when={webWhen(r.dates, r.occurrence, today)}
+                  when={cardWhen(r.dates, r.occurrence, today)}
                   location={cardLocation(r.venueName ?? v?.name ?? r.venue, r.parish ?? v?.parish)}
                   price={printPrice(r.fromPricePence, r.toPricePence, { free: r.free })}
                   image={r.headerImage}

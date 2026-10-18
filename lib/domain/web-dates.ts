@@ -50,6 +50,17 @@ export function webWhen(dates: readonly EventDate[], occurrence: Occurrence, tod
   return `${days.slice(0, 3).map(full).join(', ')} + ${days.length - 3} more`;
 }
 
+/**
+ * When, for a card: as webWhen, but scattered dates give only the next
+ * one. "Sun 18 Oct", not "Sun 18 Oct, Sat 7 Nov, Sun 8 Nov + 3 more";
+ * the event's own page lists them all.
+ */
+export function cardWhen(dates: readonly EventDate[], occurrence: Occurrence, today: string): string | null {
+  const when = webWhen(dates, occurrence, today);
+  if (occurrence === 'ongoing' || occurrence === 'regular' || !when?.includes(', ')) return when;
+  return when.split(', ')[0]!;
+}
+
 /** The next date on or after today, for ordering a list. */
 export function nextDate(dates: readonly EventDate[], today: string): string | null {
   return upcomingDates(dates, today)[0] ?? null;

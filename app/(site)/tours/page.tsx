@@ -5,7 +5,7 @@ import { publicTours, todayIso } from '@/lib/db/public';
 import { GENRES, type Genre } from '@/lib/domain/genre';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { webWhen } from '@/lib/domain/web-dates';
+import { cardWhen } from '@/lib/domain/web-dates';
 import { one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +29,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       key={t.id}
       href={`/tours/${t.slug}`}
       title={t.title}
-      when={UNIQUE.includes(t.occurrence) ? webWhen(t.dates, t.occurrence, today) : 'Book any day'}
+      when={UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, today) : 'Book any day'}
       location={cardLocation(t.meetingPoint, t.parish)}
       where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
       price={printPrice(t.fromPricePence, t.toPricePence)}
