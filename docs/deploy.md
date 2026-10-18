@@ -4,7 +4,7 @@ One Railway project, `visitor`, with:
 
 | Service | What | Notes |
 |---|---|---|
-| `web` | this repo, `main` branch | builds with `pnpm build`; runs migrations before each deploy (`preDeployCommand` in `railway.json`), then `pnpm start` |
+| `web` | this repo, `main` branch | builds with `pnpm build`; runs migrations before each deploy (pre-deploy command `pnpm db:migrate`), then `pnpm start`; healthcheck `/` |
 | `import` | this repo, cron | `pnpm import:visit-jersey`, daily (e.g. `17 5 * * *`). Agree the schedule with Visit Jersey first. |
 | Postgres | Railway's Postgres plugin, or Supabase | `DATABASE_URL` |
 
@@ -18,6 +18,11 @@ One Railway project, `visitor`, with:
 | `SUPABASE_SERVICE_ROLE_KEY` | its service role key; needed to accept an invite with a password. Secret. |
 | `NEXT_PUBLIC_APP_URL` | the public URL, e.g. `https://visitor-production.up.railway.app` or the custom domain |
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
+
+Railway no longer reads `railway.json` (config as code is deprecated), so
+the build, pre-deploy, start and healthcheck settings above are set on the
+service itself. Without the pre-deploy command the tables are never made
+and every page fails with `relation "events" does not exist`.
 
 `NEXT_PUBLIC_*` values are read at build time, so a change to one needs a
 redeploy, not just a restart.
