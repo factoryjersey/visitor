@@ -1,0 +1,103 @@
+{
+  "_note": "Invented sample, NOT real Visit Jersey data. Built from the field list in docs/visit-jersey.md so tests and local development run without network access. Business names are fictional.",
+  "accommodation": [
+    {
+      "id": 90001,
+      "link": "https://www.jersey.com/accommodation/sample-harbour-hotel/",
+      "modified_gmt": "2026-03-04 09:12:00",
+      "title": { "rendered": "Sample Harbour Hotel &amp; Kitchen" },
+      "acf": {
+        "address": { "place_name": "", "address_line_1": "1 Example Quay", "address_line_2": "St. Aubin", "postcode": "je3 8ab" },
+        "parish": { "value": "st-brelade", "label": "Saint Brelade" },
+        "map_location": { "address": "1 Example Quay, St Aubin", "lat": 49.1878, "lng": -2.1672, "zoom": 16 },
+        "telephone_number": { "area_code": "+44", "prefix": "1534", "number": "000001", "formatted": "+44 (0)1534 000001" },
+        "email_address": "stay@example.je",
+        "website": "https://example.je/harbour",
+        "short_description": "<p>A sample harbourside hotel used in tests.</p>",
+        "long_description": "<p>Twelve rooms over the harbour&#8217;s edge.</p><p>Breakfast is served &ndash; daily.</p>",
+        "key_facilities": [{ "value": "wifi", "label": "Free WiFi" }, { "value": "parking", "label": "Parking" }],
+        "accessibility": [{ "value": "lift", "label": "Lift to all floors" }],
+        "seasonality": [
+          { "value": "march", "label": "March" }, { "value": "april", "label": "April" },
+          { "value": "may", "label": "May" }, { "value": "june", "label": "June" },
+          { "value": "july", "label": "July" }, { "value": "august", "label": "August" },
+          { "value": "september", "label": "September" }, { "value": "october", "label": "October" }
+        ],
+        "low_season_rate": 135,
+        "high_season_rate": 295,
+        "aa_rating": [{ "value": "4", "label": "4 Star" }],
+        "header_image_data": "{\"url\":\"https://cdn.jersey.com/image/upload/v1/sample/harbour-header.jpg\",\"public_id\":\"sample/harbour-header\",\"alt_text\":\"\",\"original_filename\":\"DSC00001-scaled\"}",
+        "gallery_images_data": "[{\"url\":\"https://cdn.jersey.com/image/upload/v1/sample/harbour-1.jpg\",\"public_id\":\"sample/harbour-1\",\"alt_text\":\"\",\"original_filename\":\"DSC00002\"}]",
+        "portal_last_synced": "2026-03-04 09:10:00"
+      }
+    },
+    {
+      "id": 90002,
+      "link": "https://www.jersey.com/accommodation/sample-farm-cottages/",
+      "modified_gmt": "2023-05-01 12:00:00",
+      "title": { "rendered": "Sample Farm Cottages" },
+      "acf": {
+        "address": { "address_line_1": "La Rue d&#8217;Exemple", "address_line_2": "Jersey", "postcode": "JE3 1ZZ" },
+        "parish": { "value": "st-ouen", "label": "St Ouen" },
+        "map_location": { "lat": 49.2401, "lng": -2.2211 },
+        "seasonality": [
+          { "value": "november", "label": "November" }, { "value": "december", "label": "December" },
+          { "value": "january", "label": "January" }, { "value": "february", "label": "February" }
+        ],
+        "low_season_rate": "90"
+      }
+    }
+  ],
+  "food-and-drink": [
+    {
+      "id": 90011,
+      "link": "https://www.jersey.com/food-and-drink/sample-harbour-hotel-kitchen/",
+      "modified_gmt": "2026-02-01 10:00:00",
+      "title": { "rendered": "Sample Harbour Hotel &amp; Kitchen" },
+      "acf": {
+        "address": { "address_line_1": "1 Example Quay", "address_line_2": "St Brelade", "postcode": "JE3 8AB" },
+        "parish": { "value": "st-brelade", "label": "St. Brelade" },
+        "map_location": { "lat": 49.18785, "lng": -2.16725 }
+      }
+    },
+    {
+      "id": 90012,
+      "link": "https://www.jersey.com/food-and-drink/sample-beach-kiosk/",
+      "modified_gmt": "2026-06-10 08:00:00",
+      "title": { "rendered": "Sample Beach Kiosk" },
+      "acf": {
+        "address": { "address_line_1": "Example Slipway", "postcode": "JE2 6ZZ" },
+        "parish": { "value": "grouville", "label": "Grouville" },
+        "map_location": { "lat": 49.19, "lng": -2.03 },
+        "short_description": "<p>Sample kiosk for tests.</p>"
+      }
+    },
+    {
+      "id": 90013,
+      "link": "https://www.jersey.com/food-and-drink/sample-unpinned/",
+      "title": { "rendered": "Sample Unpinned Caf&eacute;" },
+      "acf": {
+        "address": { "address_line_1": "Somewhere", "postcode": "JE2 4ZZ" },
+        "parish": { "value": "st-helier", "label": "St Helier" },
+        "map_location": { "lat": 51.5, "lng": -0.12 }
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": 90021,
+      "link": "https://www.jersey.com/events/sample-new-year-concert/",
+      "modified_gmt": "2026-09-01 10:00:00",
+      "title": { "rendered": "Sample New Year Concert" },
+      "acf": {
+        "map_location": { "address": "Example Hall, St Helier", "lat": 49.184, "lng": -2.108 },
+        "event_dates": [{ "date": "20261231", "start_time": "19:00", "end_time": "01:00" }],
+        "event_dates_start": "20261231",
+        "event_dates_end": "20261231",
+        "from_price": 25,
+        "price_to": "40",
+        "short_description": "<p>Sample event for tests.</p>"
+      }
+    }
+  ]
+}

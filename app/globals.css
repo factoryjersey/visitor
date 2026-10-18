@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+body { @apply bg-white text-stone-900 antialiased; }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: white; }
+  .no-print { display: none !important; }
+  .page-break { break-before: page; }
+  .avoid-break { break-inside: avoid; }
+}
+
+/* The guide proof: the printed pocket page, 115 × 165mm, Proxima Nova at 7.5pt. */
+.guide-pages { @apply flex flex-col items-center gap-6; }
+.guide-page {
+  width: 115mm; min-height: 165mm; padding: 8mm 7mm;
+  background: white; box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 7.5pt; line-height: 1.25; font-weight: 300; color: #1c1917;
+}
+.guide-tab { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 9pt; margin-bottom: 3mm; border-bottom: 0.3mm solid currentColor; padding-bottom: 1mm; }
+.guide-area { font-weight: 700; font-size: 8.5pt; margin: 3mm 0 1.5mm; }
+.guide-columns { column-count: 2; column-gap: 4mm; }
+.guide-entry { break-inside: avoid; margin-bottom: 2.5mm; }
+.guide-when { font-weight: 700; }
+.guide-when span { margin-left: 2.5mm; font-weight: 400; }
+.guide-title { font-weight: 700; font-size: 8pt; }
+.guide-venue { font-weight: 700; margin-top: 0.8mm; }
+.guide-web { text-transform: uppercase; font-weight: 600; }
+.guide-label { display: inline-block; border: 0.25mm solid currentColor; padding: 0 1mm; font-size: 6pt; font-weight: 600; letter-spacing: 0.05em; margin: 0.5mm 0; }
+.guide-empty { font-size: 10pt; }
+.guide-highlight-image { width: calc(100% + 14mm); max-width: none; margin: -2mm -7mm 3mm; height: 78mm; object-fit: cover; }
+.guide-highlight-title { font-weight: 700; font-size: 14pt; line-height: 1.1; margin: 1mm 0 2mm; }
+.guide-highlight-copy { font-size: 8pt; line-height: 1.35; column-count: 2; column-gap: 4mm; }
+.guide-highlight-copy p + p { margin-top: 1.5mm; }
+.guide-key { column-count: 3; column-gap: 3mm; font-size: 6.5pt; margin-bottom: 2mm; }
+.guide-key p { break-inside: avoid; }
+
+@media print {
+  @page guide { size: 115mm 165mm; margin: 0; }
+  .guide-pages { display: block; }
+  .guide-page { page: guide; box-shadow: none; break-after: page; }
+}
