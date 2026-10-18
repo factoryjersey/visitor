@@ -43,6 +43,13 @@
       "when": 1792342638047,
       "tag": "0005_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792356882413,
+      "tag": "0006_enable_rls",
+      "breakpoints": true
     }
   ]
 }
