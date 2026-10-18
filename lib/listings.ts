@@ -282,6 +282,7 @@ export const SOURCE_LABEL: Record<string, string> = {
   eventbrite: 'Eventbrite',
   'ticketsolve-artscentre': 'Jersey Arts Centre',
   'ticketsolve-operahouse': 'Jersey Opera House',
+  'jersey-charities': 'the Jersey Charities diary',
   provider: 'Its business',
 };
 

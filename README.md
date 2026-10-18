@@ -111,6 +111,7 @@ all, so `pnpm import:events` adds events from elsewhere after it:
 | Jersey Arts Centre | Ticketsolve's public feed, `artscentre.ticketsolve.com/shows.xml` | straight away |
 | Jersey Opera House | the same, `jerseyoperahouse.ticketsolve.com/shows.xml` | straight away |
 | Eventbrite | the schema.org Event data on its Jersey listing pages and each event's page | after review in `/admin/review` |
+| Jersey Charities diary | its diary page, read as written, and each entry's page for the description | after review |
 
 An event another source already gave us (a date in common and most of the
 title, `lib/domain/event-match.ts`) is linked to it, not repeated, and the

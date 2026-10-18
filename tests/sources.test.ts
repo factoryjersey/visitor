@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { eventDates, eventbriteId, ldEvents, localTime, toEvent, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
+import { parseDiary, parseEntryPage, parseWhen, toEvent as fromCharities } from '@/lib/integrations/jersey-charities/parse';
 
 describe('Ticketsolve', () => {
   const shows = parseShows(readFileSync('tests/fixtures/ticketsolve-shows.xml', 'utf8'), FEEDS[0]!);
@@ -105,5 +106,38 @@ describe('Eventbrite', () => {
 
   it('calls a free event free', () => {
     expect(toEvent(listing, { ...page, offers: [{ lowPrice: '0.00', highPrice: '0.00' }] })).toMatchObject({ free: true, fromPricePence: null });
+  });
+});
+
+describe('Jersey Charities diary', () => {
+  const diary = parseDiary(readFileSync('tests/fixtures/jersey-charities-diary.html', 'utf8'));
+  const page = parseEntryPage(readFileSync('tests/fixtures/jersey-charities-entry.html', 'utf8'));
+
+  it('reads every entry on the diary page', () => {
+    expect(diary.map((d) => [d.id, d.title, d.venue])).toEqual([
+      ['3088', 'Autism Jersey - Trekker Fundraising Quiz', 'Ommaroo Hotel'],
+      ['3105', 'NSPCC Jersey - Golf Day', 'La Moye Golf Course'],
+      ['3081', "Milli's Separated & Step Family Support - Disco Bingo", null],
+    ]);
+  });
+
+  it('reads the day and times, and drops the 12:00 the diary writes for no end', () => {
+    expect(parseWhen('Fri, 23rd Oct, 2026, 18:30 - 12:00')).toEqual([{ date: '2026-10-23', start: '18:30', end: null }]);
+    expect(parseWhen('Fri, 23rd Oct, 2026, 08:00 - 18:00')).toEqual([{ date: '2026-10-23', start: '08:00', end: '18:00' }]);
+    expect(parseWhen('Sat, 7th Nov, 2026 - Sun, 8th Nov, 2026').map((d) => d.date)).toEqual(['2026-11-07', '2026-11-08']);
+    expect(parseWhen('date to be confirmed')).toEqual([]);
+  });
+
+  it('takes the clean title, the charity and the description from the event’s page', () => {
+    expect(page.title).toBe('Trekker Fundraising Quiz');
+    expect(page.charity).toBe('Autism Jersey');
+    expect(page.description).toContain('£25 per head');
+    const e = fromCharities(diary[0]!, page)!;
+    expect(e).toMatchObject({ externalId: '3088', title: 'Trekker Fundraising Quiz', venueName: 'Ommaroo Hotel', website: 'https://www.jerseycharities.org/diary/3088/trekker-fundraising-quiz' });
+    expect(e.summary).toMatch(/^In aid of Autism Jersey\. Join us/);
+  });
+
+  it('does without the page', () => {
+    expect(fromCharities(diary[1]!, null)).toMatchObject({ title: 'NSPCC Jersey - Golf Day', summary: 'In aid of NSPCC Jersey.' });
   });
 });

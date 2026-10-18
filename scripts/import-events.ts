@@ -2,7 +2,7 @@
  * Events from sources beyond Visit Jersey, after it has run:
  *
  *   pnpm import:events                     every source
- *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse
+ *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -11,8 +11,9 @@
  * repeated, and the second source only fills what the first left empty.
  *
  * The Arts Centre and the Opera House are curated, so their shows go
- * straight on the site. Anyone can post on Eventbrite, so its events wait
- * in /admin/review until staff approve them.
+ * straight on the site. Anyone can post on Eventbrite, and the charities'
+ * diary carries the odd restaurant offer, so theirs wait in /admin/review
+ * until staff approve them.
  */
 import '@/lib/load-env';
 import { readFileSync } from 'node:fs';
@@ -28,6 +29,7 @@ import { matchVenue } from '@/lib/domain/venue-match';
 import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
+import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
 
@@ -113,6 +115,40 @@ async function loadEventbrite(): Promise<Item[]> {
   return out;
 }
 
+/**
+ * The Jersey Charities diary, its pages in turn, then each entry's own page
+ * for its description. A diary that reads as empty means the site has
+ * changed under us, and fails the source rather than marking every event gone.
+ */
+async function loadCharities(): Promise<Item[]> {
+  const entries = new Map<string, DiaryEntry>();
+  const queue = ['/diary'];
+  const seen = new Set<string>();
+  while (queue.length && seen.size < 10) {
+    const path = queue.shift()!;
+    if (seen.has(path)) continue;
+    seen.add(path);
+    const html = await fetchText(`${CHARITIES}${path}`);
+    for (const e of parseDiary(html)) entries.set(e.id, e);
+    queue.push(...nextPages(html).filter((p) => !seen.has(p)));
+    await pause(1000);
+  }
+  if (!entries.size) throw new Error('the diary page had no entries: has jerseycharities.org changed?');
+  const out: Item[] = [];
+  for (const entry of entries.values()) {
+    let page: ReturnType<typeof parseEntryPage> | null = null;
+    try {
+      page = parseEntryPage(await fetchText(`${CHARITIES}${entry.path}`));
+    } catch (e) {
+      console.warn(`\n${entry.path}: ${(e as Error).message}; using the diary entry alone`);
+    }
+    const v = fromCharities(entry, page);
+    if (v) out.push({ v, raw: { entry, page } });
+    await pause(1500);
+  }
+  return out;
+}
+
 const counts = { created: 0, linked: 0, updated: 0, unchanged: 0 };
 
 /** The source's own fields for the events table. */
@@ -190,6 +226,7 @@ const SOURCES: { source: string; review: Review; load: () => Promise<Item[]> }[]
   // The theatres first: when Eventbrite lists the same show, theirs is the record and Eventbrite fills gaps.
   ...FEEDS.map((feed) => ({ source: feed.source, review: 'approved' as const, load: () => loadTicketsolve(feed) })),
   { source: 'eventbrite', review: 'pending', load: loadEventbrite },
+  { source: 'jersey-charities', review: 'pending', load: loadCharities },
 ];
 
 const allPlaces = await db.select().from(places);
