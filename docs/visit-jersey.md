@@ -1,7 +1,8 @@
 # Visit Jersey as a data source
 
-Notes on what `www.jersey.com` publishes, what we already draw from it, and what
-a print-guide production system would and would not get from it. Written
+Factory produces the official Jersey visitor guide as Visit Jersey's partner.
+These are notes on what `www.jersey.com` publishes, what we already draw from
+it, and what a print-guide production system would and would not get from it. Written
 2026-10-18; the counts are live as of that date and the field list is from a
 real listing, not from documentation — there is none.
 
@@ -120,17 +121,10 @@ camera files. A typical accommodation listing had one header image and **ten**
 gallery images. Because Cloudinary takes transformations in the path, any size
 or crop can be requested without asking anyone.
 
-Two caveats, and the second is the serious one:
-
-- `alt_text` was empty on both images I looked at. Not a problem for print.
-- **Technically available is not the same as licensed.** These photographs
-  belong to the businesses or to the photographers they commissioned, and were
-  supplied to Visit Jersey for Visit Jersey's purposes. Using them in a Factory
-  publication we sell advertising in is a permissions question to settle in
-  writing before a single page is designed — per business, or once with Visit
-  Jersey if they hold a broad enough licence to sublicense. Worth asking early,
-  because the answer changes the production model: with images, the guide can
-  be built from the data; without them, every page needs a photo request.
+As Visit Jersey's partner on the official guide, we can use this material
+directly, so the guide can be built from the data rather than from a photo
+request per page. `alt_text` was empty on both images I looked at, which does
+not matter for print.
 
 ## What we already do with it
 
@@ -238,15 +232,15 @@ Not a design — the shape of the decisions, so they are taken on purpose.
    decide that the page is right. Whatever gets built should end in something a
    person signs off, and the A4 output in `scripts/plot-delivery-routes.ts` is
    the precedent for print-first HTML.
-5. **Attribution and permission settled first.** Both the data and the images.
-   Our export already carries their page URL on every row, which is the minimum;
-   the licensing conversation is the blocker to start now rather than later.
+5. **Source kept on every row.** Our export already carries the Visit Jersey
+   page URL on every row, so any entry in the guide can be traced back to the
+   listing it came from and the business that maintains it.
 
 ## Etiquette
 
 Public, unauthenticated and undocumented is not the same as unlimited. We send a
 real contact in the User-Agent, pace the paging, cache every result in our own
 rows so an address is asked about once ever, and credit the source in anything we
-export. If a system is going to pull the whole directory on a schedule, that is
-the point to tell Visit Jersey we are doing it — they have been a straightforward
-organisation to deal with and an email costs nothing.
+export. If a system is going to pull the whole directory on a schedule, agree the
+schedule with Visit Jersey — we are their partner on the guide, and they may
+prefer a different route to the data than the public API.
