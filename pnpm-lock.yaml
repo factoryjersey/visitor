@@ -14,6 +14,9 @@ importers:
       '@fontsource-variable/josefin-sans':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource-variable/lora':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource-variable/mulish':
         specifier: ^5.3.0
         version: 5.3.0
@@ -666,6 +669,9 @@ packages:
 
   '@fontsource-variable/josefin-sans@5.3.0':
     resolution: {integrity: sha512-duVgkuzE/co4iuIfJ7jM2qX0ED3b6qdY+SlSjNMs6zfhz7EE7kJxV0qF65hQCv1kN0A20j4FwsGAYJvfpU+iSg==}
+
+  '@fontsource-variable/lora@5.3.0':
+    resolution: {integrity: sha512-2ph8KiZ8Bn141hWuC3ErtpJ+Ui8p2MJQn8TJNRSRmLmnCIOCtHfiBM9R7WLRPeUG/q6hXyHOxWQ8DvRSX+ixvQ==}
 
   '@fontsource-variable/mulish@5.3.0':
     resolution: {integrity: sha512-CLh1WAcz2noJmoAun0/dsE7+0ZO6Kq/MBd+x00CcZ9dmThXqYqdhSssXGOdqb3G9YVaeGOmVkMS5yrZd1BHr9Q==}
@@ -2156,6 +2162,8 @@ snapshots:
     optional: true
 
   '@fontsource-variable/josefin-sans@5.3.0': {}
+
+  '@fontsource-variable/lora@5.3.0': {}
 
   '@fontsource-variable/mulish@5.3.0': {}
 

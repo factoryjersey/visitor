@@ -9,6 +9,8 @@ export default {
         // for headings and labels, Mulish to read. Both self-hosted (fontsource).
         display: ['"Josefin Sans Variable"', '"Josefin Sans"', 'system-ui', 'sans-serif'],
         sans: ['"Mulish Variable"', 'Mulish', 'system-ui', 'sans-serif'],
+        // The one serif: the italic line under the wordmark.
+        serif: ['"Lora Variable"', 'Lora', 'Georgia', 'serif'],
       },
       colors: {
         // The public site: white, harbour navy, sea and a warm coral for what to notice.

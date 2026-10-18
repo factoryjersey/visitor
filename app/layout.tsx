@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '@fontsource-variable/josefin-sans';
 import '@fontsource-variable/mulish';
+import '@fontsource-variable/lora/wght-italic.css';
 import './globals.css';
 
 export const metadata: Metadata = {
