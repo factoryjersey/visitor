@@ -41,7 +41,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="mb-2 font-display text-4xl font-bold">Tours &amp; experiences</h1>
+      <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
       <FilterBar
         action="/tours"
@@ -54,13 +54,13 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       />
       {dated.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">On these dates</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{dated.map(card)}</div>
         </section>
       )}
       {onDemand.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">Book any day</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">Book any day</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{onDemand.map(card)}</div>
         </section>
       )}

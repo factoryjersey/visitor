@@ -49,7 +49,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="mb-2 font-display text-4xl font-bold">What&apos;s on</h1>
+      <h1 className="mb-2 font-display text-3xl font-bold text-ink">What&apos;s on</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
       <FilterBar
         action="/whats-on"
@@ -74,7 +74,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
       {group(rest, (r) => r.next.slice(0, 7)).map(([month, items]) => (
         <section key={month} className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-2xl font-semibold">{monthHeading(month)}</h2>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">{monthHeading(month)}</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((r) => card(r))}</div>
         </section>
       ))}

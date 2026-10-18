@@ -28,7 +28,7 @@ export default async function Home() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-harbour via-harbour/40 to-transparent" />
           <div className="mx-auto flex min-h-[460px] max-w-6xl flex-col justify-end px-4 pb-12 pt-24">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/80">{lead.event.highlight ? 'Highlight' : 'Coming up'}</p>
-            <h1 className="mt-2 max-w-3xl font-display text-4xl font-bold leading-tight md:text-6xl">{lead.event.title}</h1>
+            <h1 className="mt-2 max-w-3xl font-display text-3xl font-bold leading-tight md:text-5xl">{lead.event.title}</h1>
             <p className="mt-3 text-lg text-white/90">
               {webWhen(lead.event.dates, lead.event.occurrence, today)}
               {(lead.event.venueName ?? lead.venue?.name) && ` · ${lead.event.venueName ?? lead.venue?.name}`}
@@ -51,7 +51,7 @@ export default async function Home() {
 
         <section className="mb-14">
           <div className="mb-5 flex items-baseline justify-between gap-4">
-            <h2 className="font-display text-3xl font-semibold">Coming up</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink">Coming up</h2>
             <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-coral">Everything on →</Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -72,7 +72,7 @@ export default async function Home() {
         {datedTours.length > 0 && (
           <section>
             <div className="mb-5 flex items-baseline justify-between gap-4">
-              <h2 className="font-display text-3xl font-semibold">Tours on particular dates</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink">Tours on particular dates</h2>
               <Link href="/tours" className="text-sm font-medium text-sea hover:text-coral">All tours &amp; experiences →</Link>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

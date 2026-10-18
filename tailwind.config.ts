@@ -13,6 +13,8 @@ export default {
       colors: {
         // The public site: white, harbour navy, sea and a warm coral for what to notice.
         harbour: '#0f2a44',
+        // Headings: 80% grey.
+        ink: '#333333',
         sea: '#1f6f8b',
         coral: '#d9542f',
       },

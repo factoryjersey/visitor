@@ -67,7 +67,7 @@ export default async function EventPage({ params }: Props) {
           <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-coral">← What&apos;s on</Link>
           <header className="mb-6 mt-3">
             {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlight</p>}
-            <h1 className="font-display text-4xl font-bold leading-tight md:text-5xl">{e.title}</h1>
+            <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{e.title}</h1>
             <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
           </header>
           <Hero image={e.headerImage} title={e.title} />
@@ -131,7 +131,7 @@ export default async function EventPage({ params }: Props) {
       {related.length > 0 && (
         <section className="border-t border-harbour/10">
           <div className="mx-auto max-w-6xl px-4 py-10">
-            <h2 className="mb-5 font-display text-2xl font-semibold">You might also like</h2>
+            <h2 className="mb-5 font-display text-xl font-semibold text-ink">You might also like</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {related.map(({ event: r, venue: v }) => (
                 <ListingCard
