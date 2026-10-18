@@ -97,6 +97,7 @@ export default async function EventPage({ params }: Props) {
                   </>
                 )}
               </div>
+              {!e.businessId && <ClaimLink href={`/claim/events/${e.slug}`}>Organising this? Claim it</ClaimLink>}
             </SideSection>
 
             {venueName && (
@@ -109,6 +110,7 @@ export default async function EventPage({ params }: Props) {
                   {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-coral">{printWebsite(venueSite)?.toLowerCase()} ↗</a></li>}
                 </ul>
                 {directions && <a href={directions} target="_blank" rel="noopener" className={`${secondaryButton} mt-4 block`}>Directions</a>}
+                {venue && !venue.businessId && <ClaimLink href={`/claim/venues/${venue.slug}`}>Is this your venue? Claim it</ClaimLink>}
               </SideSection>
             )}
 
@@ -151,6 +153,15 @@ export default async function EventPage({ params }: Props) {
         </section>
       )}
     </article>
+  );
+}
+
+/** A quiet way in for whoever runs it. */
+function ClaimLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="mt-4 block text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-coral hover:decoration-coral">
+      {children}
+    </Link>
   );
 }
 

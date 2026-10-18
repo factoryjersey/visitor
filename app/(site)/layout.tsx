@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { SiteHeader } from '@/components/site/site-header';
 
 /** The public site: what visitors see. No sign-in, no editing. */
@@ -13,7 +14,10 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <img src="/visitor-logo-grey.svg" alt="Visitor" width={95} height={24} className="h-6 w-auto" />
             <p>Published by Factory with Visit Jersey.</p>
           </div>
-          <p>Check with the organiser before you travel.</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link href="/list" className="font-medium text-harbour hover:text-coral">List your venue, event or tour</Link>
+            <p>Check with the organiser before you travel.</p>
+          </div>
         </div>
       </footer>
     </div>

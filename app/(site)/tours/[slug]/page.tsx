@@ -60,6 +60,11 @@ export default async function TourPage({ params }: Props) {
             <>
               {book && <a href={book} target="_blank" rel="noopener" className={primaryButton}>Book with {provider?.name ?? 'the provider'}</a>}
               {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
+              {!t.businessId && (
+                <Link href={`/claim/tours/${t.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-coral">
+                  Run this tour? Claim it
+                </Link>
+              )}
             </>
           }
         />

@@ -5,6 +5,7 @@ import {
   boolean,
   date,
   doublePrecision,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -389,8 +390,42 @@ export type NewPlace = typeof places.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Provider = typeof providers.$inferSelect;
+/**
+ * Somebody on the public site saying "this is ours": a venue, an event or
+ * a tour we already list, or (no listing) a business that wants to add
+ * its own. Staff decide. Approving gives the listing to a business and,
+ * for someone without an account, makes their invite.
+ */
+export const claims = pgTable(
+  'claims',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** What is claimed; both empty for a request to list something new. */
+    kind: text('kind').$type<ListingKind>(),
+    listingId: uuid('listing_id'),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    businessName: text('business_name').notNull(),
+    /** "Owner", "Manager", "Organiser": how they are connected to it. */
+    relationship: text('relationship'),
+    message: text('message'),
+    status: text('status').$type<Review>().notNull().default('pending'),
+    /** The business the listing went to, on approval. */
+    businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewNote: text('review_note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byStatus: index('claims_status').on(t.status, t.createdAt),
+  }),
+);
+
 export type Experience = typeof experiences.$inferSelect;
 export type Business = typeof businesses.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type ListingChange = typeof listingChanges.$inferSelect;
+export type Claim = typeof claims.$inferSelect;

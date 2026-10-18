@@ -83,6 +83,25 @@ a business on its admin page ("Looked after by").
   `lib/domain/listing-form.ts`). Our copy, the guide section, inclusion,
   highlights and print overrides stay with staff.
 - A business that lists a tour becomes a tour provider for the guide's key.
+- "Copy as a new event" on a provider's event or tour opens the new form
+  filled in from it, dates blank: the same thing again, on new dates.
+
+## Claims
+
+Venues, organisers and tour operators find their way in from the public
+site: `/list` (linked in the footer) to search for their listing or ask for
+an account, and the "Claim it" links on event and tour pages, shown while
+nobody looks after the listing. A claim (`claims`) is a request, so
+accounts stay invite only:
+
+- A honeypot field and a minimum time to fill the form keep bots out; one
+  address may have five open requests.
+- Staff see them in `/admin/claims`, with any account the person already
+  has and businesses their email or name suggests. Approving gives the
+  listing (and, for a venue, its upcoming events nobody looks after) to the
+  chosen business, or a new one named from the claim, and makes an invite
+  for someone without an account: a link to copy, or send with the
+  prefilled email. Someone already on that business's team needs nothing.
 
 ## How it fits together
 

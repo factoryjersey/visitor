@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { requireStaff } from '@/lib/auth/session';
+import { claimCount } from '@/lib/claims';
 import { reviewCount } from '@/lib/listings';
 
 export const metadata: Metadata = { title: 'Visitor Guide admin', robots: { index: false } };
@@ -17,7 +18,7 @@ const NAV = [
 /** The editing side, for staff. Middleware keeps it behind sign-in; this keeps providers out. */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireStaff();
-  const waiting = await reviewCount();
+  const [waiting, claimed] = await Promise.all([reviewCount(), claimCount()]);
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="no-print border-b border-stone-200 bg-white">
@@ -28,6 +29,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <Link href="/admin/review" className="text-stone-600 hover:text-stone-900">
                   Review{waiting > 0 && <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800">{waiting}</span>}
+                </Link>
+                <Link href="/admin/claims" className="text-stone-600 hover:text-stone-900">
+                  Claims{claimed > 0 && <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800">{claimed}</span>}
                 </Link>
                 {NAV.map((n) => (
                   <Link key={n.href} href={n.href} className="text-stone-600 hover:text-stone-900">{n.label}</Link>

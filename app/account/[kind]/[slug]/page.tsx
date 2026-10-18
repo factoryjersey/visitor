@@ -36,7 +36,14 @@ export default async function EditListingPage({ params, searchParams }: { params
       <Link href="/account" className="text-sm text-stone-500 hover:underline">← Your listings</Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-3xl">{titleOf(row as never)}</h1>
-        <ReviewBadge review={row.review} changeWaiting={!!change} />
+        <div className="flex items-center gap-3">
+          {kind !== 'venue' && (
+            <Link href={`/account/${segment}/new?from=${encodeURIComponent(slug)}`} className="rounded border border-stone-300 px-3 py-1.5 text-sm hover:bg-stone-100">
+              Copy as a new {kind === 'event' ? 'event' : 'tour'}
+            </Link>
+          )}
+          <ReviewBadge review={row.review} changeWaiting={!!change} />
+        </div>
       </div>
 
       {created && <Notice tone="ok">Sent. We will check it and it will appear once approved; until then you can keep editing it here.</Notice>}
