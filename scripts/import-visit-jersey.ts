@@ -17,6 +17,7 @@ import { and, eq, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
 import { normaliseName } from '@/lib/domain/same-place';
+import { categorise } from '@/lib/domain/categorise';
 import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { isSamePlace } from '@/lib/domain/same-place';
@@ -125,8 +126,10 @@ async function importEvents(raws: RawItem[], allPlaces: Place[]) {
   const existing: Event[] = await db.select().from(events);
   const taken = new Set(existing.map((e) => e.slug));
   for (const raw of raws) {
-    const v = toEvent(raw);
-    if (!v.title) continue;
+    const parsed = toEvent(raw);
+    if (!parsed.title) continue;
+    // Their types where they gave some; read from the listing's words where they did not.
+    const v = parsed.eventTypes.length ? parsed : { ...parsed, eventTypes: categorise(parsed) };
     const record = await upsertRecord('events', raw, v.modifiedAt, v.portalSyncedAt);
     const stamp = { source: SOURCE, ref: `events/${v.externalId}`, at: new Date().toISOString() };
     const venue = matchVenue(v.venue, v, allPlaces);

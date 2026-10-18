@@ -21,6 +21,7 @@ import { parseArgs } from 'node:util';
 import { and, eq, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, places, sourceRecords, type Event, type Place, type Review } from '@/lib/db/schema';
+import { withCategories } from '@/lib/domain/categorise';
 import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
 import { normaliseName } from '@/lib/domain/same-place';
@@ -159,7 +160,9 @@ function eventFields(v: VjEvent, venue: Place | null) {
 
 async function importSource(source: string, items: Item[], review: Review, allPlaces: Place[], existing: Event[]) {
   const taken = new Set(existing.map((e) => e.slug));
-  for (const { v, raw } of items) {
+  for (const { v: given, raw } of items) {
+    // The source's own types, and what the event's words add.
+    const v = { ...given, eventTypes: withCategories(given.eventTypes, given, source) };
     const [record] = await db
       .insert(sourceRecords)
       .values({ source, externalType: 'events', externalId: v.externalId, payload: raw })

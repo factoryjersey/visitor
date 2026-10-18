@@ -121,6 +121,12 @@ it. Each source's own records are kept in `source_records`. Anybody can
 post on Eventbrite, so its events wait for staff; `/admin/review` approves
 them one by one or all at once.
 
+Events that arrive without types, from Eventbrite and the charities' diary
+above all, are typed from their own words (`lib/domain/categorise.ts`):
+Visit Jersey's labels, plus Charity, Nightlife, Talks & learning, Markets &
+fairs, and Business & networking, which marks what is not for visitors so
+it is quick to turn down in review and never offered as a public filter.
+
 Railway's `import` service runs `pnpm import:visit-jersey`, then
 `pnpm seed:provider-codes`, then `pnpm import:events`, daily at 05:17 UTC.
 
