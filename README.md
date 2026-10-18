@@ -156,8 +156,8 @@ thing a listing is (`lib/domain/occurrence.ts`):
 |---|---|---|---|
 | One-off | 1–3 dates, or a run of up to a week | dated listings | dated listings |
 | Specific dates | a handful of irregular dates (tide walks) | dated listings | dated listings |
-| Regular | a weekly rhythm (parkrun) | "On all season" block | on demand, by genre |
-| Ongoing | most days for three weeks or more; for a tour, a week of daily dates | "On all season" block | on demand, by genre |
+| Regular | a weekly rhythm (parkrun), or the same few weekdays filled week after week (a castle's costumed guide every Tuesday and Thursday of half-term) | "On all season" block | on demand, by genre |
+| Ongoing | most days for three weeks or more; every day for over a week in the daytime (a half-term trail); for a tour, a week of daily dates | "On all season" block | on demand, by genre |
 
 What's On and Tours list the unique kinds by default, with ticks to show
 regular and ongoing ones. A person can change a listing's kind and a

@@ -184,7 +184,7 @@ export function derivedFromDates(kind: 'event' | 'experience', dates: readonly E
     derived.startsOn = days[0] ?? null;
     derived.endsOn = days.at(-1) ?? null;
   }
-  if (!locked.includes('occurrence')) derived.occurrence = classifyOccurrence(days, { tour: kind === 'experience' });
+  if (!locked.includes('occurrence')) derived.occurrence = classifyOccurrence(days, { tour: kind === 'experience', starts: dates.map((d) => d.start) });
   return derived;
 }
 

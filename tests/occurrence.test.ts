@@ -39,4 +39,26 @@ describe('classifyOccurrence', () => {
     const tueToSun = run('2026-09-01', 60).filter((d) => new Date(d).getUTCDay() !== 1);
     expect(classifyOccurrence(tueToSun)).toBe('ongoing');
   });
+
+  it('calls the same few weekdays, week after week, regular', () => {
+    // Elizabeth Castle's costumed guides, half-term 2026.
+    expect(classifyOccurrence(['2026-10-20', '2026-10-22', '2026-10-27', '2026-10-29'])).toBe('regular');
+    expect(classifyOccurrence(['2026-10-17', '2026-10-21', '2026-10-23', '2026-10-24', '2026-10-28', '2026-10-30', '2026-10-31'])).toBe('regular');
+  });
+
+  it('keeps a few weekdays within one week, or ones that skip most weeks, as dates', () => {
+    expect(classifyOccurrence(['2026-10-20', '2026-10-21', '2026-10-23', '2026-10-24'])).not.toBe('regular');
+    expect(classifyOccurrence(['2026-09-02', '2026-09-13', '2026-09-16', '2026-09-27', '2026-10-07', '2026-11-08'])).toBe('dates');
+  });
+
+  it('calls a daytime programme every day for more than a week ongoing, but not a run of evening shows', () => {
+    const days = run('2026-10-17', 16);
+    expect(classifyOccurrence(days, { starts: days.map(() => '10:00') })).toBe('ongoing');
+    expect(classifyOccurrence(days, { starts: days.map(() => '19:30') })).toBe('dates');
+    // A panto with matinées: some evenings, so still an event.
+    expect(classifyOccurrence(days, { starts: days.map((_, i) => (i % 2 ? '14:00' : '19:00')) })).toBe('dates');
+    // A week of daytime activities is still a one-off.
+    const week = run('2027-02-08', 5);
+    expect(classifyOccurrence(week, { starts: week.map(() => '10:00') })).toBe('one-off');
+  });
 });
