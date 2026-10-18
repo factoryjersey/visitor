@@ -40,6 +40,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
       price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
       image={e.headerImage}
+      types={e.eventTypes}
       tag={UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing'}
       highlight={highlight}
       wide={wide}

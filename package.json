@@ -27,6 +27,7 @@
     "@supabase/supabase-js": "2.45.4",
     "drizzle-orm": "0.36.4",
     "leaflet": "1.9.4",
+    "lucide-react": "^1.59.0",
     "next": "15.5.28",
     "postgres": "3.4.5",
     "react": "19.1.1",
