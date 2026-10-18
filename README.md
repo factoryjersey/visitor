@@ -13,6 +13,7 @@ Matches factoryOS so the two can be joined later:
 
 - Next.js 15 (App Router), TypeScript strict
 - Postgres via Drizzle ORM (Supabase in production, like factoryOS)
+- Supabase Auth: Google or password, limited to allowed email domains
 - Tailwind, Zod, Vitest
 - Leaflet on OpenStreetMap tiles for the map
 
@@ -20,7 +21,7 @@ Matches factoryOS so the two can be joined later:
 
 ```bash
 pnpm install
-cp .env.example .env              # point DATABASE_URL at a Postgres
+cp .env.example .env              # database, Supabase keys, app URL
 pnpm db:migrate
 pnpm import:visit-jersey          # the whole directory, ~2 minutes, paced
 pnpm dev
@@ -31,6 +32,32 @@ for working without network access. It is not real data.
 
 Behind a proxy, Node's `fetch` needs `NODE_USE_ENV_PROXY=1` to use
 `HTTPS_PROXY`.
+
+## Signing in
+
+The same as factoryOS: every page needs a Supabase session, signed-out
+requests go to `/login`, and only addresses in `ALLOWED_EMAIL_DOMAINS` are
+admitted, checked at sign-in and again on every request. Each server action
+checks for itself as well, since a form POST can be replayed from anywhere.
+
+Point `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at
+factoryOS's Supabase project and the same accounts work in both. On that
+project:
+
+- add `<NEXT_PUBLIC_APP_URL>/auth/callback` to Auth → URL Configuration →
+  Redirect URLs, or Google sign-in returns to the wrong place;
+- set `ALLOWED_EMAIL_DOMAINS=factory.je` in production. Unset, anyone with
+  an account on the project gets in.
+
+Google sign-in needs no setup per person. For a password account:
+
+```bash
+pnpm auth:create-user --email=someone@factory.je --password='...'
+```
+
+There are no roles: everyone signed in can include, leave out and edit.
+Who included or left out each entry, and who last edited it, is recorded
+and shown on its page.
 
 ## How it fits together
 
@@ -60,8 +87,6 @@ venue set by hand is locked.
 
 ## Not built yet
 
-- Sign-in. factoryOS uses Supabase Auth; this has none and must not be
-  deployed publicly as it is.
 - Editions: a dated, signed-off snapshot of the selection.
 - factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
 - A scheduled import. Agree the schedule with Visit Jersey first.

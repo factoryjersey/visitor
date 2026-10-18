@@ -76,6 +76,12 @@ export const places = pgTable('places', {
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
+  /** Who decided, and when. The signed-in email. */
+  inclusionSetBy: text('inclusion_set_by'),
+  inclusionSetAt: timestamp('inclusion_set_at', { withTimezone: true }),
+  /** Who last changed our copy, note or a locked field. */
+  editedBy: text('edited_by'),
+  editedAt: timestamp('edited_at', { withTimezone: true }),
 
   /** Join keys to systems this one does not own. */
   uprn: text('uprn'),
@@ -115,6 +121,12 @@ export const events = pgTable('events', {
 
   inclusion: text('inclusion').$type<Inclusion>().notNull().default('candidate'),
   inclusionNote: text('inclusion_note'),
+  /** Who decided, and when. The signed-in email. */
+  inclusionSetBy: text('inclusion_set_by'),
+  inclusionSetAt: timestamp('inclusion_set_at', { withTimezone: true }),
+  /** Who last changed our copy, note or a locked field. */
+  editedBy: text('edited_by'),
+  editedAt: timestamp('edited_at', { withTimezone: true }),
   fieldSources: jsonb('field_sources').$type<FieldSources>().notNull().default({}),
   lockedFields: text('locked_fields').array().notNull().default([]),
   sourceModifiedAt: timestamp('source_modified_at', { withTimezone: true }),

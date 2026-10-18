@@ -13,9 +13,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "import:visit-jersey": "tsx scripts/import-visit-jersey.ts",
-    "seed:sample": "tsx scripts/import-visit-jersey.ts --fixture tests/fixtures/visit-jersey-listings.json"
+    "seed:sample": "tsx scripts/import-visit-jersey.ts --fixture tests/fixtures/visit-jersey-listings.json",
+    "auth:create-user": "tsx scripts/auth-create-user.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.45.4",
     "drizzle-orm": "0.36.4",
     "leaflet": "1.9.4",
     "next": "15.5.4",

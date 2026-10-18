@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { InclusionBadge, InclusionControl } from '@/components/inclusion';
 import { SourcePanel } from '@/components/source-panel';
@@ -68,6 +69,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
           <InclusionControl kind="venue" id={p.id} inclusion={p.inclusion} />
+          <DecidedBy inclusion={p.inclusion} by={p.inclusionSetBy} at={p.inclusionSetAt} editedBy={p.editedBy} editedAt={p.editedAt} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
           <EditorialForm kind="venue" id={p.id} guideCopy={p.guideCopy} inclusionNote={p.inclusionNote} sourceCopy={p.summary} />
