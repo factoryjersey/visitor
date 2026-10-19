@@ -143,6 +143,7 @@ all, so `pnpm import:events` adds events from elsewhere after it:
 | Jersey Opera House | the same, `jerseyoperahouse.ticketsolve.com/shows.xml` | straight away |
 | Eventbrite | the schema.org Event data on its Jersey listing pages and each event's page | after review in `/admin/review` |
 | Jersey Charities diary | its diary page, read as written, and each entry's page for the description | after review |
+| Island Ticket Hut | The Events Calendar's WordPress API, `/wp-json/tribe/events/v1/events`; Guernsey's nights left out by postcode, a show's performances joined (`lib/integrations/tribe-events`, any such site is a line in `SITES`) | after review |
 | Jersey Bulls | the fixtures page, `bulls.je/fixtures/?team=all`: home matches only (Jersey named first), men, women and U23 | straight away |
 | Jersey RFC | the fixtures and results page, `jrfc.je/results/`: home matches still to be played | straight away |
 

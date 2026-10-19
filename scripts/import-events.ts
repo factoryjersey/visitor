@@ -3,7 +3,7 @@
  *
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
- *                                          jersey-bulls, jersey-rfc, stock (pictures only)
+ *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -45,6 +45,7 @@ import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, ty
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
+import { SITES as TRIBE_SITES, eventsUrl, joinPerformances, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
@@ -55,7 +56,7 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function fetchText(url: string): Promise<string> {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html,application/xml' }, signal: AbortSignal.timeout(30_000) });
+      const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html,application/xml,application/json' }, signal: AbortSignal.timeout(30_000) });
       // Asked to slow down: wait a good while, not a moment.
       if (res.status === 429 && attempt < 3) {
         await pause(60_000 * attempt);
@@ -163,6 +164,30 @@ async function loadCharities(): Promise<Item[]> {
     await pause(1500);
   }
   return out;
+}
+
+/**
+ * A site on The Events Calendar: its programme from the WordPress API, a
+ * page of fifty at a time from today. Guernsey's nights are left out by
+ * the parser; an empty programme fails the source rather than marking
+ * every event gone.
+ */
+async function loadTribe(site: TribeSite): Promise<Item[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const all: TribeEvent[] = [];
+  if (values.fixture) all.push(...(JSON.parse(readFileSync(values.fixture, 'utf8')) as { events: TribeEvent[] }).events);
+  else {
+    for (let page = 1; page <= 20; page += 1) {
+      const body = JSON.parse(await fetchText(eventsUrl(site, page, today))) as { events?: TribeEvent[]; total_pages?: number };
+      all.push(...(body.events ?? []));
+      if (!body.total_pages || page >= body.total_pages) break;
+      await pause(1000);
+    }
+  }
+  if (!all.length) throw new Error(`no events from ${site.base}: has the site changed?`);
+  const raw = new Map(all.map((e) => [String(e.id), e]));
+  const parsed = all.map((e) => fromTribe(e, site)).filter((v) => v !== null);
+  return joinPerformances(parsed).map((v) => ({ v, raw: raw.get(v.externalId) }));
 }
 
 /**
@@ -336,6 +361,8 @@ const SOURCES: { source: string; review: Review; load: () => Promise<Item[]>; vo
   ...FEEDS.map((feed) => ({ source: feed.source, review: 'approved' as const, load: () => loadTicketsolve(feed) })),
   { source: 'eventbrite', review: 'pending', load: loadEventbrite },
   { source: 'jersey-charities', review: 'pending', load: loadCharities },
+  // Ticket sellers for anyone's night, courses and Guernsey's among them: review first.
+  ...TRIBE_SITES.map((site) => ({ source: site.source, review: 'pending' as const, load: () => loadTribe(site) })),
   // The clubs' own fixtures: on the site as they come.
   { source: 'jersey-bulls', review: 'approved', load: () => loadFixtures('jersey-bulls', BULLS_FIXTURES, parseBulls), voice: false },
   { source: 'jersey-rfc', review: 'approved', load: () => loadFixtures('jersey-rfc', JRFC_FIXTURES, parseJrfc), voice: false },

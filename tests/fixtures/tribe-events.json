@@ -1,0 +1,1051 @@
+{
+ "events": [
+  {
+   "id": 289941,
+   "status": "publish",
+   "modified": "2026-10-15 18:17:33",
+   "modified_utc": "2026-10-15 17:17:33",
+   "url": "https://www.islandtickethut.com/event/taste-of-north-africa-the-middle-east-a-thermomix-cooking-experience/",
+   "title": "Taste of North Africa &amp; the Middle East – A Thermomix Cooking Experience",
+   "description": "<p>Discover the vibrant flavours of North Africa and the Middle East at this special Thermomix TM7 event.<br />\nExplore two brand-new recipe collections, discover Arabic-language functionality and enjoy an evening of culinary inspiration at Highlands College, Jersey.</p>\n<p>Live demonstrations followed by an opportunity to sit at our shared table and enjoy our delicious creations!</p>",
+   "excerpt": "",
+   "slug": "taste-of-north-africa-the-middle-east-a-thermomix-cooking-experience",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/10/image0.jpeg"
+   },
+   "all_day": false,
+   "start_date": "2026-10-21 18:30:00",
+   "end_date": "2026-10-21 20:30:00",
+   "utc_start_date": "2026-10-21 17:30:00",
+   "utc_end_date": "2026-10-21 19:30:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "BST",
+   "cost": "Free",
+   "cost_details": {
+    "currency_symbol": "£",
+    "currency_code": "GBP",
+    "currency_position": "prefix",
+    "values": [
+     "0"
+    ]
+   },
+   "website": "https://www.facebook.com/share/1QU81iGBsW/?mibextid=wwXIfr",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Fitness, Mind &amp; Wellbeing",
+     "slug": "fitness-wellbeing",
+     "term_group": 0,
+     "term_taxonomy_id": 33,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 23,
+     "filter": "raw",
+     "id": 33,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/33",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Food &amp; Drink",
+     "slug": "food-wine-dining",
+     "term_group": 0,
+     "term_taxonomy_id": 111,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 10,
+     "filter": "raw",
+     "id": 111,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/111",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 106,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 2,
+     "filter": "raw",
+     "id": 106,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/106",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Shopping",
+     "slug": "shopping",
+     "term_group": 0,
+     "term_taxonomy_id": 118,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 2,
+     "filter": "raw",
+     "id": 118,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/118",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 230492,
+    "status": "publish",
+    "modified": "2023-01-01 12:34:39",
+    "url": "https://www.islandtickethut.com/venue/highlands-college/",
+    "venue": "Highlands College",
+    "slug": "highlands-college",
+    "address": "Concert Hall",
+    "city": "St Helier",
+    "country": "United Kingdom",
+    "province": "Jersey",
+    "zip": "JE1 1HL",
+    "phone": "01534 608608",
+    "website": "https://www.highlands.ac.uk",
+    "stateprovince": "Jersey"
+   },
+   "organizer": [
+    {
+     "id": 288648,
+     "author": "10202",
+     "status": "publish",
+     "date": "2026-10-06 15:48:50",
+     "date_utc": "2026-10-06 14:48:50",
+     "modified": "2026-10-06 15:48:50",
+     "modified_utc": "2026-10-06 14:48:50",
+     "url": "https://www.islandtickethut.com/organiser/thermomix-channel-islands/",
+     "organizer": "Thermomix Channel Islands",
+     "slug": "thermomix-channel-islands",
+     "phone": "07700323234",
+     "website": "https://www.facebook.com/thermomixchannelislands",
+     "email": "michellemaye@gmail.com",
+     "global_id": "www.islandtickethut.com?id=288648",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=288648"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 285263,
+   "status": "publish",
+   "modified": "2026-10-14 10:43:53",
+   "modified_utc": "2026-10-14 09:43:53",
+   "url": "https://www.islandtickethut.com/event/2-day-mental-health-first-aid-october-2/",
+   "title": "2-day Mental Health First Aid – October",
+   "description": "<p><strong>Help create mentally healthy workplaces where people, communities, and business thrive</strong></p>\n<p>Our Mental Health First Aid course empowers MHFAiders to play a critical role in supporting people’s mental health and creating healthy working environments.</p>\n<p>Our course is ideal for anyone who’d like to gain the knowledge and skills to spot the signs of someone experiencing poor mental health, be confident to start a conversation, and signpost them to appropriate support.</p>\n<p>MHFAiders® receive three years of certification and are invited to join the Association of Mental",
+   "excerpt": "",
+   "slug": "2-day-mental-health-first-aid-october-2",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/09/Event-Image.jpg"
+   },
+   "all_day": false,
+   "start_date": "2026-10-22 09:00:00",
+   "end_date": "2026-10-23 17:00:00",
+   "utc_start_date": "2026-10-22 08:00:00",
+   "utc_end_date": "2026-10-23 16:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "BST",
+   "cost": "&pound;325.00",
+   "cost_details": {
+    "currency_symbol": "£",
+    "currency_code": "GBP",
+    "currency_position": "prefix",
+    "values": [
+     "325"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Charity",
+     "slug": "charity",
+     "term_group": 0,
+     "term_taxonomy_id": 113,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 22,
+     "filter": "raw",
+     "id": 113,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/113",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Courses, Workshops &amp; Education",
+     "slug": "courses",
+     "term_group": 0,
+     "term_taxonomy_id": 119,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 24,
+     "filter": "raw",
+     "id": 119,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/119",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Fitness, Mind &amp; Wellbeing",
+     "slug": "fitness-wellbeing",
+     "term_group": 0,
+     "term_taxonomy_id": 33,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 23,
+     "filter": "raw",
+     "id": 33,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/33",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 260158,
+    "status": "publish",
+    "modified": "2026-01-22 18:27:48",
+    "url": "https://www.islandtickethut.com/venue/les-cotils/",
+    "venue": "Les Cotils",
+    "slug": "les-cotils",
+    "address": "Les Cotils",
+    "province": "St Peter Port",
+    "zip": "GY1 1UU",
+    "phone": "01481 727793",
+    "website": "https://www.lescotils.com",
+    "stateprovince": "St Peter Port"
+   },
+   "organizer": [
+    {
+     "id": 260385,
+     "author": "3304",
+     "status": "publish",
+     "date": "2026-01-26 15:42:24",
+     "date_utc": "2026-01-26 15:42:24",
+     "modified": "2026-01-26 15:42:24",
+     "modified_utc": "2026-01-26 15:42:24",
+     "url": "https://www.islandtickethut.com/organiser/guernsey-mind-2/",
+     "organizer": "Guernsey Mind",
+     "slug": "guernsey-mind-2",
+     "phone": "01481 722959",
+     "website": "https://www.guernseymind.org.gg",
+     "email": "info@guernseymind.org.gg",
+     "global_id": "www.islandtickethut.com?id=260385",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=260385"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 288377,
+   "status": "publish",
+   "modified": "2026-10-17 16:55:44",
+   "modified_utc": "2026-10-17 15:55:44",
+   "url": "https://www.islandtickethut.com/event/haunted-st-helier-a-curry-evening/",
+   "title": "Haunted St Helier: A Curry Evening",
+   "description": "<p>This Halloween, step into the darker side of St Helier…</p>\n<p>Join Toby, founder of Tall Tales, for a spine-tingling walking tour uncovering the town’s most sinister stories, grim secrets and ghostly tales. Then, continue the evening at historic Beresford House &#8211; once a grand Victorian gentlemen’s club &#8211; for a delicious curry supper in the privacy of our own room.</p>\n<p>Your ticket includes:</p>\n<ul>\n<li>A drink of your choice</li>\n<li>A curry main course, freshly prepared by Beresford House’s excellent chefs</li>\n<li>A delicious dessert</li>\n</ul>\n<p>It’s the perfect way to c",
+   "excerpt": "",
+   "slug": "haunted-st-helier-a-curry-evening",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/10/0-1.png"
+   },
+   "all_day": false,
+   "start_date": "2026-10-29 18:00:00",
+   "end_date": "2026-10-29 21:00:00",
+   "utc_start_date": "2026-10-29 18:00:00",
+   "utc_end_date": "2026-10-29 21:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "&pound;75.00",
+   "cost_details": {
+    "currency_symbol": "£",
+    "currency_code": "GBP",
+    "currency_position": "prefix",
+    "values": [
+     "75.00"
+    ]
+   },
+   "website": "http://www.talltalestours.com",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Adventure &amp; Activities",
+     "slug": "adventure-activities",
+     "term_group": 0,
+     "term_taxonomy_id": 102,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 8,
+     "filter": "raw",
+     "id": 102,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/102",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Walks &amp; Tours",
+     "slug": "walks-tours",
+     "term_group": 0,
+     "term_taxonomy_id": 127,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 7,
+     "filter": "raw",
+     "id": 127,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/127",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 288381,
+    "status": "publish",
+    "modified": "2026-10-02 14:41:04",
+    "url": "https://www.islandtickethut.com/venue/beresford-house/",
+    "venue": "Beresford House",
+    "slug": "beresford-house",
+    "address": "8 Beresford Street",
+    "city": "St Helier",
+    "zip": "JE2 4WN",
+    "website": "https://beresford-house.com/"
+   },
+   "organizer": [
+    {
+     "id": 246550,
+     "author": "10",
+     "status": "publish",
+     "date": "2025-01-11 10:08:49",
+     "date_utc": "2025-01-11 10:08:49",
+     "modified": "2026-01-07 20:39:07",
+     "modified_utc": "2026-01-07 20:39:07",
+     "url": "https://www.islandtickethut.com/organiser/tall-tales/",
+     "organizer": "Tall Tales",
+     "slug": "tall-tales",
+     "website": "https://talltalestours.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnPg--WuPoSeJVEJ_m8HHLp5XtuoCSkdQDtEfq9gCyM5HBRH69hzlRDki1gwk_aem_2ds8Q1Q4ywN9Wg9AfCYl3w",
+     "email": "toby@talltalestours.com",
+     "global_id": "www.islandtickethut.com?id=246550",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=246550"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 287019,
+   "status": "publish",
+   "modified": "2026-10-16 11:20:27",
+   "modified_utc": "2026-10-16 10:20:27",
+   "url": "https://www.islandtickethut.com/event/matinee-midnight-joanna/",
+   "title": "Fundraiser Matinee &#8211; Relaxed Performance &#8211; Midnight Joanna",
+   "description": "<p>Hot-on-the-heels of a sold-out opening run and a critically acclaimed UK debut in Bristol, Jerseyman songwriter &amp; piano-vocalist Ant Noel brings his swinging new production Midnight Joanna to The Sundown for two special performances.</p>\n<p>Featuring a 10-strong band of incredible professional musicians, Midnight Joanna is a thrilling show of rollicking rock &#8216;n&#8217; roll, jivin&#8217; jazz, blistering blues &amp; brassy ballads, telling the tales of colourful characters within the atmospheric walls of a late-night piano bar.</p>\n<p>All profits from these unique shows will be goi",
+   "excerpt": "",
+   "slug": "matinee-midnight-joanna",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/09/Unknown.jpg"
+   },
+   "all_day": false,
+   "start_date": "2026-11-07 12:30:00",
+   "end_date": "2026-11-07 15:00:00",
+   "utc_start_date": "2026-11-07 12:30:00",
+   "utc_end_date": "2026-11-07 15:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "&pound;15.00",
+   "cost_details": {
+    "currency_symbol": "£",
+    "currency_code": "GBP",
+    "currency_position": "prefix",
+    "values": [
+     "15"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Comedy",
+     "slug": "comedy",
+     "term_group": 0,
+     "term_taxonomy_id": 131,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 4,
+     "filter": "raw",
+     "id": 131,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/131",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 254538,
+    "status": "publish",
+    "modified": "2025-11-07 10:52:21",
+    "url": "https://www.islandtickethut.com/venue/the-sundown/",
+    "venue": "The Sundown",
+    "slug": "the-sundown",
+    "address": "4 Wharf St, St Helier, Jersey JE2 3NF"
+   },
+   "organizer": [
+    {
+     "id": 256247,
+     "author": "10",
+     "status": "publish",
+     "date": "2025-11-07 10:12:57",
+     "date_utc": "0000-00-00 00:00:00",
+     "modified": "2025-11-07 10:12:57",
+     "modified_utc": "0000-00-00 00:00:00",
+     "url": "https://www.islandtickethut.com/organiser/the-sundown/",
+     "organizer": "The Sundown",
+     "slug": "the-sundown",
+     "phone": "01534 875788",
+     "website": "https://thesundown.co.uk",
+     "global_id": "www.islandtickethut.com?id=256247",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=256247"
+     ]
+    },
+    {
+     "id": 287040,
+     "author": "5779",
+     "status": "publish",
+     "date": "2026-09-19 15:30:39",
+     "date_utc": "2026-09-19 14:30:39",
+     "modified": "2026-09-19 15:30:39",
+     "modified_utc": "2026-09-19 14:30:39",
+     "url": "https://www.islandtickethut.com/organiser/ant-noel/",
+     "organizer": "Ant Noel",
+     "slug": "ant-noel",
+     "global_id": "www.islandtickethut.com?id=287040",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=287040"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 287044,
+   "status": "publish",
+   "modified": "2026-10-16 11:21:29",
+   "modified_utc": "2026-10-16 10:21:29",
+   "url": "https://www.islandtickethut.com/event/evening-midnight-joanna/",
+   "title": "Fundraiser Evening &#8211; Midnight Joanna",
+   "description": "<p>Hot-on-the-heels of a sold-out opening run and a critically acclaimed UK debut in Bristol, Jerseyman songwriter &amp; piano-vocalist Ant Noel brings his swinging new production Midnight Joanna to The Sundown for two special performances.</p>\n<p>Featuring a 10-strong band of incredible professional musicians, Midnight Joanna is a thrilling show of rollicking rock ‘n’ roll, jivin’ jazz, blistering blues &amp; brassy ballads, telling the tales of colourful characters within the atmospheric walls of a late-night piano bar.</p>\n<p>All profits from these unique shows will be going towards local c",
+   "excerpt": "",
+   "slug": "evening-midnight-joanna",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/09/Unknown-1.jpg"
+   },
+   "all_day": false,
+   "start_date": "2026-11-07 18:00:00",
+   "end_date": "2026-11-07 21:00:00",
+   "utc_start_date": "2026-11-07 18:00:00",
+   "utc_end_date": "2026-11-07 21:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "&pound;22.00",
+   "cost_details": {
+    "currency_symbol": "£",
+    "currency_code": "GBP",
+    "currency_position": "prefix",
+    "values": [
+     "22"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Comedy",
+     "slug": "comedy",
+     "term_group": 0,
+     "term_taxonomy_id": 131,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 4,
+     "filter": "raw",
+     "id": 131,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/131",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 254538,
+    "status": "publish",
+    "modified": "2025-11-07 10:52:21",
+    "url": "https://www.islandtickethut.com/venue/the-sundown/",
+    "venue": "The Sundown",
+    "slug": "the-sundown",
+    "address": "4 Wharf St, St Helier, Jersey JE2 3NF"
+   },
+   "organizer": [
+    {
+     "id": 287040,
+     "author": "5779",
+     "status": "publish",
+     "date": "2026-09-19 15:30:39",
+     "date_utc": "2026-09-19 14:30:39",
+     "modified": "2026-09-19 15:30:39",
+     "modified_utc": "2026-09-19 14:30:39",
+     "url": "https://www.islandtickethut.com/organiser/ant-noel/",
+     "organizer": "Ant Noel",
+     "slug": "ant-noel",
+     "global_id": "www.islandtickethut.com?id=287040",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=287040"
+     ]
+    },
+    {
+     "id": 256247,
+     "author": "10",
+     "status": "publish",
+     "date": "2025-11-07 10:12:57",
+     "date_utc": "0000-00-00 00:00:00",
+     "modified": "2025-11-07 10:12:57",
+     "modified_utc": "0000-00-00 00:00:00",
+     "url": "https://www.islandtickethut.com/organiser/the-sundown/",
+     "organizer": "The Sundown",
+     "slug": "the-sundown",
+     "phone": "01534 875788",
+     "website": "https://thesundown.co.uk",
+     "global_id": "www.islandtickethut.com?id=256247",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=256247"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 282843,
+   "status": "publish",
+   "modified": "2026-10-02 13:14:38",
+   "modified_utc": "2026-10-02 12:14:38",
+   "url": "https://www.islandtickethut.com/event/moonshine-sunsoakers-clameur-de-haro-country-night/",
+   "title": "Moonshine Sunsoakers &amp; Clameur De Haro Country Night",
+   "description": "<p>Dust off your cowboy boots and tassels and get ready for a  Country Night ft Moonshine Sunsoakers &amp; Clameur De Haro @ The fermain Tav</p>",
+   "excerpt": "",
+   "slug": "moonshine-sunsoakers-clameur-de-haro-country-night",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/08/Moonshineposter.jpeg"
+   },
+   "all_day": false,
+   "start_date": "2026-11-07 19:00:00",
+   "end_date": "2026-11-07 23:59:00",
+   "utc_start_date": "2026-11-07 19:00:00",
+   "utc_end_date": "2026-11-07 23:59:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "&pound;10.00 – &pound;13.00",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "",
+    "values": [
+     "10",
+     "13"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 240333,
+    "status": "publish",
+    "modified": "2024-12-20 10:27:19",
+    "url": "https://www.islandtickethut.com/venue/fermain-tavern/",
+    "venue": "Fermain Tavern, Guernsey",
+    "slug": "fermain-tavern",
+    "address": "Fort Road",
+    "country": "United Kingdom",
+    "province": "Guernsey",
+    "zip": "GY1 1ZW",
+    "stateprovince": "Guernsey"
+   },
+   "organizer": [
+    {
+     "id": 265251,
+     "author": "6900",
+     "status": "publish",
+     "date": "2026-04-21 22:59:17",
+     "date_utc": "2026-04-21 21:59:17",
+     "modified": "2026-06-14 19:37:18",
+     "modified_utc": "2026-06-14 18:37:18",
+     "url": "https://www.islandtickethut.com/organiser/fermain-tavern/",
+     "organizer": "Fermain Tavern",
+     "slug": "fermain-tavern",
+     "website": "https://www.facebook.com/profile.php?id=61583019093709",
+     "global_id": "www.islandtickethut.com?id=265251",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=265251"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 285097,
+   "status": "publish",
+   "modified": "2026-09-08 07:57:27",
+   "modified_utc": "2026-09-08 06:57:27",
+   "url": "https://www.islandtickethut.com/event/ms-sc-d-h-country-night-vip-special/",
+   "title": "Moonshine Sunsoakers &amp; Clameur De Haro Country Night &#8211; VIP",
+   "description": "<p>Dust off your cowboy boots and tassels and get ready for a  Country Night ft Moonshine Sunsoakers &amp; Clameur De Haro @ The fermain Tav</p>",
+   "excerpt": "",
+   "slug": "ms-sc-d-h-country-night-vip-special",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/08/Moonshineposter.jpeg"
+   },
+   "all_day": false,
+   "start_date": "2026-11-07 19:00:00",
+   "end_date": "2026-11-07 23:59:00",
+   "utc_start_date": "2026-11-07 19:00:00",
+   "utc_end_date": "2026-11-07 23:59:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "Free",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "",
+    "values": [
+     "0"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 240333,
+    "status": "publish",
+    "modified": "2024-12-20 10:27:19",
+    "url": "https://www.islandtickethut.com/venue/fermain-tavern/",
+    "venue": "Fermain Tavern, Guernsey",
+    "slug": "fermain-tavern",
+    "address": "Fort Road",
+    "country": "United Kingdom",
+    "province": "Guernsey",
+    "zip": "GY1 1ZW",
+    "stateprovince": "Guernsey"
+   },
+   "organizer": [
+    {
+     "id": 265251,
+     "author": "6900",
+     "status": "publish",
+     "date": "2026-04-21 22:59:17",
+     "date_utc": "2026-04-21 21:59:17",
+     "modified": "2026-06-14 19:37:18",
+     "modified_utc": "2026-06-14 18:37:18",
+     "url": "https://www.islandtickethut.com/organiser/fermain-tavern/",
+     "organizer": "Fermain Tavern",
+     "slug": "fermain-tavern",
+     "website": "https://www.facebook.com/profile.php?id=61583019093709",
+     "global_id": "www.islandtickethut.com?id=265251",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=265251"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 289697,
+   "status": "publish",
+   "modified": "2026-10-13 20:12:06",
+   "modified_utc": "2026-10-13 19:12:06",
+   "url": "https://www.islandtickethut.com/event/tom-meighan-the-true-voice-of-kasabian-raw26/",
+   "title": "TOM MEIGHAN | The true voice of Kasabian | Raw26",
+   "description": "<ol>\n<li style=\"text-align: right\">The true voice of Kasabian the one and only Tom Meighan brings his Raw 26 tour to Jersey’s legendary watersplash on Saturday 28th November 2026.support acts :</li>\n<li>The Author</li>\n<li>Special Guests TBA</li>\n<li>Craig Smith (A life like this)</li>\n<li>Dj Pip (melting pot/adored)</li>\n<li>Compare for the evening will be the splash back legend himself Mad Mark</li>\n<li>Doors open 7pm &#8211; Close 1am</li>\n<li>Exclusive Coaches will be available to take you from town and return you safely. No need to worry about transportation (limited coach passes availabl",
+   "excerpt": "",
+   "slug": "tom-meighan-the-true-voice-of-kasabian-raw26",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/10/1350-1080-scaled.png"
+   },
+   "all_day": false,
+   "start_date": "2026-11-28 19:00:00",
+   "end_date": "2026-11-29 01:00:00",
+   "utc_start_date": "2026-11-28 19:00:00",
+   "utc_end_date": "2026-11-29 01:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "GMT",
+   "cost": "&pound;35.00 – &pound;48.00",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "",
+    "values": [
+     "35",
+     "48"
+    ]
+   },
+   "website": "https://www.facebook.com/share/18uJvRuSaF/?mibextid=wwXIfr",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Music &amp; Entertainment",
+     "slug": "festivals-music-entertainment",
+     "term_group": 0,
+     "term_taxonomy_id": 103,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 21,
+     "filter": "raw",
+     "id": 103,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/103",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 229048,
+    "status": "publish",
+    "modified": "2022-08-23 14:16:13",
+    "url": "https://www.islandtickethut.com/venue/watersplash-jersey/",
+    "venue": "Watersplash Jersey",
+    "slug": "watersplash-jersey",
+    "address": "La Grande Route Des Mielles,",
+    "city": "St Peter",
+    "country": "United Kingdom",
+    "province": "Jersey",
+    "zip": "JE3 7FN",
+    "phone": "+441534 482 885",
+    "website": "https://www.watersplashjersey.com/contact-us.aspx",
+    "stateprovince": "Jersey"
+   },
+   "organizer": [
+    {
+     "id": 289715,
+     "author": "926",
+     "status": "publish",
+     "date": "2026-10-13 19:31:19",
+     "date_utc": "2026-10-13 18:31:19",
+     "modified": "2026-10-13 19:31:19",
+     "modified_utc": "2026-10-13 18:31:19",
+     "url": "https://www.islandtickethut.com/organiser/bubblebrain-hq-brokenwing-club/",
+     "organizer": "Bubblebrain Hq &amp; Brokenwing club",
+     "slug": "bubblebrain-hq-brokenwing-club",
+     "phone": "07829714095",
+     "website": "https://instagram.com/jimfromtheauthor?rpxt=MWluZ3M1bnJldW0wOA&amp;utm_source=qr",
+     "email": "jamesdolan@live.com",
+     "global_id": "www.islandtickethut.com?id=289715",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=289715"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  },
+  {
+   "id": 289822,
+   "status": "publish",
+   "modified": "2026-10-15 13:05:30",
+   "modified_utc": "2026-10-15 12:05:30",
+   "url": "https://www.islandtickethut.com/event/2-day-mental-health-first-aid-october/",
+   "title": "2-day Mental Health First Aid – October",
+   "description": "<div class=\"elementToProof\" role=\"presentation\"><b>Help create mentally healthy workplaces where people, communities, and business thrive</b></div>\n<div role=\"presentation\"></div>\n<div class=\"elementToProof\" role=\"presentation\">Our Mental Health First Aid course empowers MHFAiders to play a critical role in supporting people’s mental health and creating healthy working environments.</div>\n<div role=\"presentation\"></div>\n<div class=\"elementToProof\" role=\"presentation\">The course is ideal for anyone who’d like to gain the knowledge and skills to spot the signs of someone experiencing poor mental",
+   "excerpt": "",
+   "slug": "2-day-mental-health-first-aid-october",
+   "image": {
+    "url": "https://www.islandtickethut.com/wp-content/uploads/2026/10/Cover-Image-2-day.jpg.jpeg"
+   },
+   "all_day": false,
+   "start_date": "2027-10-28 09:00:00",
+   "end_date": "2027-10-29 17:00:00",
+   "utc_start_date": "2027-10-28 08:00:00",
+   "utc_end_date": "2027-10-29 16:00:00",
+   "timezone": "Europe/Jersey",
+   "timezone_abbr": "BST",
+   "cost": "&pound;325.00",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "",
+    "values": [
+     "325"
+    ]
+   },
+   "website": "",
+   "show_map": true,
+   "show_map_link": true,
+   "hide_from_listings": false,
+   "sticky": false,
+   "featured": false,
+   "categories": [
+    {
+     "name": "Charity",
+     "slug": "charity",
+     "term_group": 0,
+     "term_taxonomy_id": 113,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 22,
+     "filter": "raw",
+     "id": 113,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/113",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Courses, Workshops &amp; Education",
+     "slug": "courses",
+     "term_group": 0,
+     "term_taxonomy_id": 119,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 24,
+     "filter": "raw",
+     "id": 119,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/119",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    },
+    {
+     "name": "Fitness, Mind &amp; Wellbeing",
+     "slug": "fitness-wellbeing",
+     "term_group": 0,
+     "term_taxonomy_id": 33,
+     "taxonomy": "tribe_events_cat",
+     "description": "",
+     "parent": 0,
+     "count": 23,
+     "filter": "raw",
+     "id": 33,
+     "urls": {
+      "self": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories/33",
+      "collection": "https://www.islandtickethut.com/wp-json/tribe/events/v1/categories"
+     }
+    }
+   ],
+   "venue": {
+    "id": 260158,
+    "status": "publish",
+    "modified": "2026-01-22 18:27:48",
+    "url": "https://www.islandtickethut.com/venue/les-cotils/",
+    "venue": "Les Cotils",
+    "slug": "les-cotils",
+    "address": "Les Cotils",
+    "province": "St Peter Port",
+    "zip": "GY1 1UU",
+    "phone": "01481 727793",
+    "website": "https://www.lescotils.com",
+    "stateprovince": "St Peter Port"
+   },
+   "organizer": [
+    {
+     "id": 246942,
+     "author": "4",
+     "status": "publish",
+     "date": "2025-01-31 10:28:01",
+     "date_utc": "2025-01-31 10:28:01",
+     "modified": "2026-10-15 12:40:58",
+     "modified_utc": "2026-10-15 11:40:58",
+     "url": "https://www.islandtickethut.com/organiser/guernsey-mind/",
+     "organizer": "Guernsey Mind",
+     "slug": "guernsey-mind",
+     "global_id": "www.islandtickethut.com?id=246942",
+     "global_id_lineage": [
+      "www.islandtickethut.com?id=246942"
+     ]
+    }
+   ],
+   "ticketed": [
+    "woo"
+   ],
+   "is_virtual": false,
+   "virtual_url": null,
+   "virtual_video_source": ""
+  }
+ ],
+ "total": 9,
+ "total_pages": 1
+}
