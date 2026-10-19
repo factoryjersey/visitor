@@ -109,7 +109,7 @@ export async function publicTours(f: PublicTourFilter = {}) {
   if (month) where.push(month);
 
   const rows = await db
-    .select({ tour: experiences, provider: { name: providers.name, website: providers.website } })
+    .select({ tour: experiences, provider: { id: providers.id, name: providers.name, website: providers.website } })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
     .where(and(...where))

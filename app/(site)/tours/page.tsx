@@ -3,7 +3,7 @@ import { FilterBar, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicTours, todayIso } from '@/lib/db/public';
 import { GENRES, type Genre } from '@/lib/domain/genre';
-import { printPrice } from '@/lib/domain/house-style';
+import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { one, type SearchParams } from '@/lib/params';
@@ -17,9 +17,27 @@ export const metadata: Metadata = { title: 'Tours & experiences', description: '
  */
 export default async function Tours({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), month: one(sp.month), genre: one(sp.genre), any: one(sp.any) };
+  const values = { q: one(sp.q), month: one(sp.month), genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
   const genre = (GENRES as readonly string[]).includes(values.genre ?? '') ? (values.genre as Genre) : undefined;
-  const rows = await publicTours({ showOnDemand: values.any === '1', genre, month: values.month, q: values.q });
+  const found = await publicTours({ showOnDemand: values.any === '1', genre, month: values.month, q: values.q });
+
+  // Where they start and who runs them, each counted from what the other choices leave.
+  const inParish = (r: (typeof found)[number]) => !values.where || printParish(r.tour.parish) === values.where;
+  const runBy = (r: (typeof found)[number]) => !values.by || r.provider?.id === values.by;
+  const tally = (rs: typeof found, key: (r: (typeof found)[number]) => [string, string] | null) => {
+    const m = new Map<string, { label: string; n: number }>();
+    for (const r of rs) {
+      const k = key(r);
+      if (k) m.set(k[0], { label: k[1], n: (m.get(k[0])?.n ?? 0) + 1 });
+    }
+    return [...m].sort(([, a], [, b]) => a.label.localeCompare(b.label)).map(([value, v]) => ({ value, label: `${v.label} (${v.n})` }));
+  };
+  const parishOptions = tally(found.filter(runBy), (r) => {
+    const p = printParish(r.tour.parish);
+    return p ? [p, p] : null;
+  });
+  const providerOptions = tally(found.filter(inParish), (r) => (r.provider?.id ? [r.provider.id, r.provider.name] : null));
+  const rows = found.filter((r) => inParish(r) && runBy(r));
   const today = todayIso();
   const dated = rows.filter((r) => UNIQUE.includes(r.tour.occurrence) || r.tour.highlight);
   const onDemand = rows.filter((r) => !UNIQUE.includes(r.tour.occurrence) && !r.tour.highlight);
@@ -51,9 +69,12 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
         selects={[
           { name: 'month', label: 'When', options: monthOptions() },
           { name: 'genre', label: 'Kind', options: GENRES.map((g) => ({ value: g, label: g })) },
+          { name: 'where', label: 'Where', options: parishOptions },
+          { name: 'by', label: 'Run by', options: providerOptions },
         ]}
         toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
       />
+      <div className="h-4" />
       {dated.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>
