@@ -84,3 +84,13 @@ describe('guideTour', () => {
     expect(guideTour(tour, null, { from: '2027-01-01', to: '2027-03-31' })).toBeNull();
   });
 });
+
+describe('guideWebsite', () => {
+  it('prints the venue’s own site over a ticket platform', async () => {
+    const { guideWebsite } = await import('@/lib/domain/guide-entry');
+    expect(guideWebsite('https://www.eventbrite.co.uk/e/quiz-123', 'https://www.ommaroo.com')).toBe('https://www.ommaroo.com');
+    expect(guideWebsite('https://jerseyoperahouse.ticketsolve.com/shows/1', 'https://www.jerseyoperahouse.co.uk')).toBe('https://www.jerseyoperahouse.co.uk');
+    expect(guideWebsite('https://www.eventbrite.co.uk/e/quiz-123', null)).toBe('https://www.eventbrite.co.uk/e/quiz-123');
+    expect(guideWebsite('https://www.ommaroo.com/music', 'https://www.ommaroo.com')).toBe('https://www.ommaroo.com/music');
+  });
+});

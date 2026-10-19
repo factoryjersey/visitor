@@ -38,9 +38,23 @@ describe('printDates', () => {
     expect(printDates(d(...range('2026-09-01', '2026-10-29')))).toBe('1 SEP UNTIL 29 OCT');
   });
 
+  it('prints the same days each week as a weekday and a range', () => {
+    // Coast Bar's Friday music, 6 Nov to 18 Dec.
+    expect(printDates(d('2026-11-06', '2026-11-13', '2026-11-20', '2026-11-27', '2026-12-04', '2026-12-11', '2026-12-18'))).toBe('EVERY FRIDAY, 6 NOV - 18 DEC');
+    // The Christmas market's four long weekends, a Monday or two aside.
+    const market = ['2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29', '2026-12-03', '2026-12-04', '2026-12-05', '2026-12-06', '2026-12-10', '2026-12-11', '2026-12-12', '2026-12-13', '2026-12-17', '2026-12-18', '2026-12-19', '2026-12-20'];
+    expect(printDates(d(...market))).toBe('EVERY THU - SUN, 26 NOV - 20 DEC');
+    expect(printDates(d('2026-11-07', '2026-11-08', '2026-11-14', '2026-11-15', '2026-11-21', '2026-11-22'))).toBe('EVERY SAT & SUN, 7 NOV - 22 NOV');
+    // Tide walks land on any day: still their dates.
+    expect(printDates(d('2026-09-02', '2026-09-13', '2026-09-16', '2026-09-27'))).toBe('2 SEP, 13/16/27 SEP');
+  });
+
   it('groups the rest by month after the first date', () => {
+    // Every Tuesday and Thursday is a weekly pattern now (below); dates that skip weeks still group.
+    expect(printDates(d('2026-09-01', '2026-09-03', '2026-09-15', '2026-09-24')))
+      .toBe('1 SEP, 3/15/24 SEP');
     expect(printDates(d('2026-09-01', '2026-09-03', '2026-09-08', '2026-09-10', '2026-09-15', '2026-09-17', '2026-09-22', '2026-09-24')))
-      .toBe('1 SEP, 3/8/10/15/17/22/24 SEP');
+      .toBe('EVERY TUE & THU, 1 SEP - 24 SEP');
     expect(printDates(d('2026-09-04', '2026-10-02', '2026-11-06'))).toBe('4 SEP, 2 OCT, 6 NOV');
     expect(printDates(d('2026-09-06', '2026-09-20', '2026-10-04', '2026-10-18', '2026-11-07', '2026-11-08')))
       .toBe('6 SEP, 20 SEP, 4/18 OCT, 7/8 NOV');

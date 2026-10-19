@@ -38,6 +38,25 @@ export type GuideEvent = {
 
 export type Window = { from: string; to: string };
 
+/** Sites that sell for everyone: in print they say nothing about the event. */
+const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
+
+/**
+ * The address the guide prints: the event's own, unless that is a ticket
+ * platform and the venue has a site of its own, which a reader can type
+ * and remember.
+ */
+export function guideWebsite(eventSite: string | null, venueSite: string | null): string | null {
+  if (!eventSite) return venueSite;
+  let host = '';
+  try {
+    host = new URL(/^https?:/i.test(eventSite) ? eventSite : `https://${eventSite}`).hostname.replace(/^www\./, '');
+  } catch {
+    return eventSite;
+  }
+  return TICKET_PLATFORMS.test(host) && venueSite ? venueSite : eventSite;
+}
+
 export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
   const dates = e.printDates ?? printDates(e.dates, window);
@@ -57,7 +76,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     venue: e.venueName ?? venue?.name ?? e.venue?.split(',')[0] ?? '',
     address: address ?? '',
     contact: printContact(e.phone ?? venue?.phone ?? null, e.email) ?? '',
-    website: printWebsite(e.website ?? venue?.website ?? null) ?? '',
+    website: printWebsite(guideWebsite(e.website, venue?.website ?? null)) ?? '',
     // A stock picture is for the web only: print uses the listing's own or none.
     imageUrl: e.headerImage && !e.headerImage.credit ? e.headerImage.url : '',
     block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',

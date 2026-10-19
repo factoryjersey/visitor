@@ -32,6 +32,31 @@ function day(iso: string): Day {
 
 const dm = (x: Day) => `${x.d} ${MONTHS[x.m - 1]}`;
 
+const WEEKDAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+const short = (w: number) => WEEKDAYS[w]!.slice(0, 3);
+
+/**
+ * The same one to four weekdays, filled most weeks for a fortnight or
+ * more: "FRIDAY", "SAT & SUN", "THU - SUN". Null for anything else, a
+ * daily run or dates that skip about.
+ */
+function everyWeek(days: Day[]): string | null {
+  const first = days[0]!;
+  const last = days.at(-1)!;
+  if (days.length < 4 || last.t - first.t < 13) return null;
+  const dow = (x: Day) => new Date(x.t * 86_400_000).getUTCDay();
+  const weekdays = [...new Set(days.map(dow))].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  if (weekdays.length > 4) return null;
+  let slots = 0;
+  for (let t = first.t; t <= last.t; t += 1) if (weekdays.includes(new Date(t * 86_400_000).getUTCDay())) slots += 1;
+  if (days.length / slots < 0.75) return null;
+  if (weekdays.length === 1) return WEEKDAYS[weekdays[0]!]!;
+  const mon = weekdays.map((w) => (w + 6) % 7);
+  const run = mon.every((w, i) => i === 0 || w === mon[i - 1]! + 1);
+  if (run && weekdays.length > 2) return `${short(weekdays[0]!)} - ${short(weekdays.at(-1)!)}`;
+  return weekdays.length === 2 ? `${short(weekdays[0]!)} & ${short(weekdays[1]!)}` : weekdays.map(short).join(', ');
+}
+
 /**
  * An event's dates as the guide prints them, keeping only those inside
  * the edition's window.
@@ -39,6 +64,8 @@ const dm = (x: Day) => `${x.d} ${MONTHS[x.m - 1]}`;
  *   one date                          26 OCT
  *   two                               1 SEP & 15 SEP
  *   a short run of consecutive days   1 - 5 SEP, 30 SEP - 4 OCT
+ *   the same days most weeks          EVERY FRIDAY, 6 NOV - 18 DEC
+ *                                     EVERY THU - SUN, 26 NOV - 20 DEC
  *   a long run, mostly daily          1 SEP UNTIL 29 OCT
  *   anything else                     1 SEP, 3/8/10/15 SEP, 2 OCT
  *
@@ -60,6 +87,8 @@ export function printDates(dates: readonly EventDate[], window?: { from: string;
   if (consecutive && span <= 7) {
     return first.m === last.m ? `${first.d} - ${last.d} ${MONTHS[last.m - 1]}` : `${dm(first)} - ${dm(last)}`;
   }
+  const weekly = everyWeek(days);
+  if (weekly) return `EVERY ${weekly}, ${dm(first)} - ${dm(last)}`;
   // Open most days over a long stretch: an exhibition, a season.
   if (days.length >= 8 && days.length / span >= 0.4) return `${dm(first)} UNTIL ${dm(last)}`;
   if (days.length === 2) return `${dm(first)} & ${dm(last)}`;
