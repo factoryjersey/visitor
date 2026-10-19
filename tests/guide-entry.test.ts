@@ -94,3 +94,31 @@ describe('guideWebsite', () => {
     expect(guideWebsite('https://www.ommaroo.com/music', 'https://www.ommaroo.com')).toBe('https://www.ommaroo.com/music');
   });
 });
+
+describe('fitting copy to its printed frame', () => {
+  it('keeps whole sentences that fit, and cuts a single long one at a word', async () => {
+    const { fitCopy } = await import('@/lib/domain/guide-entry');
+    expect(fitCopy('First one. Second one is longer. Third.', 30)).toBe('First one.');
+    expect(fitCopy('First one. Second one is longer. Third.', 40)).toBe('First one. Second one is longer. Third.');
+    expect(fitCopy('Short.', 30)).toBe('Short.');
+    expect(fitCopy('An extremely long single sentence that never stops going on and on', 30)).toBe('An extremely long single…');
+  });
+
+  it('leaves less room for copy when the title and address run long', async () => {
+    const { copyBudget } = await import('@/lib/domain/guide-entry');
+    const base = { dates: '1 NOV', times: '', title: 'Quiz', price: '', venue: 'Hall', address: '', contact: '', website: 'X.JE' };
+    const roomy = copyBudget(base);
+    const tight = copyBudget({ ...base, title: 'A very long title that runs onto two or three lines in the frame', address: 'La Route de la Haule, St. Lawrence, JE3 1AB, Jersey', contact: '+44 (0) 1534 000000' });
+    expect(tight).toBeLessThan(roomy);
+    expect(roomy).toBeGreaterThan(300);
+  });
+
+  it('prints the fullest copy that fits in whole sentences, the short version when nothing longer does', async () => {
+    const { printCopy } = await import('@/lib/domain/guide-entry');
+    const description = 'The museum tells the story of the island. It has three floors of exhibits. A café looks over the harbour.';
+    expect(printCopy({ guideCopy: null, summary: 'A museum of island life.', description }, 80)).toBe('The museum tells the story of the island. It has three floors of exhibits.');
+    const run = 'An unbroken sentence that goes on for far longer than any frame could ever hold without a stop';
+    expect(printCopy({ guideCopy: null, summary: 'A museum of island life.', description: run }, 70)).toBe('A museum of island life.');
+    expect(printCopy({ guideCopy: 'Ours, for print.', summary: 'Theirs.', description }, 70)).toBe('Ours, for print.');
+  });
+});
