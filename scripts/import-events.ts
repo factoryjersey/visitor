@@ -178,7 +178,10 @@ async function loadTribe(site: TribeSite): Promise<Item[]> {
   if (values.fixture) all.push(...(JSON.parse(readFileSync(values.fixture, 'utf8')) as { events: TribeEvent[] }).events);
   else {
     for (let page = 1; page <= 20; page += 1) {
-      const body = JSON.parse(await fetchText(eventsUrl(site, page, today))) as { events?: TribeEvent[]; total_pages?: number };
+      const text = await fetchText(eventsUrl(site, page, today));
+      // A security page in place of the data: say whose, so the log points at the cause.
+      if (!text.trimStart().startsWith('{')) throw new Error(`${site.base} sent a web page, not its events (${/<title>([^<]*)/i.exec(text)?.[1]?.trim() || 'no title'}): its host may be challenging our server`);
+      const body = JSON.parse(text) as { events?: TribeEvent[]; total_pages?: number };
       all.push(...(body.events ?? []));
       if (!body.total_pages || page >= body.total_pages) break;
       await pause(1000);

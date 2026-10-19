@@ -62,7 +62,7 @@ const UA = 'VisitorGuideJersey/1.0 (+https://visitor.je)';
 async function fromPexels(query: string, key: string): Promise<StockPhoto[]> {
   const res = await fetch(`https://api.pexels.com/v1/search?${new URLSearchParams({ query, orientation: 'landscape', per_page: '30' })}`, {
     headers: { authorization: key, 'user-agent': UA },
-    signal: AbortSignal.timeout(20_000),
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Pexels ${res.status}`);
   const body = (await res.json()) as { photos?: { src: { landscape: string; large2x?: string }; alt?: string; photographer: string; photographer_url?: string }[] };
@@ -71,13 +71,23 @@ async function fromPexels(query: string, key: string): Promise<StockPhoto[]> {
 
 async function fromOpenverse(query: string): Promise<StockPhoto[]> {
   const params = new URLSearchParams({ q: query, license: 'cc0,pdm', category: 'photograph', aspect_ratio: 'wide', size: 'large', page_size: '20', mature: 'false' });
-  const res = await fetch(`https://api.openverse.org/v1/images/?${params}`, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(20_000) });
+  const res = await fetch(`https://api.openverse.org/v1/images/?${params}`, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Openverse ${res.status}`);
   const body = (await res.json()) as { results?: { url: string; thumbnail?: string; title?: string; creator?: string; creator_url?: string; foreign_landing_url?: string }[] };
   // Openverse's own resized copy: an original can run to many megabytes.
   return (body.results ?? [])
     .filter((r) => /^https:\/\//.test(r.url))
     .map((r) => ({ url: r.thumbnail ?? r.url, alt: r.title ?? null, credit: { name: r.creator || 'Unknown', url: r.creator_url ?? r.foreign_landing_url ?? null, source: 'Openverse' } }));
+}
+
+/** Openverse without a key is slow and rations requests: a second try after a pause, then give up until tomorrow. */
+async function retryOnce<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    await new Promise((r) => setTimeout(r, 10_000));
+    return fn();
+  }
 }
 
 /** Searches cached for the run: one request per kind of picture, not per listing. */
@@ -87,7 +97,7 @@ export function stockLibrary(pexelsKey?: string) {
     if (!pools.has(query)) {
       pools.set(
         query,
-        (pexelsKey ? fromPexels(query, pexelsKey) : fromOpenverse(query)).catch((e) => {
+        retryOnce(() => (pexelsKey ? fromPexels(query, pexelsKey) : fromOpenverse(query))).catch((e) => {
           console.warn(`stock pictures for "${query}": ${(e as Error).message}`);
           return [];
         }),
