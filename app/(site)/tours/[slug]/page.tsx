@@ -46,7 +46,7 @@ export default async function TourPage({ params }: Props) {
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
       <JsonLd data={[tourLd(tourOut(t, provider, today)), breadcrumbs([['Tours & experiences', '/tours'], [t.title, `/tours/${t.slug}`]])]} />
-      {staff && <StaffEdit kind="experience" id={t.id} title={t.title} summary={t.summary} description={t.description} genre={t.genre} genres={GENRES} adminHref={`/admin/tours/${t.slug}`} />}
+      {staff && <StaffEdit kind="experience" id={t.id} title={t.title} summary={t.summary} description={t.description} image={t.headerImage ? { url: webImage(t.headerImage, 800, 400), alt: t.headerImage.alt, stock: !!t.headerImage.credit } : null} genre={t.genre} genres={GENRES} adminHref={`/admin/tours/${t.slug}`} />}
       <Link href="/tours" className="text-sm text-harbour/60 hover:text-brand">← Tours &amp; experiences</Link>
       <ListingHeader
         when={dated ? headerWhen(t.dates, t.occurrence, today) : { main: 'Book any day', more: null }}

@@ -2,10 +2,12 @@
 
 import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
-import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers } from '@/lib/db/schema';
+import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers, type Image } from '@/lib/db/schema';
+import { storeListingImage } from '@/lib/images/upload';
 import { EVENT_TYPES } from '@/lib/domain/categorise';
 import { GENRES } from '@/lib/domain/genre';
 import { OCCURRENCES } from '@/lib/domain/occurrence';
@@ -269,4 +271,60 @@ export async function quickEditTour(form: FormData) {
     .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(experiences.id, v.id));
   revalidatePath('/', 'layout');
+}
+
+const imageSchema = z.object({
+  kind: z.enum(['event', 'experience']),
+  id: z.string().uuid(),
+  mode: z.enum(['upload', 'url', 'remove']),
+  url: z.string().trim().max(1000).optional(),
+  alt: z.string().trim().max(300).optional(),
+});
+
+/**
+ * A listing's picture, set by a person: uploaded, linked from elsewhere,
+ * or taken away. Locked, so neither the source nor the stock pictures
+ * replace it. Says what went wrong rather than failing quietly.
+ */
+export async function setListingImage(form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireStaff();
+  const v = imageSchema.parse({ kind: form.get('kind'), id: form.get('id'), mode: form.get('mode'), url: form.get('url') ?? undefined, alt: form.get('alt') ?? undefined });
+  const table = v.kind === 'event' ? events : experiences;
+  let headerImage: Image | null = null;
+  try {
+    if (v.mode === 'upload') {
+      const file = form.get('file');
+      if (!(file instanceof File) || !file.size) return { ok: false, error: 'Choose a picture first.' };
+      headerImage = { url: await storeListingImage(v.kind, v.id, file), publicId: null, alt: v.alt || null, originalFilename: file.name || null };
+    } else if (v.mode === 'url') {
+      if (!v.url || !/^https:\/\/\S+$/i.test(v.url)) return { ok: false, error: 'A link starting https://, please.' };
+      headerImage = { url: v.url, publicId: null, alt: v.alt || null, originalFilename: null };
+    }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  await lockAndSet(table, v.id, 'headerImage', { headerImage }, user.email);
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+const takeOffSchema = z.object({ kind: z.enum(['event', 'experience']), id: z.string().uuid() });
+
+/**
+ * From a listing's own page: off the site and out of the guide, then on to
+ * its admin page, where it shows as left out and can be put back. Staying
+ * on the public page would only find it gone.
+ */
+export async function takeOffSite(form: FormData) {
+  const user = await requireStaff();
+  const { kind, id } = takeOffSchema.parse(Object.fromEntries(form));
+  const table = kind === 'event' ? events : experiences;
+  const now = new Date();
+  const [row] = await db
+    .update(table)
+    .set({ inclusion: 'excluded', inclusionSetBy: user.email, inclusionSetAt: now, updatedAt: now })
+    .where(eq(table.id, id))
+    .returning({ slug: table.slug });
+  revalidatePath('/', 'layout');
+  redirect(row ? `/admin/${kind === 'event' ? 'whats-on' : 'tours'}/${row.slug}` : '/admin');
 }

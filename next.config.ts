@@ -3,6 +3,8 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   // Postgres is only ever reached from the server.
   serverExternalPackages: ['postgres'],
+  // A listing's picture comes through a server action; the browser scales it first, but leave room.
+  experimental: { serverActions: { bodySizeLimit: '9mb' } },
   // One address: www.visitor.je points here too, and sends people on to visitor.je.
   async redirects() {
     return [
