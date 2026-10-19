@@ -6,6 +6,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
 import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
+import { slugify } from '@/lib/domain/slug';
 import { cardWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
 
 export const dynamic = 'force-dynamic';
@@ -97,6 +98,11 @@ export default async function EventPage({ params }: Props) {
                   </>
                 )}
               </div>
+              {e.organiser && (
+                <p className="mt-4 text-sm text-harbour/70">
+                  Organised by <Link href={`/organisers/${slugify(e.organiser)}`} className="font-medium text-ink hover:text-coral">{e.organiser}</Link>
+                </p>
+              )}
               {!e.businessId && <ClaimLink href={`/claim/events/${e.slug}`}>Organising this? Claim it</ClaimLink>}
             </SideSection>
 

@@ -25,7 +25,7 @@ export const MARKERS: [type: string, icon: LucideIcon][] = [
 ];
 
 /** A tour's genre, as one tile. */
-const GENRE_MARKERS: Record<Genre, LucideIcon> = {
+export const GENRE_MARKERS: Record<Genre, LucideIcon> = {
   'On foot': Footprints,
   Active: Bike,
   'On the water': Sailboat,

@@ -1,28 +1,34 @@
 import { LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
-import { MARKERS } from './category-markers';
+import { GENRE_MARKERS, MARKERS } from './category-markers';
 import { Slider } from './slider';
 
 /**
- * The kinds of event as a row of icon tiles, each with how many it would
- * show given the rest of the search. One tap filters; tapping the chosen
- * one again lets it go. Links, so every choice has an address.
+ * The kinds of event (or of tour) as a row of icon tiles, each with how
+ * many it would show given the rest of the search. One tap filters;
+ * tapping the chosen one again lets it go. Links, so every choice has an
+ * address.
  */
 export function CategoryMenu(props: {
   action: string;
   values: Record<string, string | undefined>;
   counts: Map<string, number>;
   total: number;
+  /** Events' kinds by `type`, or tours' genres by `genre`. */
+  of?: 'events' | 'tours';
 }) {
+  const tours = props.of === 'tours';
+  const param = tours ? 'genre' : 'type';
   const href = (type: string | null) => {
     const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(props.values)) if (v && k !== 'type') params.set(k, v);
-    if (type) params.set('type', type);
+    for (const [k, v] of Object.entries(props.values)) if (v && k !== param) params.set(k, v);
+    if (type) params.set(param, type);
     const qs = params.toString();
     return qs ? `${props.action}?${qs}` : props.action;
   };
-  const chosen = props.values.type ?? null;
-  const tiles = MARKERS.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || t === chosen);
+  const chosen = props.values[param] ?? null;
+  const all: [string, typeof LayoutGrid][] = tours ? (Object.entries(GENRE_MARKERS) as [string, typeof LayoutGrid][]) : MARKERS;
+  const tiles = all.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || t === chosen);
 
   const tile = (key: string, label: string, Icon: typeof LayoutGrid, count: number, active: boolean, to: string) => (
     <li key={key} className="shrink-0 snap-start">
@@ -46,8 +52,8 @@ export function CategoryMenu(props: {
   );
 
   return (
-    <nav aria-label="Kinds of event" className="mb-8">
-      <Slider label="kinds of event">
+    <nav aria-label={tours ? 'Kinds of tour' : 'Kinds of event'} className="mb-8">
+      <Slider label={tours ? 'kinds of tour' : 'kinds of event'}>
         {tile('all', 'Everything', LayoutGrid, props.total, !chosen, href(null))}
         {tiles.map(([type, Icon]) => tile(type, type, Icon, props.counts.get(type) ?? 0, chosen === type, href(chosen === type ? null : type)))}
       </Slider>

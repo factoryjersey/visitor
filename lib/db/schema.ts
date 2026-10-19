@@ -234,6 +234,8 @@ export const events = pgTable('events', {
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
+  /** Who puts it on, as the source names them: the organisers page groups by it. */
+  organiser: text('organiser'),
 
   /** The business that looks after it, when one does. */
   businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),

@@ -32,6 +32,7 @@ export type LdEvent = {
     address?: { streetAddress?: string; addressLocality?: string; addressRegion?: string; postalCode?: string; addressCountry?: string };
   };
   offers?: { lowPrice?: string | number; highPrice?: string | number; price?: string | number }[] | { lowPrice?: string | number; highPrice?: string | number; price?: string | number };
+  organizer?: { name?: string; url?: string };
 };
 
 /** Every schema.org Event in a page's JSON-LD, however deeply it is nested. */
@@ -180,6 +181,7 @@ export function toEvent(listing: LdEvent, page: LdEvent | null): VjEvent | null 
     toPricePence: to === 0 || to === from ? null : to,
     headerImage: image,
     sourceLink: e.url ?? null,
+    organiser: decodeEntities(e.organizer?.name ?? '').trim() || null,
     modifiedAt: null,
     portalSyncedAt: null,
   };

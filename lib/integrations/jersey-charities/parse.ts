@@ -107,6 +107,7 @@ export function toEvent(entry: DiaryEntry, page: ReturnType<typeof parseEntryPag
     toPricePence: null,
     headerImage: null,
     sourceLink: link,
+    organiser: charity,
     modifiedAt: null,
     portalSyncedAt: null,
   };

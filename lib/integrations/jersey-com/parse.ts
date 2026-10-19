@@ -70,6 +70,8 @@ export type VjEvent = {
   toPricePence: number | null;
   headerImage: Image | null;
   sourceLink: string | null;
+  /** Who puts it on, when the source says: an Eventbrite organiser, the charity in the diary. */
+  organiser?: string | null;
   modifiedAt: Date | null;
   portalSyncedAt: Date | null;
 };

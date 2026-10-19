@@ -13,7 +13,7 @@ const base: Event = {
   dates: Array.from({ length: 59 }, (_, i) => ({ date: new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10), start: '10:00', end: '16:00' })),
   startsOn: '2026-09-01', endsOn: '2026-10-29', fromPricePence: 1145, toPricePence: 2450,
   printDates: null, printTimes: null, printPrice: null, highlight: false,
-  headerImage: null, sourceLink: null, businessId: null, review: 'approved', reviewNote: null, inclusion: 'included', inclusionNote: null,
+  headerImage: null, sourceLink: null, organiser: null, businessId: null, review: 'approved', reviewNote: null, inclusion: 'included', inclusionNote: null,
   inclusionSetBy: null, inclusionSetAt: null, editedBy: null, editedAt: null,
   fieldSources: {}, lockedFields: [], sourceModifiedAt: null, createdAt: new Date(), updatedAt: new Date(),
 };
