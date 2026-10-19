@@ -61,9 +61,15 @@ export default async function ClaimsPage() {
                 {c.phone && (<><dt className="text-stone-500">Phone</dt><dd><a href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} className="hover:underline">{c.phone}</a></dd></>)}
                 <dt className="text-stone-500">Business</dt>
                 <dd>{c.businessName}</dd>
-                {c.account && (<><dt className="text-stone-500">Account</dt><dd>Already a provider{c.account.businessName && ` for ${c.account.businessName}`}</dd></>)}
+                {c.account?.role === 'provider' && (<><dt className="text-stone-500">Account</dt><dd>Already a provider{c.account.businessName && ` for ${c.account.businessName}`}</dd></>)}
               </dl>
               {c.message && <p className="whitespace-pre-line rounded bg-stone-50 p-3 text-stone-700">{c.message}</p>}
+              {c.account && c.account.role !== 'provider' && (
+                <p className="rounded bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
+                  {c.email} is a staff account here, so it cannot be given a business. Turn this down and claim again with another address, or give the
+                  listing to a business from its admin page.
+                </p>
+              )}
             </div>
             <ClaimDecision
               claimId={c.id}

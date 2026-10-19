@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import { recordSignIn, resolveAccount } from '@/lib/auth/accounts';
 import { safeNext } from '@/lib/auth/permissions';
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
   }
   await recordSignIn(account);
 
-  const next = searchParams.get('next');
+  // The path asked for, or the one remembered when Supabase dropped it.
+  const jar = await cookies();
+  const next = searchParams.get('next') ?? jar.get('after_sign_in')?.value;
+  jar.delete('after_sign_in');
   return NextResponse.redirect(`${base}${next ? safeNext(next) : homeFor(account.role)}`);
 }

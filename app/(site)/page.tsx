@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
@@ -10,7 +11,11 @@ import { cardWhen, webWhen } from '@/lib/domain/web-dates';
 export const dynamic = 'force-dynamic';
 
 /** The front page: the lead highlight, what's coming up, and tours on particular dates. */
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
+  // A sign-in Supabase sent to the Site URL rather than back to us: finish it.
+  const { code } = await searchParams;
+  if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+
   const [events, tours] = await Promise.all([publicEvents(), publicTours()]);
   const today = todayIso();
   const lead = pickLead(events, today);
