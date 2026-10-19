@@ -35,9 +35,8 @@ export function SiteHeader() {
   return (
     <header className="relative z-30 border-b border-harbour/10 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4">
-        <Link href="/" aria-label="Visitor.je, Jersey’s What’s On Guide: home" className="flex flex-col items-start">
+        <Link href="/" aria-label="Visitor.je, Jersey’s What’s On Guide: home" className="-ml-1 block">
           <Wordmark />
-          <span className="mt-1 font-serif text-[0.8rem] italic leading-none text-ink/70">Jersey’s What’s On Guide</span>
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-8 lg:flex">
