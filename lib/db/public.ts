@@ -133,3 +133,48 @@ export async function publicTour(slug: string) {
     .where(and(eq(experiences.slug, slug), ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved')));
   return row ?? null;
 }
+
+/** A venue on the public site, by its slug: approved and not left out. */
+export async function publicVenue(slug: string) {
+  const [venue] = await db
+    .select()
+    .from(places)
+    .where(and(eq(places.slug, slug), ne(places.inclusion, 'excluded'), eq(places.review, 'approved')));
+  return venue ?? null;
+}
+
+/** Everything coming up at a venue, soonest first: ongoing things too, as a venue's page is its whole programme. */
+export async function publicEventsAt(placeId: string) {
+  const rows = await db
+    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
+    .from(events)
+    .leftJoin(places, eq(places.id, events.placeId))
+    .where(and(...upcomingPublic(), eq(events.placeId, placeId)));
+  return byNextDate(rows);
+}
+
+/**
+ * The venues with something coming up, and how many: the venues page and
+ * the What's on venue filter. Unique events count by default, as on What's
+ * on; `withOngoing` counts exhibitions and weekly sessions too.
+ */
+export async function publicVenuesWithEvents(opts: { withOngoing?: boolean } = {}) {
+  const where = [...upcomingPublic()];
+  if (!opts.withOngoing) where.push(or(inArray(events.occurrence, [...UNIQUE]), eq(events.highlight, true))!);
+  const rows = await db
+    .select({
+      id: places.id,
+      slug: places.slug,
+      name: places.name,
+      parish: places.parish,
+      category: places.category,
+      headerImage: places.headerImage,
+      summary: places.summary,
+      count: sql<number>`count(${events.id})::int`,
+    })
+    .from(places)
+    .innerJoin(events, eq(events.placeId, places.id))
+    .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), ...where))
+    .groupBy(places.id);
+  return rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}

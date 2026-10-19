@@ -1,6 +1,7 @@
 import { LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { MARKERS } from './category-markers';
+import { Slider } from './slider';
 
 /**
  * The kinds of event as a row of icon tiles, each with how many it would
@@ -45,11 +46,11 @@ export function CategoryMenu(props: {
   );
 
   return (
-    <nav aria-label="Kinds of event" className="-mx-4 mb-8 px-4">
-      <ul className="flex snap-x gap-1 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+    <nav aria-label="Kinds of event" className="mb-8">
+      <Slider label="kinds of event">
         {tile('all', 'Everything', LayoutGrid, props.total, !chosen, href(null))}
         {tiles.map(([type, Icon]) => tile(type, type, Icon, props.counts.get(type) ?? 0, chosen === type, href(chosen === type ? null : type)))}
-      </ul>
+      </Slider>
     </nav>
   );
 }

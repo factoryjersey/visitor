@@ -102,7 +102,11 @@ export default async function EventPage({ params }: Props) {
 
             {venueName && (
               <SideSection title="Venue">
-                <p className="font-medium">{venueName}</p>
+                {venue ? (
+                  <Link href={`/venues/${venue.slug}`} className="font-medium hover:text-coral">{venueName}</Link>
+                ) : (
+                  <p className="font-medium">{venueName}</p>
+                )}
                 {address && <p className="text-sm text-harbour/60">{address}</p>}
                 {(venue?.guideCopy ?? venue?.summary) && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-harbour/80">{venue?.guideCopy ?? venue?.summary}</p>}
                 <ul className="mt-3 space-y-1 text-sm">

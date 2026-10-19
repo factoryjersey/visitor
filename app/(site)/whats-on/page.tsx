@@ -23,12 +23,19 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
  */
 export default async function WhatsOn({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), month: one(sp.month), type: one(sp.type), ongoing: one(sp.ongoing) };
-  // Everything the rest of the search finds, counted by kind for the tiles; then the kind chosen.
-  const all = await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q });
+  const values = { q: one(sp.q), month: one(sp.month), venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
+  // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
+  // from what the search finds, the kinds from what is on at the venue chosen.
+  const found = await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q });
+  const venues = new Map<string, { name: string; n: number }>();
+  for (const r of found) if (r.venue?.slug) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
+  const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;
   const counts = new Map<string, number>();
   for (const r of all) for (const t of new Set(r.event.eventTypes)) counts.set(t, (counts.get(t) ?? 0) + 1);
   const rows = values.type ? all.filter((r) => r.event.eventTypes.includes(values.type!)) : all;
+  const venueOptions = [...venues]
+    .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+    .map(([slug, v]) => ({ value: slug, label: `${v.name} (${v.n})` }));
   const today = todayIso();
   const highlights = rows.filter((r) => r.event.highlight);
   const rest = rows.filter((r) => !r.event.highlight);
@@ -57,7 +64,10 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <FilterBar
         action="/whats-on"
         values={values}
-        selects={[{ name: 'month', label: 'When', options: monthOptions() }]}
+        selects={[
+          { name: 'month', label: 'When', options: monthOptions() },
+          { name: 'venue', label: 'Venue', options: venueOptions },
+        ]}
         toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
         keep={['type']}
       />
