@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { GuideAd } from '@/components/site/guide-ad';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
@@ -76,6 +77,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             ))}
           </div>
         </section>
+
+        <GuideAd />
 
         {datedTours.length > 0 && (
           <section>
