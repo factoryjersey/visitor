@@ -2,7 +2,8 @@
  * Events from sources beyond Visit Jersey, after it has run:
  *
  *   pnpm import:events                     every source
- *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities
+ *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
+ *                                          jersey-bulls, jersey-rfc
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -14,6 +15,9 @@
  * straight on the site. Anyone can post on Eventbrite, and the charities'
  * diary carries the odd restaurant offer, so theirs wait in /admin/review
  * until staff approve them.
+ *
+ * Jersey Bulls' and Jersey RFC's home matches come from the clubs' own
+ * fixture pages, each with a line of its own about the two sides.
  *
  * Every event's copy is put in the guide's third person by Claude when its
  * words change, with ANTHROPIC_API_KEY set; without it, as the organiser wrote it.
@@ -31,7 +35,9 @@ import { mergeFromSource } from '@/lib/domain/merge';
 import { normaliseName } from '@/lib/domain/same-place';
 import { uniqueSlug } from '@/lib/domain/slug';
 import { matchVenue } from '@/lib/domain/venue-match';
+import { fixtureCopy } from '@/lib/integrations/claude/fixture';
 import { rewriteListing, type Rewrite } from '@/lib/integrations/claude/rewrite';
+import { BULLS_FIXTURES, JRFC_FIXTURES, isHome, parseBulls, parseJrfc, plainCopy, toEvent as fromFixture, type Fixture } from '@/lib/integrations/fixtures/parse';
 import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
@@ -155,6 +161,48 @@ async function loadCharities(): Promise<Item[]> {
   return out;
 }
 
+/**
+ * A club's home matches, Jersey named first. Each match's copy is Claude's,
+ * written once and kept with the record until the match itself changes
+ * (opponent, competition, ground); a new kick-off time needs no new words.
+ * A page with no matches at all means the site has changed under us.
+ */
+async function loadFixtures(source: string, url: string, parse: (html: string) => Fixture[]): Promise<Item[]> {
+  const all = parse(values.fixture ? readFileSync(values.fixture, 'utf8') : await fetchText(url));
+  if (!all.length) throw new Error(`no fixtures on ${url}: has the page changed?`);
+  const kept = new Map<string, KeptRewrite>();
+  for (const r of await db
+    .select({ id: sourceRecords.externalId, payload: sourceRecords.payload })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, source), eq(sourceRecords.externalType, 'events')))) {
+    const rw = (r.payload as { rewrite?: KeptRewrite } | null)?.rewrite;
+    if (rw) kept.set(r.id, rw);
+  }
+  const home = all.filter(isHome);
+  const out: Item[] = [];
+  for (let n = 0; n < home.length; n += 4) {
+    out.push(
+      ...(await Promise.all(
+        home.slice(n, n + 4).map(async (f) => {
+          const key = createHash('sha1').update([f.home, f.away, f.competition ?? '', f.venue ?? ''].join('\u0000')).digest('hex');
+          const old = kept.get(f.id);
+          let rewrite = old?.key === key ? old : null;
+          if (!rewrite) {
+            const made = await fixtureCopy(f);
+            if (made) {
+              rewrite = { ...made, key };
+              counts.rewritten += 1;
+            }
+          }
+          const copy = rewrite ? { snippet: rewrite.snippet, description: rewrite.description } : plainCopy(f);
+          return { v: fromFixture(f, copy), raw: { fixture: f, ...(rewrite ? { rewrite } : {}) } };
+        }),
+      )),
+    );
+  }
+  return out;
+}
+
 const counts = { created: 0, linked: 0, updated: 0, unchanged: 0, rewritten: 0 };
 
 /** Which words a rewrite was made from: a new one only when these change. */
@@ -203,9 +251,10 @@ function eventFields(v: VjEvent, venue: Place | null) {
   return { ...fields, placeId: venue?.id ?? null, lat: v.lat ?? venue?.lat ?? null, lon: v.lon ?? venue?.lon ?? null };
 }
 
-async function importSource(source: string, items: Item[], review: Review, allPlaces: Place[], existing: Event[]) {
+async function importSource(source: string, items: Item[], review: Review, allPlaces: Place[], existing: Event[], voice: boolean) {
   const taken = new Set(existing.map((e) => e.slug));
-  const rewrites = await guideVoice(source, items);
+  // Matches come with copy of their own, already in the guide's voice.
+  const rewrites = voice ? await guideVoice(source, items) : new Map<string, KeptRewrite>();
   for (const { v: given, raw: fetched } of items) {
     const rw = rewrites.get(given.externalId);
     // The source's own types, and what the event's own words add; then the copy in the guide's voice.
@@ -278,11 +327,14 @@ async function importSource(source: string, items: Item[], review: Review, allPl
   }
 }
 
-const SOURCES: { source: string; review: Review; load: () => Promise<Item[]> }[] = [
+const SOURCES: { source: string; review: Review; load: () => Promise<Item[]>; voice?: false }[] = [
   // The theatres first: when Eventbrite lists the same show, theirs is the record and Eventbrite fills gaps.
   ...FEEDS.map((feed) => ({ source: feed.source, review: 'approved' as const, load: () => loadTicketsolve(feed) })),
   { source: 'eventbrite', review: 'pending', load: loadEventbrite },
   { source: 'jersey-charities', review: 'pending', load: loadCharities },
+  // The clubs' own fixtures: on the site as they come.
+  { source: 'jersey-bulls', review: 'approved', load: () => loadFixtures('jersey-bulls', BULLS_FIXTURES, parseBulls), voice: false },
+  { source: 'jersey-rfc', review: 'approved', load: () => loadFixtures('jersey-rfc', JRFC_FIXTURES, parseJrfc), voice: false },
 ];
 
 const allPlaces = await db.select().from(places);
@@ -293,7 +345,7 @@ for (const s of SOURCES.filter((s) => !values.only || s.source === values.only))
   try {
     const before = { ...counts };
     const items = await s.load();
-    await importSource(s.source, items, s.review, allPlaces, existing);
+    await importSource(s.source, items, s.review, allPlaces, existing, s.voice !== false);
     console.log(
       `\r${s.source}: ${items.length} events; created ${counts.created - before.created}, linked to one we had ${counts.linked - before.linked}, ` +
         `updated ${counts.updated - before.updated}, unchanged ${counts.unchanged - before.unchanged}, rewritten ${counts.rewritten - before.rewritten}`,

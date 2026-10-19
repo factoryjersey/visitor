@@ -143,6 +143,13 @@ all, so `pnpm import:events` adds events from elsewhere after it:
 | Jersey Opera House | the same, `jerseyoperahouse.ticketsolve.com/shows.xml` | straight away |
 | Eventbrite | the schema.org Event data on its Jersey listing pages and each event's page | after review in `/admin/review` |
 | Jersey Charities diary | its diary page, read as written, and each entry's page for the description | after review |
+| Jersey Bulls | the fixtures page, `bulls.je/fixtures/?team=all`: home matches only (Jersey named first), men, women and U23 | straight away |
+| Jersey RFC | the fixtures and results page, `jrfc.je/results/`: home matches still to be played | straight away |
+
+Each match gets copy of its own from Claude (`lib/integrations/claude/fixture.ts`),
+a line about the two clubs meeting and the card's sentence, written once
+and kept until the opponent, competition or ground changes. Without a key,
+a plain line naming both sides.
 
 An event another source already gave us (a date in common and most of the
 title, `lib/domain/event-match.ts`) is linked to it, not repeated, and the
