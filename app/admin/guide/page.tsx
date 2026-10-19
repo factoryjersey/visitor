@@ -1,5 +1,12 @@
+import '@fontsource/barlow-semi-condensed/400.css';
+import '@fontsource/barlow-semi-condensed/500.css';
+import '@fontsource/barlow-semi-condensed/500-italic.css';
+import '@fontsource/barlow-semi-condensed/600.css';
+import '@fontsource/barlow-semi-condensed/600-italic.css';
+import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
-import type { GuideEvent, GuideTour, GuideVenue } from '@/lib/domain/guide-entry';
+import { GuideBook } from '@/components/guide/book';
+import type { GuideVenue } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
@@ -29,12 +36,10 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
     guide = await buildGuide(window, { draft });
   }
   const { highlights, events, tours, providers, venues } = guide;
-  const allSeason = events.filter((e) => e.block === 'all season');
-  const dated = events.filter((e) => e.block === 'dated');
-  const datedTours = tours.filter((t) => t.kind === 'dated');
-  const onDemand = tours.filter((t) => t.kind === 'on demand');
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}`;
   const year = Number(window.from.slice(0, 4));
+  // Where What's On starts in the printed guide; the 2026 editions open it on page 36.
+  const firstPage = Math.max(1, Math.min(400, Number(one(sp.page)) || 36));
   const presets = [...editions(year - 1).slice(3), ...editions(year), ...editions(year + 1).slice(0, 2)];
   const href = (w: { from: string; to: string }, d = draft) => `/admin/guide?from=${w.from}&to=${w.to}&draft=${d ? 1 : 0}`;
   const pill = (active: boolean) => `rounded-full border px-3 py-1 ${active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 hover:bg-stone-100'}`;
@@ -57,6 +62,10 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <label className="flex flex-col">
             <span className="text-xs text-stone-500">to</span>
             <input type="date" name="to" defaultValue={window.to} className="rounded border border-stone-300 px-2 py-1" />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-xs text-stone-500">First page</span>
+            <input type="number" name="page" min={1} max={400} defaultValue={firstPage} className="w-20 rounded border border-stone-300 px-2 py-1" />
           </label>
           <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
           <span className="ml-auto flex gap-1">
@@ -91,51 +100,12 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         )}
       </div>
 
-      <div className="guide-pages">
-        {highlights.map((e) => <HighlightPage key={e.title} e={e} />)}
-        <section className="guide-page">
-          <h2 className="guide-tab">Events this season</h2>
-          {events.length === 0 && (
-            <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>.</p>
-          )}
-          {allSeason.length > 0 && (
-            <>
-              <h3 className="guide-area">On all season</h3>
-              <div className="guide-columns">
-                {allSeason.map((e) => <EventEntry key={e.title + e.sortKey} e={e} />)}
-              </div>
-              {dated.length > 0 && <h3 className="guide-area">Dates for the diary</h3>}
-            </>
-          )}
-          <div className="guide-columns">
-            {dated.map((e) => <EventEntry key={e.title + e.sortKey} e={e} />)}
-          </div>
-        </section>
+      {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
+        <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
+      )}
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}`} highlights={highlights} events={events} tours={tours} providers={providers} venues={venues} firstPage={firstPage} />
 
-        {tours.length > 0 && (
-          <section className="guide-page">
-            <h2 className="guide-tab">Walks and tours</h2>
-            <h3 className="guide-area">Tour guides &amp; providers</h3>
-            <div className="guide-key">
-              {providers.map((p) => (
-                <p key={p.name}><strong>{p.code || '??'}</strong> {p.name} {p.contact} {p.website}</p>
-              ))}
-            </div>
-            {datedTours.length > 0 && (
-              <>
-                <h3 className="guide-area">Tours &amp; experiences on these dates</h3>
-                <div className="guide-columns">{datedTours.map((t) => <TourEntry key={t.title} t={t} />)}</div>
-              </>
-            )}
-            {group(onDemand, (t) => t.genre || 'Other').map(([genre, ts]) => (
-              <div key={genre}>
-                <h3 className="guide-area">On demand: {genre.toLowerCase()}</h3>
-                <div className="guide-columns">{ts.map((t) => <TourEntry key={t.title} t={t} />)}</div>
-              </div>
-            ))}
-          </section>
-        )}
-
+      <div className="guide-pages mt-8">
         {group(venues, (v) => v.section).map(([section, inSection]) => (
           <section key={section} className="guide-page">
             <h2 className="guide-tab">{section}</h2>
@@ -154,53 +124,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   );
 }
 
-function EventEntry({ e }: { e: GuideEvent }) {
-  return (
-    <article className="guide-entry">
-      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
-      <h4 className="guide-title">{e.title}</h4>
-      <p>{e.copy} {e.price && <strong>{e.price}</strong>}</p>
-      <p className="guide-venue">{e.venue}</p>
-      {e.address && <p>{e.address}</p>}
-      {e.contact && <p>{e.contact}</p>}
-      {e.website && <p className="guide-web">{e.website}</p>}
-    </article>
-  );
-}
 
-/** A highlight's full page: the large image, then the extended listing. Images print from the original upload. */
-function HighlightPage({ e }: { e: GuideEvent }) {
-  return (
-    <section className="guide-page guide-highlight">
-      <h2 className="guide-tab">Highlight</h2>
-      {e.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.imageUrl} alt="" className="guide-highlight-image" />
-      )}
-      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
-      <h3 className="guide-highlight-title">{e.title}</h3>
-      <div className="guide-highlight-copy">
-        {e.extendedCopy.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
-      </div>
-      <p className="mt-2">{e.price && <strong>{e.price}</strong>}</p>
-      <p className="guide-venue">{e.venue}</p>
-      {e.address && <p>{e.address}</p>}
-      {e.contact && <p>{e.contact}</p>}
-      {e.website && <p className="guide-web">{e.website}</p>}
-    </section>
-  );
-}
 
-function TourEntry({ t }: { t: GuideTour }) {
-  return (
-    <article className="guide-entry">
-      {t.dates && <p className="guide-when">{t.dates}</p>}
-      <p>
-        <strong>{t.title}</strong> <strong>{t.code || '??'}</strong> {t.duration}{t.times && `, ${t.times}`} {t.copy}
-      </p>
-    </article>
-  );
-}
 
 function VenueEntry({ v }: { v: GuideVenue }) {
   return (

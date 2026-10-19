@@ -56,8 +56,8 @@ const genreOrder = (g: string) => {
 };
 
 /**
- * Everything included, as printed entries, in guide order: the
- * all-season block before the dated events; dated tours by date, then
+ * Everything included, as printed entries, in guide order: events by
+ * their first date in the edition; dated tours by date, then
  * on-demand ones by genre; the provider key only for providers with a
  * tour in this edition.
  */
@@ -68,11 +68,8 @@ export async function buildGuide(window: Window, opts: { draft?: boolean } = {})
     .map(({ event, venue }) => guideEvent(event, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  const events = all
-    .filter((e) => !e.highlight)
-    .sort((a, b) =>
-      (a.block === b.block ? 0 : a.block === 'all season' ? -1 : 1)
-      || (a.block === 'all season' ? a.title.localeCompare(b.title) : a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)));
+  // By their first date in the edition, long runs among the rest, as the 2026 pages print them.
+  const events = all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title));
 
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
   for (const { experience, provider } of tourRows) {

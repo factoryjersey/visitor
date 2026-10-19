@@ -1,4 +1,5 @@
 import type { Event, Experience, Place, Provider } from '@/lib/db/schema';
+import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
   printAddress,
@@ -34,6 +35,8 @@ export type GuideEvent = {
   extendedCopy: string;
   /** The first date inside the edition, for ordering. Not printed. */
   sortKey: string;
+  /** A web-sized copy of the picture for the on-screen proof; the export keeps the original. Not printed. */
+  preview: string;
 };
 
 export type Window = { from: string; to: string };
@@ -79,6 +82,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     website: printWebsite(guideWebsite(e.website, venue?.website ?? null)) ?? '',
     // A stock picture is for the web only: print uses the listing's own or none.
     imageUrl: e.headerImage && !e.headerImage.credit ? e.headerImage.url : '',
+    preview: e.headerImage && !e.headerImage.credit ? webImage(e.headerImage, 520, 182) : '',
     block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',
     highlight: e.highlight,
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
