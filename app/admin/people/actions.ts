@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
 import { LISTING_KINDS, ROLES, businesses } from '@/lib/db/schema';
 import { TABLES } from '@/lib/listings';
 
-type InviteState = { error?: string; link?: string; email?: string } | null;
+type InviteState = { error?: string; link?: string; email?: string; emailed?: boolean } | null;
 
 const inviteSchema = z.object({
   email: z.string().trim().email('Enter an email address.'),
@@ -50,7 +50,7 @@ export async function inviteAction(_prev: InviteState, form: FormData): Promise<
   }
   const result = await createInvite({ email, name, role, businessId, invitedBy: user.email });
   revalidatePath('/admin/people');
-  return result.ok ? { link: result.link, email: result.email } : { error: result.error };
+  return result.ok ? { link: result.link, email: result.email, emailed: result.emailed } : { error: result.error };
 }
 
 /** Who looks after a listing. Their people can then edit it, through review. Blank: nobody. */

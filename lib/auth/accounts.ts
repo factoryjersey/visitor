@@ -2,7 +2,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { db } from '@/lib/db';
-import { invites, users, type Role, type User } from '@/lib/db/schema';
+import { businesses, invites, users, type Role, type User } from '@/lib/db/schema';
+import { sendEmail } from '@/lib/email/send';
+import { inviteEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
 import { isEmailListed } from './permissions';
 
@@ -61,9 +63,15 @@ export const inviteLink = (token: string) => `${env.NEXT_PUBLIC_APP_URL.replace(
  * link; an address with an account as anything else is refused, so an
  * invite can never move somebody to another business or role.
  */
-export async function createInvite(input: { email: string; role: Role; businessId: string | null; name?: string | null; invitedBy: string }): Promise<
-  { ok: true; email: string; link: string } | { ok: false; error: string }
-> {
+export async function createInvite(input: {
+  email: string;
+  role: Role;
+  businessId: string | null;
+  name?: string | null;
+  invitedBy: string;
+  /** A line for the email saying why: "Your claim for … is approved." */
+  reason?: string;
+}): Promise<{ ok: true; email: string; link: string; emailed: boolean } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase();
   const [existing] = await db.select().from(users).where(eq(users.email, email));
   if (existing && (existing.role !== input.role || existing.businessId !== input.businessId)) {
@@ -86,7 +94,14 @@ export async function createInvite(input: { email: string; role: Role; businessI
       expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000),
     });
   });
-  return { ok: true, email, link: inviteLink(token) };
+  const link = inviteLink(token);
+  // Emailed when we can; the link is returned either way, to copy if it does not arrive.
+  const [business] = input.businessId ? await db.select({ name: businesses.name }).from(businesses).where(eq(businesses.id, input.businessId)) : [];
+  const emailed = await sendEmail({
+    to: email,
+    ...inviteEmail({ name: input.name ?? existing?.name ?? null, businessName: business?.name ?? null, staff: input.role !== 'provider', link, reason: input.reason }),
+  });
+  return { ok: true, email, link, emailed };
 }
 
 /** The open invite a link refers to, or null if it is unknown, used or expired. */

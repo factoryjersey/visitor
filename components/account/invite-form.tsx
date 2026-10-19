@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { CopyLink } from './invite-link';
 
-type State = { error?: string; link?: string; email?: string } | null;
+type State = { error?: string; link?: string; email?: string; emailed?: boolean } | null;
 
 /** Name and email, and the link to pass on once made. Extra fields (role, business) come in as children. */
 export function InviteForm({ action, children, submitLabel = 'Make invite link' }: { action: (s: State, f: FormData) => Promise<State>; children?: React.ReactNode; submitLabel?: string }) {
@@ -28,7 +28,7 @@ export function InviteForm({ action, children, submitLabel = 'Make invite link' 
       {state?.link && (
         <div className="max-w-2xl rounded border border-emerald-200 bg-emerald-50 p-3">
           <p className="mb-2 text-sm text-emerald-800">Invite made for {state.email}.</p>
-          <CopyLink link={state.link} />
+          <CopyLink link={state.link} emailedTo={state.emailed ? state.email : null} />
         </div>
       )}
     </div>

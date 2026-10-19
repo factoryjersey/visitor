@@ -41,12 +41,12 @@ export async function enableUserAction(form: FormData) {
   refresh();
 }
 
-type LinkState = { link?: string; error?: string } | null;
+type LinkState = { link?: string; email?: string; emailed?: boolean; error?: string } | null;
 
 /** A fresh invite link for somebody who has not set a password yet, or lost the first one. */
 export async function resendInviteAction(_prev: LinkState, form: FormData): Promise<LinkState> {
   const { actor, other } = await target(form);
   const result = await createInvite({ email: other.email, role: other.role, businessId: other.businessId, invitedBy: actor.email });
   refresh();
-  return result.ok ? { link: result.link } : { error: result.error };
+  return result.ok ? { link: result.link, email: result.email, emailed: result.emailed } : { error: result.error };
 }

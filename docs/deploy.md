@@ -18,6 +18,10 @@ One Railway project, `visitor`, with:
 | `SUPABASE_SERVICE_ROLE_KEY` | its service role key; needed to accept an invite with a password. Secret. |
 | `NEXT_PUBLIC_APP_URL` | the public URL: `https://visitor.je` (www.visitor.je redirects there) |
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
+| `ANTHROPIC_API_KEY` | optional: puts providers' and imported copy in the third person |
+| `RESEND_API_KEY` | optional: sends invites and claim emails (Resend, with visitor.je verified) |
+| `EMAIL_FROM` | optional, default `Visitor <hello@visitor.je>` |
+| `STAFF_NOTIFY_EMAILS` | optional, comma-separated: who hears about new claims (default every staff account) |
 
 Railway no longer reads `railway.json` (config as code is deprecated), so
 the build, pre-deploy, start and healthcheck settings above are set on the

@@ -5,7 +5,11 @@ import { z } from 'zod';
 import { requireStaff } from '@/lib/auth/session';
 import { approveClaim, rejectClaim } from '@/lib/claims';
 
-export type DecisionState = { done: 'approved'; businessName: string; listings: number; invite: { email: string; link: string } | null } | { done: 'rejected' } | { error: string } | null;
+export type DecisionState =
+  | { done: 'approved'; businessName: string; listings: number; invite: { email: string; link: string } | null; emailed: boolean; email: string }
+  | { done: 'rejected'; emailed: boolean }
+  | { error: string }
+  | null;
 
 /** Approve: to the business chosen, or a new one named after the claim ("new"). Reject: with a note for our records. */
 export async function decideClaimAction(_prev: DecisionState, form: FormData): Promise<DecisionState> {
@@ -21,9 +25,9 @@ export async function decideClaimAction(_prev: DecisionState, form: FormData): P
     .parse(Object.fromEntries(form));
 
   if (v.decision === 'reject') {
-    await rejectClaim(v.claimId, user.email, v.note || null);
+    const { emailed } = await rejectClaim(v.claimId, user.email, v.note || null);
     revalidatePath('/admin', 'layout');
-    return { done: 'rejected' };
+    return { done: 'rejected', emailed };
   }
   const result = await approveClaim({
     claimId: v.claimId,
@@ -33,5 +37,5 @@ export async function decideClaimAction(_prev: DecisionState, form: FormData): P
   });
   revalidatePath('/admin', 'layout');
   if (!result.ok) return { error: result.error };
-  return { done: 'approved', businessName: result.businessName, listings: result.listings, invite: result.invite };
+  return { done: 'approved', businessName: result.businessName, listings: result.listings, invite: result.invite, emailed: result.emailed, email: result.invite?.email ?? '' };
 }

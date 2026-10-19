@@ -2,6 +2,9 @@ import { and, asc, eq, gte, ilike, isNull, ne, or, sql } from 'drizzle-orm';
 import { createInvite } from '@/lib/auth/accounts';
 import { db } from '@/lib/db';
 import { businesses, claims, events, experiences, places, users, type Claim, type ListingKind } from '@/lib/db/schema';
+import { sendEmail } from '@/lib/email/send';
+import { claimApprovedEmail, claimReceivedEmail, claimRejectedEmail, claimStaffEmail } from '@/lib/email/templates';
+import { env } from '@/lib/env';
 import { TABLES } from '@/lib/listings';
 
 /**
@@ -79,7 +82,32 @@ export async function submitClaim(input: ClaimInput): Promise<{ ok: true } | { o
   if (open.some((c) => c.kind === input.kind && c.listingId === input.listingId)) return { ok: true };
   if (open.length >= OPEN_PER_EMAIL) return { ok: false, error: 'We already have several requests from you. We will be in touch about those first.' };
   await db.insert(claims).values({ ...input, email });
+
+  // Staff hear of it; the person hears we have it. Neither holds up the reply.
+  const listing = input.kind && input.listingId ? await listingTitle(input.kind, input.listingId) : null;
+  await Promise.all([
+    staffAddresses().then((to) =>
+      sendEmail({ to, ...claimStaffEmail({ ...input, email, listing: listing && input.kind ? { kind: KIND_WORD[input.kind], title: listing } : null }) }),
+    ),
+    sendEmail({ to: email, ...claimReceivedEmail({ name: input.name, listingTitle: listing }) }),
+  ]);
   return { ok: true };
+}
+
+const KIND_WORD: Record<ListingKind, string> = { venue: 'venue', event: 'event', experience: 'tour' };
+
+async function listingTitle(kind: ListingKind, id: string): Promise<string | null> {
+  const t = TABLES[kind];
+  const [row] = (await db.select().from(t).where(eq(t.id, id))) as Record<string, unknown>[];
+  return row ? String(row.name ?? row.title) : null;
+}
+
+/** Who hears about claims: STAFF_NOTIFY_EMAILS, else every staff account still switched on. */
+async function staffAddresses(): Promise<string[]> {
+  const listed = env.STAFF_NOTIFY_EMAILS?.split(',').map((s) => s.trim()).filter(Boolean);
+  if (listed?.length) return listed;
+  const staff = await db.select({ email: users.email, role: users.role, disabledAt: users.disabledAt }).from(users);
+  return staff.filter((u) => u.role !== 'provider' && !u.disabledAt).map((u) => u.email);
 }
 
 export type QueuedClaim = Claim & {
@@ -119,7 +147,9 @@ export async function claimCount() {
   return Number(row?.n ?? 0);
 }
 
-export type ApproveResult = { ok: true; invite: { email: string; link: string } | null; businessName: string; listings: number } | { ok: false; error: string };
+export type ApproveResult =
+  | { ok: true; invite: { email: string; link: string } | null; emailed: boolean; businessName: string; listings: number }
+  | { ok: false; error: string };
 
 /**
  * Give the claimed listing to a business, an existing one or one made
@@ -167,15 +197,31 @@ export async function approveClaim(input: { claimId: string; reviewer: string; b
     await tx.update(claims).set({ status: 'approved', businessId, reviewedBy: input.reviewer, reviewedAt: new Date() }).where(eq(claims.id, c.id));
   });
 
-  if (account) return { ok: true, invite: null, businessName, listings };
-  const made = await createInvite({ email: c.email, name: c.name, role: 'provider', businessId: businessId!, invitedBy: input.reviewer });
+  const title = c.kind && c.listingId ? await listingTitle(c.kind, c.listingId) : null;
+  if (account) {
+    const emailed = await sendEmail({ to: c.email, ...claimApprovedEmail({ name: c.name, businessName, listingTitle: title }) });
+    return { ok: true, invite: null, emailed, businessName, listings };
+  }
+  const made = await createInvite({
+    email: c.email,
+    name: c.name,
+    role: 'provider',
+    businessId: businessId!,
+    invitedBy: input.reviewer,
+    reason: title ? `Your claim for ${title} is approved.` : 'Your request to list with Visitor is approved.',
+  });
   if (!made.ok) return { ok: false, error: made.error };
-  return { ok: true, invite: { email: made.email, link: made.link }, businessName, listings };
+  return { ok: true, invite: { email: made.email, link: made.link }, emailed: made.emailed, businessName, listings };
 }
 
-export async function rejectClaim(claimId: string, reviewer: string, note: string | null) {
-  await db
+/** Turn a claim down. The note is ours; the person gets a kind email that does not quote it. */
+export async function rejectClaim(claimId: string, reviewer: string, note: string | null): Promise<{ emailed: boolean }> {
+  const [c] = await db
     .update(claims)
     .set({ status: 'rejected', reviewNote: note, reviewedBy: reviewer, reviewedAt: new Date() })
-    .where(and(eq(claims.id, claimId), eq(claims.status, 'pending')));
+    .where(and(eq(claims.id, claimId), eq(claims.status, 'pending')))
+    .returning();
+  if (!c) return { emailed: false };
+  const title = c.kind && c.listingId ? await listingTitle(c.kind, c.listingId) : null;
+  return { emailed: await sendEmail({ to: c.email, ...claimRejectedEmail({ name: c.name, listingTitle: title }) }) };
 }

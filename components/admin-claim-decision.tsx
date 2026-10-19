@@ -23,7 +23,7 @@ export function ClaimDecision(props: {
   const [state, action, pending] = useActionState<DecisionState, FormData>(decideClaimAction, null);
 
   if (state && 'done' in state) {
-    if (state.done === 'rejected') return <p className="text-sm text-stone-500">Turned down.</p>;
+    if (state.done === 'rejected') return <p className="text-sm text-stone-500">Turned down{state.emailed ? ' and told by email' : ''}.</p>;
     const subject = encodeURIComponent('Your Visitor listing');
     const body = state.invite
       ? encodeURIComponent(`Hello,\n\nYour claim has been approved. Set up your account here to update your listing and add what you have coming up:\n\n${state.invite.link}\n\nThe link works once, for 14 days.\n\nVisitor`)
@@ -36,13 +36,15 @@ export function ClaimDecision(props: {
         </p>
         {state.invite ? (
           <>
-            <CopyLink link={state.invite.link} />
-            <a href={`mailto:${state.invite.email}?subject=${subject}&body=${body}`} className="inline-block text-xs font-medium text-emerald-800 hover:underline">
-              Email it to {state.invite.email} →
-            </a>
+            <CopyLink link={state.invite.link} emailedTo={state.emailed ? state.invite.email : null} />
+            {!state.emailed && (
+              <a href={`mailto:${state.invite.email}?subject=${subject}&body=${body}`} className="inline-block text-xs font-medium text-emerald-800 hover:underline">
+                Email it to {state.invite.email} →
+              </a>
+            )}
           </>
         ) : (
-          <p className="text-xs text-emerald-800">They already have an account: it is in their listings now.</p>
+          <p className="text-xs text-emerald-800">They already have an account: it is in their listings now{state.emailed ? ', and we have emailed to say so' : ''}.</p>
         )}
       </div>
     );

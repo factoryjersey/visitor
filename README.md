@@ -103,6 +103,18 @@ accounts stay invite only:
   for someone without an account: a link to copy, or send with the
   prefilled email. Someone already on that business's team needs nothing.
 
+## Email
+
+Through Resend (`lib/email`), when `RESEND_API_KEY` is set; without it
+nothing is sent and invite links are shown to copy, as before. A failed
+send never stops what caused it, and an invite link is always shown too.
+
+- Invites, from People, a provider's team page and approved claims.
+- A new claim: to staff (`STAFF_NOTIFY_EMAILS`, else every staff account),
+  replying straight to the claimant; and a "we have your request" to them.
+- A claim approved (for someone with an account; others get the invite)
+  or turned down. Our note on a turned-down claim stays ours.
+
 ## How it fits together
 
 | | |
@@ -251,7 +263,7 @@ InDesign does that.
 
 - Editions: a dated, signed-off snapshot of the selection.
 - factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
-- Emailing invites and review outcomes. Invite links are copied and sent by hand.
+- Emailing review outcomes on providers' listings.
 - Images on providers' listings: they need somewhere to upload to.
 
 ## Checks

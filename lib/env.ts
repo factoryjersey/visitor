@@ -27,6 +27,14 @@ const envSchema = z.object({
   // Claude, for putting providers' own words into the guide's voice. Without
   // it their text is saved as they wrote it.
   ANTHROPIC_API_KEY: z.string().optional(),
+
+  // Resend, for invites and claim emails. Without the key nothing is sent:
+  // invite links are shown to copy, as before.
+  RESEND_API_KEY: z.string().optional(),
+  // The sender: an address on a domain verified in Resend.
+  EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
+  // Who hears about new claims, comma-separated. Unset: every staff account.
+  STAFF_NOTIFY_EMAILS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

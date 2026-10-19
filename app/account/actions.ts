@@ -47,7 +47,7 @@ export async function saveListingAction(_prev: SaveState, form: FormData): Promi
   return { ok: true, at, message: OUTCOME[result.outcome] + (result.rewritten ? REWRITTEN : '') };
 }
 
-type InviteState = { error?: string; link?: string; email?: string } | null;
+type InviteState = { error?: string; link?: string; email?: string; emailed?: boolean } | null;
 
 /** Invite a colleague to the same business. The link is shown once, here, to pass on. */
 export async function inviteColleagueAction(_prev: InviteState, form: FormData): Promise<InviteState> {
@@ -58,5 +58,5 @@ export async function inviteColleagueAction(_prev: InviteState, form: FormData):
   const result = await createInvite({ ...parsed.data, role: 'provider', businessId: user.businessId, invitedBy: user.email });
   if (!result.ok) return { error: result.error };
   revalidatePath('/account/team');
-  return { link: result.link, email: result.email };
+  return { link: result.link, email: result.email, emailed: result.emailed };
 }
