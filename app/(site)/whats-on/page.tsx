@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicEventTypes, publicEvents, todayIso } from '@/lib/db/public';
+import { publicEvents, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
@@ -23,10 +24,11 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
 export default async function WhatsOn({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const values = { q: one(sp.q), month: one(sp.month), type: one(sp.type), ongoing: one(sp.ongoing) };
-  const [rows, types] = await Promise.all([
-    publicEvents({ showOngoing: values.ongoing === '1', month: values.month, type: values.type, q: values.q }),
-    publicEventTypes(),
-  ]);
+  // Everything the rest of the search finds, counted by kind for the tiles; then the kind chosen.
+  const all = await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q });
+  const counts = new Map<string, number>();
+  for (const r of all) for (const t of new Set(r.event.eventTypes)) counts.set(t, (counts.get(t) ?? 0) + 1);
+  const rows = values.type ? all.filter((r) => r.event.eventTypes.includes(values.type!)) : all;
   const today = todayIso();
   const highlights = rows.filter((r) => r.event.highlight);
   const rest = rows.filter((r) => !r.event.highlight);
@@ -55,12 +57,11 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <FilterBar
         action="/whats-on"
         values={values}
-        selects={[
-          { name: 'month', label: 'When', options: monthOptions() },
-          { name: 'type', label: 'Type', options: types.map((t) => ({ value: t, label: t })) },
-        ]}
+        selects={[{ name: 'month', label: 'When', options: monthOptions() }]}
         toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
+        keep={['type']}
       />
+      <CategoryMenu action="/whats-on" values={values} counts={counts} total={all.length} />
 
       {highlights.length > 0 && (
         <section className="mb-12">

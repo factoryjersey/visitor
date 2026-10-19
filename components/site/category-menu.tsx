@@ -1,0 +1,55 @@
+import { LayoutGrid } from 'lucide-react';
+import Link from 'next/link';
+import { MARKERS } from './category-markers';
+
+/**
+ * The kinds of event as a row of icon tiles, each with how many it would
+ * show given the rest of the search. One tap filters; tapping the chosen
+ * one again lets it go. Links, so every choice has an address.
+ */
+export function CategoryMenu(props: {
+  action: string;
+  values: Record<string, string | undefined>;
+  counts: Map<string, number>;
+  total: number;
+}) {
+  const href = (type: string | null) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(props.values)) if (v && k !== 'type') params.set(k, v);
+    if (type) params.set('type', type);
+    const qs = params.toString();
+    return qs ? `${props.action}?${qs}` : props.action;
+  };
+  const chosen = props.values.type ?? null;
+  const tiles = MARKERS.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || t === chosen);
+
+  const tile = (key: string, label: string, Icon: typeof LayoutGrid, count: number, active: boolean, to: string) => (
+    <li key={key} className="shrink-0 snap-start">
+      <Link
+        href={to}
+        scroll={false}
+        aria-current={active ? 'true' : undefined}
+        className={`group/tile flex w-[5.75rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2.5 text-center transition-colors ${active ? 'bg-coral/10' : 'hover:bg-harbour/5'}`}
+      >
+        <span
+          className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 transition-colors ${
+            active ? 'bg-coral text-white ring-coral' : 'bg-white text-harbour ring-harbour/10 group-hover/tile:text-coral group-hover/tile:ring-coral/40'
+          }`}
+        >
+          <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
+        </span>
+        <span className={`text-[0.7rem] font-semibold leading-tight ${active ? 'text-coral' : 'text-ink'}`}>{label}</span>
+        <span className="text-[0.7rem] leading-none text-harbour/50">{count}</span>
+      </Link>
+    </li>
+  );
+
+  return (
+    <nav aria-label="Kinds of event" className="-mx-4 mb-8 px-4">
+      <ul className="flex snap-x gap-1 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+        {tile('all', 'Everything', LayoutGrid, props.total, !chosen, href(null))}
+        {tiles.map(([type, Icon]) => tile(type, type, Icon, props.counts.get(type) ?? 0, chosen === type, href(chosen === type ? null : type)))}
+      </ul>
+    </nav>
+  );
+}

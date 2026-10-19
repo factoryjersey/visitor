@@ -98,14 +98,6 @@ export async function publicRelatedEvents(e: Pick<Event, 'eventTypes'>, exclude:
 /** Types for staff, not visitors: a filter for them would only lead to what review turned down. */
 const STAFF_ONLY_TYPES = new Set(['Business & networking']);
 
-/** The event types in use, for the filter: "Music", "Arts & cultural". */
-export async function publicEventTypes(): Promise<string[]> {
-  const rows = await db.execute<{ t: string }>(
-    sql`select distinct unnest(${events.eventTypes}) as t from ${events} where ${events.inclusion} <> 'excluded' and ${events.review} = 'approved' order by 1`,
-  );
-  return rows.map((r) => r.t).filter((t) => !STAFF_ONLY_TYPES.has(t));
-}
-
 export type PublicTourFilter = { showOnDemand?: boolean; genre?: Genre; month?: string; q?: string };
 
 export async function publicTours(f: PublicTourFilter = {}) {

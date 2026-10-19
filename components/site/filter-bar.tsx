@@ -9,10 +9,13 @@ export function FilterBar(props: {
   values: Record<string, string | undefined>;
   selects: { name: string; label: string; options: Option[] }[];
   toggle: { name: string; label: string; hint: string };
+  /** Values chosen elsewhere (the category tiles) that a search keeps. */
+  keep?: string[];
 }) {
   const active = Object.values(props.values).some(Boolean);
   return (
-    <form action={props.action} className="mb-8 flex flex-wrap items-end gap-4 rounded-lg bg-white p-4 shadow-sm ring-1 ring-harbour/5">
+    <form action={props.action} className="mb-4 flex flex-wrap items-end gap-4 rounded-lg bg-white p-4 shadow-sm ring-1 ring-harbour/5">
+      {props.keep?.map((k) => props.values[k] && <input key={k} type="hidden" name={k} value={props.values[k]} />)}
       <label className="flex min-w-48 flex-1 flex-col text-sm">
         <span className="mb-1 text-xs font-medium uppercase tracking-wide text-harbour/60">Search</span>
         <input name="q" defaultValue={props.values.q ?? ''} placeholder="Name or venue" className="rounded border border-harbour/20 px-3 py-2" />

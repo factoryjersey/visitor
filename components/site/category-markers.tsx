@@ -7,7 +7,7 @@ import type { Genre } from '@/lib/domain/genre';
  * and Business & networking say nothing to a visitor at a glance, so they
  * have none.
  */
-const MARKERS: [type: string, icon: LucideIcon][] = [
+export const MARKERS: [type: string, icon: LucideIcon][] = [
   ['Festivals', PartyPopper],
   ['Music', Music],
   ['Sports', Trophy],
