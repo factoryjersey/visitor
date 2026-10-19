@@ -18,6 +18,8 @@ export default {
         // Headings: 80% grey.
         ink: '#333333',
         sea: '#1f6f8b',
+        // The .je in the wordmark.
+        cyan: '#12a5c4',
         coral: '#d9542f',
       },
     },

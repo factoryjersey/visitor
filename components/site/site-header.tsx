@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Wordmark } from './wordmark';
 
 const NAV = [
   { href: '/whats-on', label: 'What’s on' },
@@ -34,10 +35,8 @@ export function SiteHeader() {
   return (
     <header className="relative z-30 border-b border-harbour/10 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4">
-        <Link href="/" aria-label="Visitor, Jersey’s What’s On Guide: home" className="flex flex-col">
-          {/* The visitor wordmark, as on visitor.je, in harbour navy for the white header. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/visitor-logo.svg" alt="Visitor" width={130} height={33} className="h-7 w-auto self-start md:h-8" />
+        <Link href="/" aria-label="Visitor.je, Jersey’s What’s On Guide: home" className="flex flex-col items-start">
+          <Wordmark />
           <span className="mt-1 font-serif text-[0.8rem] italic leading-none text-ink/70">Jersey’s What’s On Guide</span>
         </Link>
 
