@@ -2,15 +2,16 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { Copy, DateList, Facts, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
-import { publicTour, todayIso } from '@/lib/db/public';
+import { publicTour, publicVenueNamed, todayIso } from '@/lib/db/public';
 import { GENRES } from '@/lib/domain/genre';
 import { printPrice, printTimes } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
-import { webWhen } from '@/lib/domain/web-dates';
+import { headerWhen, webWhen } from '@/lib/domain/web-dates';
+import { slugify } from '@/lib/domain/slug';
 import { JsonLd } from '@/components/site/json-ld';
 import { tourOut } from '@/lib/agents/data';
 import { breadcrumbs, tourLd } from '@/lib/agents/schema-org';
@@ -39,18 +40,22 @@ export default async function TourPage({ params }: Props) {
   const dated = UNIQUE.includes(t.occurrence);
   const directions = directionsUrl(t.lat, t.lon, t.meetingPoint);
   const book = t.website ?? provider?.website;
-  const staff = await staffViewer();
+  // Where it happens, when that is a venue on the site: the operator's own place, or the meeting point.
+  const [staff, host] = await Promise.all([staffViewer(), publicVenueNamed(provider?.name, t.meetingPoint)]);
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
       <JsonLd data={[tourLd(tourOut(t, provider, today)), breadcrumbs([['Tours & experiences', '/tours'], [t.title, `/tours/${t.slug}`]])]} />
       {staff && <StaffEdit kind="experience" id={t.id} title={t.title} summary={t.summary} description={t.description} genre={t.genre} genres={GENRES} adminHref={`/admin/tours/${t.slug}`} />}
       <Link href="/tours" className="text-sm text-harbour/60 hover:text-brand">← Tours &amp; experiences</Link>
-      <header className="mb-6 mt-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">{t.highlight ? 'Highlight' : t.genre ?? 'Experience'}</p>
-        <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{t.title}</h1>
-        <p className="mt-2 text-lg font-medium text-sea">{dated ? webWhen(t.dates, t.occurrence, today) : 'Book any day'}{provider && <span className="text-harbour/60"> · with {provider.name}</span>}</p>
-      </header>
+      <ListingHeader
+        when={dated ? headerWhen(t.dates, t.occurrence, today) : { main: 'Book any day', more: null }}
+        title={t.title}
+        label={t.highlight ? 'Highlight' : (t.genre ?? 'Experience')}
+        whereWord="with"
+        where={host ? { name: host.name, href: `/venues/${host.slug}` } : provider ? { name: provider.name, href: `/organisers/${slugify(provider.name)}` } : null}
+        by={host && provider ? { name: provider.name, href: `/organisers/${slugify(provider.name)}` } : null}
+      />
       <Hero image={t.headerImage} title={t.title} />
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
         <div className="space-y-6">

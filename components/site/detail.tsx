@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { EventDate, Image } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
 import { upcomingDates } from '@/lib/domain/web-dates';
@@ -82,4 +83,37 @@ export function directionsUrl(lat: number | null, lon: number | null, fallback: 
 export function timesSummary(times: string | null): string | null {
   if (!times) return null;
   return times.split(/ \| |, /).length > 2 ? 'Varies by day, see all dates' : times;
+}
+
+type Who = { name: string; href: string | null } | null;
+
+const whoLink = (w: NonNullable<Who>) =>
+  w.href ? <Link href={w.href} className="font-semibold text-ink hover:text-brand">{w.name}</Link> : <span className="font-semibold text-ink">{w.name}</span>;
+
+/**
+ * The top of a listing's page: when first, the next date large and any
+ * later ones small; then what it is; then where, and whose, each a way
+ * on to that venue's or organiser's own page.
+ */
+export function ListingHeader(props: { when: { main: string; more: string | null } | null; title: string; label?: string | null; where?: Who; whereWord?: 'at' | 'with'; by?: Who }) {
+  const { where, by } = props;
+  // A tour run by the place it happens at needs saying once.
+  const showBy = by && (!where || by.name.toLowerCase() !== where.name.toLowerCase());
+  return (
+    <header className="mb-6 mt-3">
+      {props.label && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">{props.label}</p>}
+      <p className="font-display text-xl font-semibold text-sea md:text-2xl">
+        {props.when?.main ?? 'Finished'}
+        {props.when?.more && <span className="ml-2 text-base font-medium text-sea/70 md:text-lg">({props.when.more})</span>}
+      </p>
+      <h1 className="mt-1 font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{props.title}</h1>
+      {(where || showBy) && (
+        <p className="mt-2 text-lg text-harbour/70">
+          {where && <>{props.whereWord ?? 'at'} {whoLink(where)}</>}
+          {where && showBy && ' '}
+          {showBy && <>by {whoLink(by)}</>}
+        </p>
+      )}
+    </header>
+  );
 }

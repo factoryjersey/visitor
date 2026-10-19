@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { Copy, DateList, Facts, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
@@ -11,7 +11,7 @@ import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@
 import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { slugify } from '@/lib/domain/slug';
-import { cardWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, headerWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
 import { eventOut } from '@/lib/agents/data';
 import { breadcrumbs, eventLd } from '@/lib/agents/schema-org';
@@ -66,11 +66,13 @@ export default async function EventPage({ params }: Props) {
       <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
         <div className="min-w-0 px-4 py-8 md:pr-10">
           <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-brand">← What&apos;s on</Link>
-          <header className="mb-6 mt-3">
-            {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Highlight</p>}
-            <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{e.title}</h1>
-            <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
-          </header>
+          <ListingHeader
+            when={headerWhen(e.dates, e.occurrence, today)}
+            title={e.title}
+            label={e.highlight ? 'Highlight' : null}
+            where={venueName ? { name: venueName, href: venue ? `/venues/${venue.slug}` : null } : null}
+            by={e.organiser ? { name: e.organiser, href: `/organisers/${slugify(e.organiser)}` } : null}
+          />
           <Hero image={e.headerImage} title={e.title} />
           <div className="mt-8 space-y-6">
             <Copy lead={e.guideCopy ?? e.summary} body={e.description} />

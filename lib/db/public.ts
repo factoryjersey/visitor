@@ -4,6 +4,7 @@ import { events, experiences, places, providers, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
+import { normaliseName } from '@/lib/domain/same-place';
 import { slugify } from '@/lib/domain/slug';
 
 /**
@@ -252,4 +253,15 @@ export async function publicOrganiser(slug: string) {
     events: byNextDate(eventRows),
     tours: tourRows.map((r) => ({ ...r, next: nextDate(r.tour.dates, today) ?? '9999' })).sort((a, b) => a.next.localeCompare(b.next)),
   };
+}
+
+/** A public venue by its name, as a tour gives its meeting place or operator: for a link, so only an exact match. */
+export async function publicVenueNamed(...names: (string | null | undefined)[]) {
+  const wanted = names.filter((n): n is string => !!n?.trim()).map((n) => normaliseName(n));
+  if (!wanted.length) return null;
+  const rows = await db
+    .select({ name: places.name, slug: places.slug })
+    .from(places)
+    .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), inArray(sql`lower(${places.name})`, names.filter((n): n is string => !!n?.trim()).map((n) => n.trim().toLowerCase()))));
+  return rows.find((r) => wanted.includes(normaliseName(r.name))) ?? null;
 }

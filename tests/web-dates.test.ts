@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
+import { cardWhen, headerWhen, nextDate, webWhen } from '@/lib/domain/web-dates';
 
 const d = (...isos: string[]) => isos.map((date) => ({ date, start: null, end: null }));
 const today = '2026-10-18';
@@ -37,5 +37,17 @@ describe('cardWhen', () => {
     expect(cardWhen(d('2026-10-24'), 'one-off', today)).toBe('Sat 24 Oct');
     expect(cardWhen(d('2026-10-31', '2026-11-01'), 'one-off', today)).toBe('Sat 31 Oct – Sun 1 Nov');
     expect(cardWhen(d('2026-10-24', '2026-10-31', '2026-11-07'), 'regular', today)).toBe(webWhen(d('2026-10-24', '2026-10-31', '2026-11-07'), 'regular', today));
+  });
+});
+
+describe('headerWhen', () => {
+  const at = (...ds: string[]) => ds.map((date) => ({ date, start: null, end: null }));
+  it('puts the next date first and the rest after it', () => {
+    expect(headerWhen(at('2026-10-24', '2026-11-07'), 'dates', '2026-10-19')).toEqual({ main: 'Sat 24 Oct', more: 'and Sat 7 Nov' });
+    expect(headerWhen(at('2026-10-24', '2026-11-07', '2026-11-21', '2026-12-05'), 'dates', '2026-10-19')).toEqual({ main: 'Sat 24 Oct', more: 'and 3 more dates' });
+  });
+  it('keeps a run of days, or a single date, as one phrase', () => {
+    expect(headerWhen(at('2026-10-31', '2026-11-01'), 'one-off', '2026-10-19')).toEqual({ main: 'Sat 31 Oct – Sun 1 Nov', more: null });
+    expect(headerWhen(at('2026-10-24'), 'one-off', '2026-10-19')).toEqual({ main: 'Sat 24 Oct', more: null });
   });
 });
