@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { StaffEdit } from '@/components/site/staff-edit';
+import { staffViewer } from '@/lib/auth/session';
 import { publicTour, todayIso } from '@/lib/db/public';
+import { GENRES } from '@/lib/domain/genre';
 import { printPrice, printTimes } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -31,9 +34,11 @@ export default async function TourPage({ params }: Props) {
   const dated = UNIQUE.includes(t.occurrence);
   const directions = directionsUrl(t.lat, t.lon, t.meetingPoint);
   const book = t.website ?? provider?.website;
+  const staff = await staffViewer();
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
+      {staff && <StaffEdit kind="experience" id={t.id} title={t.title} summary={t.summary} description={t.description} genre={t.genre} genres={GENRES} adminHref={`/admin/tours/${t.slug}`} />}
       <Link href="/tours" className="text-sm text-harbour/60 hover:text-brand">← Tours &amp; experiences</Link>
       <header className="mb-6 mt-3">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">{t.highlight ? 'Highlight' : t.genre ?? 'Experience'}</p>

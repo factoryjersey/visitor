@@ -38,7 +38,7 @@ const RULES: Rule[] = [
   },
   {
     type: 'Sports',
-    title: /\b(parkrun|fun run|\d+ ?k (run|race)|running|marathon|triathlon|duathlon|swim(ming)?|golf|tennis|padel|football|rugby|cricket|hockey|netball|cycl\w*|sportive|regatta|sailing|race|tournament|match|boxing(?! day)|climbing|\bfc|home games?|surf\w*|paddleboard\w*|kayak\w*)\b/i,
+    title: /\b(parkrun|fun run|\d+ ?k (run|race)|running (club|race|festival|group|session)|marathon|triathlon|duathlon|swim(ming)?|golf|tennis|padel|football|rugby|cricket|hockey|netball|cycl\w*|sportive|regatta|sailing|race|tournament|match|boxing(?! day)|climbing|\bfc|home games?|surf\w*|paddleboard\w*|kayak\w*)\b/i,
   },
   {
     type: 'Health & wellbeing',
@@ -71,6 +71,9 @@ const RULES: Rule[] = [
   { type: 'Festivals', title: /\b(festival|fête|fete|carnival)\b/i },
   { type: 'Markets & fairs', title: /\b(market|craft fair|fair|car boot|bazaar|pop[- ]up shop|makers)\b/i },
 ];
+
+/** Every type an event can carry, for a person choosing them: the rules' own, and Visit Jersey's two for sport. */
+export const EVENT_TYPES = [...new Set([...RULES.map((r) => r.type), 'Spectator', 'Participant'])].sort();
 
 /** Types a source always means, whatever the event says. */
 const BY_SOURCE: Record<string, string[]> = { 'jersey-charities': ['Charity'] };

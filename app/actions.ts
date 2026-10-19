@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
 import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers } from '@/lib/db/schema';
+import { EVENT_TYPES } from '@/lib/domain/categorise';
 import { GENRES } from '@/lib/domain/genre';
 import { OCCURRENCES } from '@/lib/domain/occurrence';
 
@@ -211,5 +212,61 @@ export async function setHighlight(form: FormData) {
   const table = kind === 'event' ? events : experiences;
   const now = new Date();
   await db.update(table).set({ highlight: highlight === 'true', editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(table.id, id));
+  revalidatePath('/', 'layout');
+}
+
+const checked = (form: FormData, name: string) => form.getAll(name).map(String);
+
+const quickEventSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1).max(300),
+  summary: z.string().trim().max(600),
+  description: z.string().trim().max(6000),
+  eventTypes: z.array(z.enum(EVENT_TYPES as [string, ...string[]])),
+});
+
+/**
+ * Staff's quick fixes from the event's own page: its title, card sentence,
+ * copy and kinds. Whatever they change is locked, so the next import keeps
+ * their answer rather than the source's.
+ */
+export async function quickEditEvent(form: FormData) {
+  const user = await requireStaff();
+  const v = quickEventSchema.parse({ ...Object.fromEntries(form), eventTypes: checked(form, 'eventTypes') });
+  const [row] = await db.select().from(events).where(eq(events.id, v.id));
+  if (!row) return;
+  const next = { title: v.title, summary: v.summary || null, description: v.description || null, eventTypes: v.eventTypes };
+  const changed = (Object.keys(next) as (keyof typeof next)[]).filter((k) => JSON.stringify(row[k]) !== JSON.stringify(next[k]));
+  if (!changed.length) return;
+  const now = new Date();
+  await db
+    .update(events)
+    .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
+    .where(eq(events.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
+const quickTourSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1).max(300),
+  summary: z.string().trim().max(600),
+  description: z.string().trim().max(6000),
+  genre: z.union([z.enum(GENRES), z.literal('')]),
+});
+
+/** The same for a tour, its genre in place of an event's kinds. */
+export async function quickEditTour(form: FormData) {
+  const user = await requireStaff();
+  const v = quickTourSchema.parse(Object.fromEntries(form));
+  const [row] = await db.select().from(experiences).where(eq(experiences.id, v.id));
+  if (!row) return;
+  const next = { title: v.title, summary: v.summary || null, description: v.description || null, genre: v.genre || null };
+  const changed = (Object.keys(next) as (keyof typeof next)[]).filter((k) => row[k] !== next[k]);
+  if (!changed.length) return;
+  const now = new Date();
+  await db
+    .update(experiences)
+    .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
+    .where(eq(experiences.id, v.id));
   revalidatePath('/', 'layout');
 }

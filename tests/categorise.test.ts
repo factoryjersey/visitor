@@ -36,6 +36,9 @@ describe('categorise', () => {
     expect(types('Sound Bath Meditation')).toEqual(['Health & wellbeing']);
     expect(types('Golf Day')).toEqual(['Sports']);
     expect(types('Embrace the Start: a classic evening')).toEqual([]);
+    // Running a process is not a run.
+    expect(types('The Right Advice On: Running a Grievance Process')).not.toContain('Sports');
+    expect(types('Jersey Spartans Running Club')).toEqual(['Sports']);
   });
 
   it('keeps a source’s own types and adds to them', () => {

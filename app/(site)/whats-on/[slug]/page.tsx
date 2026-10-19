@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
+import { StaffEdit } from '@/components/site/staff-edit';
+import { staffViewer } from '@/lib/auth/session';
+import { EVENT_TYPES } from '@/lib/domain/categorise';
 import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
 import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
@@ -49,7 +52,7 @@ export default async function EventPage({ params }: Props) {
     offers: e.fromPricePence !== null ? { '@type': 'Offer', price: (e.fromPricePence / 100).toFixed(2), priceCurrency: 'GBP', url: e.website ?? undefined } : undefined,
   };
 
-  const atVenue = await publicVenueEvents(e);
+  const [atVenue, staff] = await Promise.all([publicVenueEvents(e), staffViewer()]);
   // Not what the sidebar already lists.
   const related = await publicRelatedEvents(e, [e.id, ...atVenue.map((o) => o.event.id)]);
   // The organiser's own link from the feed. jersey.com's page about the listing is not one: it only sends people on again.
@@ -62,6 +65,9 @@ export default async function EventPage({ params }: Props) {
 
   return (
     <article>
+      {staff && (
+        <StaffEdit kind="event" id={e.id} title={e.title} summary={e.summary} description={e.description} eventTypes={e.eventTypes} allTypes={EVENT_TYPES} adminHref={`/admin/whats-on/${e.slug}`} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
         <div className="min-w-0 px-4 py-8 md:pr-10">

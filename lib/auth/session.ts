@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { Role } from '@/lib/db/schema';
 import { resolveAccount } from './accounts';
@@ -44,4 +45,16 @@ export async function requireProvider(): Promise<SessionUser & { businessId: str
   const user = await requireUser();
   if (user.role !== 'provider' || !user.businessId) redirect('/admin');
   return user as SessionUser & { businessId: string };
+}
+
+/**
+ * Staff looking at the public site, for the quick-edit panel. Visitors
+ * carry no Supabase session cookie, so for them this asks nothing of
+ * Supabase and the page costs what it did.
+ */
+export async function staffViewer(): Promise<SessionUser | null> {
+  const jar = await cookies();
+  if (!jar.getAll().some((c) => c.name.startsWith('sb-') && c.name.includes('auth-token'))) return null;
+  const user = await getUser();
+  return user && isStaff(user.role) ? user : null;
 }

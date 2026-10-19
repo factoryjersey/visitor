@@ -16,6 +16,8 @@ export function CategoryMenu(props: {
   total: number;
   /** Events' kinds by `type`, or tours' genres by `genre`. */
   of?: 'events' | 'tours';
+  /** Ways in from elsewhere, the front page: nothing is chosen yet, so no tile shows as chosen. */
+  entry?: boolean;
 }) {
   const tours = props.of === 'tours';
   const param = tours ? 'genre' : 'type';
@@ -54,7 +56,7 @@ export function CategoryMenu(props: {
   return (
     <nav aria-label={tours ? 'Kinds of tour' : 'Kinds of event'} className="mb-8">
       <Slider label={tours ? 'kinds of tour' : 'kinds of event'}>
-        {tile('all', 'Everything', LayoutGrid, props.total, !chosen, href(null))}
+        {tile('all', 'Everything', LayoutGrid, props.total, !chosen && !props.entry, href(null))}
         {tiles.map(([type, Icon]) => tile(type, type, Icon, props.counts.get(type) ?? 0, chosen === type, href(chosen === type ? null : type)))}
       </Slider>
     </nav>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { CategoryMenu } from '@/components/site/category-menu';
 import { GuideAd } from '@/components/site/guide-ad';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
@@ -23,6 +24,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const otherHighlights = events.filter((r) => r.event.highlight && r !== lead).slice(0, 2);
   const comingUp = events.filter((r) => r !== lead && !r.event.highlight && UNIQUE.includes(r.event.occurrence)).slice(0, 6);
   const datedTours = tours.slice(0, 3);
+  // The same tiles as What's on and Tours, each a way in to that page filtered.
+  const eventKinds = new Map<string, number>();
+  for (const r of events) for (const t of new Set(r.event.eventTypes)) eventKinds.set(t, (eventKinds.get(t) ?? 0) + 1);
+  const tourKinds = new Map<string, number>();
+  for (const r of tours) if (r.tour.genre) tourKinds.set(r.tour.genre, (tourKinds.get(r.tour.genre) ?? 0) + 1);
 
   return (
     <>
@@ -61,6 +67,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             <h2 className="font-display text-2xl font-semibold text-ink">Unique events coming soon</h2>
             <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-brand">Everything on →</Link>
           </div>
+          <CategoryMenu action="/whats-on" values={{}} counts={eventKinds} total={events.length} entry />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {comingUp.map(({ event: e, venue }) => (
               <ListingCard
@@ -86,6 +93,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               <h2 className="font-display text-2xl font-semibold text-ink">Tours &amp; experiences</h2>
               <Link href="/tours" className="text-sm font-medium text-sea hover:text-brand">All tours &amp; experiences →</Link>
             </div>
+            <CategoryMenu action="/tours" values={{}} counts={tourKinds} total={tours.length} of="tours" entry />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {datedTours.map(({ tour: t, provider }) => (
                 <ListingCard
