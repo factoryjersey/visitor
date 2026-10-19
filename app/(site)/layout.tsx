@@ -15,7 +15,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <p>Published by Factory with Visit Jersey.</p>
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <Link href="/list" className="font-medium text-harbour hover:text-coral">List your venue, event or tour</Link>
+            <Link href="/list" className="font-medium text-harbour hover:text-brand">List your venue, event or tour</Link>
             <p>Check with the organiser before you travel.</p>
           </div>
         </div>

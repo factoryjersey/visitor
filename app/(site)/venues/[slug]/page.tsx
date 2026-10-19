@@ -45,7 +45,7 @@ export default async function VenuePage({ params }: Props) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
-      <Link href="/venues" className="text-sm text-harbour/60 hover:text-coral">← Venues</Link>
+      <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
       <header className="mb-6 mt-3">
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
         {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
@@ -56,15 +56,15 @@ export default async function VenuePage({ params }: Props) {
         <Facts
           rows={[
             ['Address', address],
-            ['Phone', venue.phone && <a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{venue.phone}</a>],
-            ['Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-coral">{printWebsite(venue.website)?.toLowerCase()} ↗</a>],
+            ['Phone', venue.phone && <a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{venue.phone}</a>],
+            ['Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venue.website)?.toLowerCase()} ↗</a>],
           ]}
           actions={
             <>
               {venue.website && <a href={venue.website} target="_blank" rel="noopener" className={primaryButton}>Visit their website ↗</a>}
               {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
               {!venue.businessId && (
-                <Link href={`/claim/venues/${venue.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-coral">
+                <Link href={`/claim/venues/${venue.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand">
                   Is this your venue? Claim it
                 </Link>
               )}

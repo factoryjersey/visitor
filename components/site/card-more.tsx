@@ -22,7 +22,7 @@ export function CardMore({ price, summary }: { price?: string | null; summary?: 
             aria-expanded={open}
             aria-controls={id}
             aria-label={open ? 'Hide description' : 'Show description'}
-            className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full text-harbour/50 transition-colors hover:bg-harbour/5 hover:text-coral"
+            className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full text-harbour/50 transition-colors hover:bg-harbour/5 hover:text-brand"
           >
             <svg viewBox="0 0 16 16" aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
               <path d="M3.5 6l4.5 4.5L12.5 6" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />

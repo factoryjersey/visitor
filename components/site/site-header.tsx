@@ -45,7 +45,7 @@ export function SiteHeader() {
               key={n.href}
               href={n.href}
               aria-current={current(n.href) ? 'page' : undefined}
-              className={`font-display text-[0.95rem] font-semibold tracking-wide transition-colors hover:text-coral ${current(n.href) ? 'text-coral' : 'text-ink'}`}
+              className={`font-display text-[0.95rem] font-semibold tracking-wide transition-colors hover:text-brand ${current(n.href) ? 'text-brand' : 'text-ink'}`}
             >
               {n.label}
             </Link>
@@ -80,7 +80,7 @@ export function SiteHeader() {
               href={n.href}
               aria-current={current(n.href) ? 'page' : undefined}
               style={{ transitionDelay: open ? `${80 + i * 60}ms` : '0ms' }}
-              className={`border-b border-harbour/10 py-4 font-display text-2xl font-semibold transition-all duration-300 last:border-0 ${open ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'} ${current(n.href) ? 'text-coral' : 'text-ink'}`}
+              className={`border-b border-harbour/10 py-4 font-display text-2xl font-semibold transition-all duration-300 last:border-0 ${open ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'} ${current(n.href) ? 'text-brand' : 'text-ink'}`}
             >
               {n.label}
             </Link>

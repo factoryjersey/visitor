@@ -40,7 +40,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               {(lead.event.venueName ?? lead.venue?.name) && ` · ${lead.event.venueName ?? lead.venue?.name}`}
             </p>
             <div className="mt-6">
-              <Link href={`/whats-on/${lead.event.slug}`} className="inline-block rounded bg-coral px-5 py-3 text-sm font-semibold hover:bg-white hover:text-harbour">Find out more</Link>
+              <Link href={`/whats-on/${lead.event.slug}`} className="inline-block rounded bg-brand px-5 py-3 text-sm font-semibold hover:bg-white hover:text-harbour">Find out more</Link>
             </div>
           </div>
         </section>
@@ -58,7 +58,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         <section className="mb-14">
           <div className="mb-5 flex items-baseline justify-between gap-4">
             <h2 className="font-display text-2xl font-semibold text-ink">Unique events coming soon</h2>
-            <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-coral">Everything on →</Link>
+            <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-brand">Everything on →</Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {comingUp.map(({ event: e, venue }) => (
@@ -81,7 +81,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           <section>
             <div className="mb-5 flex items-baseline justify-between gap-4">
               <h2 className="font-display text-2xl font-semibold text-ink">Tours &amp; experiences</h2>
-              <Link href="/tours" className="text-sm font-medium text-sea hover:text-coral">All tours &amp; experiences →</Link>
+              <Link href="/tours" className="text-sm font-medium text-sea hover:text-brand">All tours &amp; experiences →</Link>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {datedTours.map(({ tour: t, provider }) => (

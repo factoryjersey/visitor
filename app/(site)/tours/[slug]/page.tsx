@@ -34,9 +34,9 @@ export default async function TourPage({ params }: Props) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
-      <Link href="/tours" className="text-sm text-harbour/60 hover:text-coral">← Tours &amp; experiences</Link>
+      <Link href="/tours" className="text-sm text-harbour/60 hover:text-brand">← Tours &amp; experiences</Link>
       <header className="mb-6 mt-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">{t.highlight ? 'Highlight' : t.genre ?? 'Experience'}</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">{t.highlight ? 'Highlight' : t.genre ?? 'Experience'}</p>
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{t.title}</h1>
         <p className="mt-2 text-lg font-medium text-sea">{dated ? webWhen(t.dates, t.occurrence, today) : 'Book any day'}{provider && <span className="text-harbour/60"> · with {provider.name}</span>}</p>
       </header>
@@ -54,14 +54,14 @@ export default async function TourPage({ params }: Props) {
             ['Price', printPrice(t.fromPricePence, t.toPricePence)],
             ['Meeting point', t.meetingPoint],
             ['Run by', provider?.name],
-            ['Contact', t.phone ? <a href={`tel:${t.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{t.phone}</a> : t.email && <a href={`mailto:${t.email}`} className="hover:text-coral">{t.email}</a>],
+            ['Contact', t.phone ? <a href={`tel:${t.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{t.phone}</a> : t.email && <a href={`mailto:${t.email}`} className="hover:text-brand">{t.email}</a>],
           ]}
           actions={
             <>
               {book && <a href={book} target="_blank" rel="noopener" className={primaryButton}>Book with {provider?.name ?? 'the provider'}</a>}
               {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
               {!t.businessId && (
-                <Link href={`/claim/tours/${t.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-coral">
+                <Link href={`/claim/tours/${t.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand">
                   Run this tour? Claim it
                 </Link>
               )}

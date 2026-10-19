@@ -57,17 +57,17 @@ export default async function EventPage({ params }: Props) {
   const tickets = ownLink(e.website) ?? ownLink(e.sourceLink);
   const venueSite = venue?.website && venue.website !== e.website ? venue.website : null;
   const contact = e.phone
-    ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{e.phone}</a>
-    : e.email && <a href={`mailto:${e.email}`} className="hover:text-coral">{e.email}</a>;
+    ? <a href={`tel:${e.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{e.phone}</a>
+    : e.email && <a href={`mailto:${e.email}`} className="hover:text-brand">{e.email}</a>;
 
   return (
     <article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
         <div className="min-w-0 px-4 py-8 md:pr-10">
-          <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-coral">← What&apos;s on</Link>
+          <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-brand">← What&apos;s on</Link>
           <header className="mb-6 mt-3">
-            {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlight</p>}
+            {e.highlight && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Highlight</p>}
             <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{e.title}</h1>
             <p className="mt-2 text-lg font-medium text-sea">{webWhen(e.dates, e.occurrence, today) ?? 'Finished'}</p>
           </header>
@@ -100,7 +100,7 @@ export default async function EventPage({ params }: Props) {
               </div>
               {e.organiser && (
                 <p className="mt-4 text-sm text-harbour/70">
-                  Organised by <Link href={`/organisers/${slugify(e.organiser)}`} className="font-medium text-ink hover:text-coral">{e.organiser}</Link>
+                  Organised by <Link href={`/organisers/${slugify(e.organiser)}`} className="font-medium text-ink hover:text-brand">{e.organiser}</Link>
                 </p>
               )}
               {!e.businessId && <ClaimLink href={`/claim/events/${e.slug}`}>Organising this? Claim it</ClaimLink>}
@@ -109,15 +109,15 @@ export default async function EventPage({ params }: Props) {
             {venueName && (
               <SideSection title="Venue">
                 {venue ? (
-                  <Link href={`/venues/${venue.slug}`} className="font-medium hover:text-coral">{venueName}</Link>
+                  <Link href={`/venues/${venue.slug}`} className="font-medium hover:text-brand">{venueName}</Link>
                 ) : (
                   <p className="font-medium">{venueName}</p>
                 )}
                 {address && <p className="text-sm text-harbour/60">{address}</p>}
                 {(venue?.guideCopy ?? venue?.summary) && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-harbour/80">{venue?.guideCopy ?? venue?.summary}</p>}
                 <ul className="mt-3 space-y-1 text-sm">
-                  {venue?.phone && <li><a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-coral">{venue.phone}</a></li>}
-                  {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-coral">{printWebsite(venueSite)?.toLowerCase()} ↗</a></li>}
+                  {venue?.phone && <li><a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{venue.phone}</a></li>}
+                  {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venueSite)?.toLowerCase()} ↗</a></li>}
                 </ul>
                 {directions && <a href={directions} target="_blank" rel="noopener" className={`${secondaryButton} mt-4 block`}>Directions</a>}
                 {venue && !venue.businessId && <ClaimLink href={`/claim/venues/${venue.slug}`}>Is this your venue? Claim it</ClaimLink>}
@@ -129,7 +129,7 @@ export default async function EventPage({ params }: Props) {
                 <ul className="divide-y divide-harbour/10 text-sm">
                   {atVenue.map(({ event: o }) => (
                     <li key={o.id} className="py-2">
-                      <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-coral">{o.title}</Link>
+                      <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-brand">{o.title}</Link>
                       <span className="block text-xs text-harbour/60">{cardWhen(o.dates, o.occurrence, today)}</span>
                     </li>
                   ))}
@@ -169,7 +169,7 @@ export default async function EventPage({ params }: Props) {
 /** A quiet way in for whoever runs it. */
 function ClaimLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="mt-4 block text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-coral hover:decoration-coral">
+    <Link href={href} className="mt-4 block text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand hover:decoration-brand">
       {children}
     </Link>
   );
@@ -178,7 +178,7 @@ function ClaimLink({ href, children }: { href: string; children: React.ReactNode
 function SideSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-coral">{title}</h2>
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-brand">{title}</h2>
       {children}
     </section>
   );

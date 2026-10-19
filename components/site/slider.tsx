@@ -35,7 +35,7 @@ export function Slider({ children, label }: { children: React.ReactNode; label: 
       onClick={() => move(dir)}
       aria-label={dir < 0 ? `Scroll ${label} left` : `Scroll ${label} right`}
       tabIndex={-1}
-      className={`absolute top-[1.15rem] z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white text-harbour shadow-md ring-1 ring-harbour/10 transition-opacity hover:text-coral ${dir < 0 ? 'left-0' : 'right-0'} ${show ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+      className={`absolute top-[1.15rem] z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white text-harbour shadow-md ring-1 ring-harbour/10 transition-opacity hover:text-brand ${dir < 0 ? 'left-0' : 'right-0'} ${show ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
     >
       {dir < 0 ? <ChevronLeft className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
     </button>

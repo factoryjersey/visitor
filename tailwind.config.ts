@@ -9,18 +9,14 @@ export default {
         // for headings and labels, Mulish to read. Both self-hosted (fontsource).
         display: ['"Josefin Sans Variable"', '"Josefin Sans"', 'system-ui', 'sans-serif'],
         sans: ['"Mulish Variable"', 'Mulish', 'system-ui', 'sans-serif'],
-        // The one serif: the italic line under the wordmark.
-        serif: ['"Lora Variable"', 'Lora', 'Georgia', 'serif'],
       },
       colors: {
-        // The public site: white, harbour navy, sea and a warm coral for what to notice.
+        // The public site: white, harbour navy, sea, and the logo's red for what to notice.
         harbour: '#0f2a44',
         // Headings: 80% grey.
         ink: '#333333',
         sea: '#1f6f8b',
-        // The .je in the wordmark.
-        cyan: '#12a5c4',
-        coral: '#d9542f',
+        brand: '#cd1316',
       },
     },
   },

@@ -22,12 +22,12 @@ export default async function OrganisersPage() {
 
       {busiest.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Busiest</h2>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Busiest</h2>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {busiest.map((o) => (
               <li key={o.slug}>
                 <Link href={`/organisers/${o.slug}`} className="group block h-full rounded-lg bg-white p-4 shadow-sm ring-1 ring-harbour/5 transition hover:shadow-md">
-                  <h3 className="font-display text-base font-semibold leading-snug text-ink group-hover:text-coral">{o.name}</h3>
+                  <h3 className="font-display text-base font-semibold leading-snug text-ink group-hover:text-brand">{o.name}</h3>
                   <p className="mt-2 text-sm text-sea">
                     {[o.events && count(o.events, 'event', 'events'), o.tours && count(o.tours, 'tour', 'tours')].filter(Boolean).join(' · ')} coming up
                   </p>
@@ -43,7 +43,7 @@ export default async function OrganisersPage() {
         <ul className="columns-1 gap-8 sm:columns-2 lg:columns-3">
           {alphabetical.map((o) => (
             <li key={o.slug} className="break-inside-avoid py-1.5">
-              <Link href={`/organisers/${o.slug}`} className="hover:text-coral">{o.name}</Link>
+              <Link href={`/organisers/${o.slug}`} className="hover:text-brand">{o.name}</Link>
               <span className="ml-2 text-xs text-harbour/50">{o.events + o.tours}</span>
             </li>
           ))}

@@ -23,7 +23,7 @@ export default async function ClaimPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      {back && <Link href={`${back}/${listing.slug}`} className="text-sm text-harbour/60 hover:text-coral">← {listing.title}</Link>}
+      {back && <Link href={`${back}/${listing.slug}`} className="text-sm text-harbour/60 hover:text-brand">← {listing.title}</Link>}
       <h1 className="mt-3 font-display text-3xl font-bold text-ink">Is this your {NOUN[kind]}?</h1>
       <p className="mt-3 max-w-2xl leading-relaxed text-harbour/80">
         Claim <strong className="font-semibold text-ink">{listing.title}</strong>
@@ -39,7 +39,7 @@ export default async function ClaimPage({ params }: Props) {
         <ClaimForm kind={kind} listingId={listing.id} submitLabel="Send my claim" />
       </div>
       <p className="mt-8 text-sm text-harbour/60">
-        Already have an account? <Link href="/login?next=/account" className="text-sea hover:text-coral">Sign in</Link> and add it from your listings.
+        Already have an account? <Link href="/login?next=/account" className="text-sea hover:text-brand">Sign in</Link> and add it from your listings.
       </p>
     </div>
   );

@@ -22,7 +22,7 @@ function compose(subject: string, paragraphs: string[], button?: { label: string
 <p style="margin:0 0 4px;font-size:26px;font-weight:bold;color:#0f2a44;letter-spacing:-0.5px">Visitor</p>
 <p style="margin:0 0 28px;font-family:Georgia,serif;font-style:italic;font-size:13px;color:#777">Jersey’s What’s On Guide</p>
 ${paragraphs.map(p).join('\n')}
-${button ? `<p style="margin:24px 0"><a href="${esc(button.href)}" style="display:inline-block;background:#d9542f;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:4px">${esc(button.label)}</a></p>` : ''}
+${button ? `<p style="margin:24px 0"><a href="${esc(button.href)}" style="display:inline-block;background:#cd1316;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:4px">${esc(button.label)}</a></p>` : ''}
 ${footnote ? `<p style="margin:16px 0 0;font-size:13px;color:#777;line-height:1.5">${esc(footnote).replace(/\n/g, '<br>')}</p>` : ''}
 </td></tr></table>
 <p style="margin:16px 0 0;font-size:12px;color:#999"><a href="${esc(site())}" style="color:#999">${esc(site().replace(/^https?:\/\//, ''))}</a></p>

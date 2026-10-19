@@ -26,7 +26,7 @@ export default async function VenuesPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1 py-0.5">
-                <h2 className="font-display text-base font-semibold leading-snug text-ink group-hover:text-coral">{v.name}</h2>
+                <h2 className="font-display text-base font-semibold leading-snug text-ink group-hover:text-brand">{v.name}</h2>
                 <p className="mt-0.5 text-xs text-harbour/60">{[printParish(v.parish), CATEGORY_LABEL[v.category]].filter(Boolean).join(' · ')}</p>
                 <p className="mt-2 text-sm font-medium text-sea">{v.count} {v.count === 1 ? 'event' : 'events'} coming up</p>
               </div>

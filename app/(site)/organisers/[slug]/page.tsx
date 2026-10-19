@@ -25,11 +25,11 @@ export default async function OrganiserPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <Link href="/organisers" className="text-sm text-harbour/60 hover:text-coral">← Organisers</Link>
+      <Link href="/organisers" className="text-sm text-harbour/60 hover:text-brand">← Organisers</Link>
       <header className="mb-8 mt-3">
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{o.name}</h1>
         {o.website && (
-          <a href={o.website} target="_blank" rel="noopener" className="mt-2 inline-block text-sea hover:text-coral">
+          <a href={o.website} target="_blank" rel="noopener" className="mt-2 inline-block text-sea hover:text-brand">
             {printWebsite(o.website)?.toLowerCase()} ↗
           </a>
         )}

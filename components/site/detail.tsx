@@ -60,7 +60,7 @@ export function Facts({ rows, actions }: { rows: [string, React.ReactNode][]; ac
   );
 }
 
-export const primaryButton = 'rounded bg-coral px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-harbour';
+export const primaryButton = 'rounded bg-brand px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-harbour';
 export const secondaryButton = 'rounded border border-harbour/20 px-4 py-2.5 text-center text-sm font-medium hover:border-harbour';
 
 export function directionsUrl(lat: number | null, lon: number | null, fallback: string | null): string | null {

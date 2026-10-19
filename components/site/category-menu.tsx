@@ -36,16 +36,16 @@ export function CategoryMenu(props: {
         href={to}
         scroll={false}
         aria-current={active ? 'true' : undefined}
-        className={`group/tile flex w-[5.75rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2.5 text-center transition-colors ${active ? 'bg-coral/10' : 'hover:bg-harbour/5'}`}
+        className={`group/tile flex w-[5.75rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2.5 text-center transition-colors ${active ? 'bg-brand/10' : 'hover:bg-harbour/5'}`}
       >
         <span
           className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 transition-colors ${
-            active ? 'bg-coral text-white ring-coral' : 'bg-white text-harbour ring-harbour/10 group-hover/tile:text-coral group-hover/tile:ring-coral/40'
+            active ? 'bg-brand text-white ring-brand' : 'bg-white text-harbour ring-harbour/10 group-hover/tile:text-brand group-hover/tile:ring-brand/40'
           }`}
         >
           <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
         </span>
-        <span className={`text-[0.7rem] font-semibold leading-tight ${active ? 'text-coral' : 'text-ink'}`}>{label}</span>
+        <span className={`text-[0.7rem] font-semibold leading-tight ${active ? 'text-brand' : 'text-ink'}`}>{label}</span>
         <span className="text-[0.7rem] leading-none text-harbour/50">{count}</span>
       </Link>
     </li>

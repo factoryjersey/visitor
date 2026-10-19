@@ -23,7 +23,7 @@ export default async function ListPage({ searchParams }: { searchParams: SearchP
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-coral">For venues, organisers and tour operators</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">For venues, organisers and tour operators</p>
       <h1 className="mt-2 font-display text-3xl font-bold text-ink md:text-4xl">Get your listings on Visitor</h1>
       <p className="mt-3 max-w-2xl leading-relaxed text-harbour/80">
         Listing is free. Claim your venue, event or tour and you can keep its details right, add new events and dates as you plan them, and give
@@ -41,7 +41,7 @@ export default async function ListPage({ searchParams }: { searchParams: SearchP
             aria-label="Search listings"
             className="w-full rounded-md border border-harbour/20 px-3 py-2 text-sm outline-none focus:border-sea focus:ring-2 focus:ring-sea/20"
           />
-          <button className="rounded bg-harbour px-4 py-2 text-sm font-semibold text-white hover:bg-coral">Search</button>
+          <button className="rounded bg-harbour px-4 py-2 text-sm font-semibold text-white hover:bg-brand">Search</button>
         </form>
 
         {q && (
@@ -60,7 +60,7 @@ export default async function ListPage({ searchParams }: { searchParams: SearchP
                         {l.businessId && ' · already claimed'}
                       </p>
                     </div>
-                    <Link href={`/claim/${KIND_PATH[l.kind]}/${l.slug}`} className="shrink-0 rounded border border-harbour/20 px-3 py-1.5 text-sm font-medium hover:border-coral hover:text-coral">
+                    <Link href={`/claim/${KIND_PATH[l.kind]}/${l.slug}`} className="shrink-0 rounded border border-harbour/20 px-3 py-1.5 text-sm font-medium hover:border-brand hover:text-brand">
                       Claim
                     </Link>
                   </li>
@@ -80,7 +80,7 @@ export default async function ListPage({ searchParams }: { searchParams: SearchP
       </section>
 
       <p className="mt-10 text-sm text-harbour/60">
-        Already have an account? <Link href="/login?next=/account" className="text-sea hover:text-coral">Sign in</Link>.
+        Already have an account? <Link href="/login?next=/account" className="text-sea hover:text-brand">Sign in</Link>.
       </p>
     </div>
   );

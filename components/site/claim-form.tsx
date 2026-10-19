@@ -57,7 +57,7 @@ export function ClaimForm({ kind, listingId, submitLabel }: { kind?: ListingKind
       </label>
 
       <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
-        <button type="submit" disabled={pending} className="rounded bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-harbour disabled:opacity-60">
+        <button type="submit" disabled={pending} className="rounded bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-harbour disabled:opacity-60">
           {pending ? 'Sending…' : submitLabel}
         </button>
         {state && !state.ok && <span className="text-sm text-red-700">{state.message ?? 'Check the fields marked.'}</span>}

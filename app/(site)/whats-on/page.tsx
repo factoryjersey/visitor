@@ -75,7 +75,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
       {highlights.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-coral">Highlights</h2>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Highlights</h2>
           <div className={`grid gap-6 ${highlights.length > 1 ? 'md:grid-cols-2' : ''}`}>{highlights.map((r) => card(r, true, highlights.length === 1))}</div>
         </section>
       )}
