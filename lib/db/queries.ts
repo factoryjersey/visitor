@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, ilike, inArray, isNotNull, lte, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, gte, ilike, inArray, isNotNull, lte, or, sql, type SQL, ne } from 'drizzle-orm';
 import { db } from './index';
 import { events, experiences, places, providers, type Category, type Inclusion } from './schema';
 import type { Genre } from '@/lib/domain/genre';
@@ -87,13 +87,20 @@ export async function getVenue(slug: string) {
 }
 
 /** What the guide currently holds. */
-export async function guideSelection() {
+/**
+ * What the guide prints: what staff have included, or, as a draft, every
+ * approved listing nobody has left out, so an edition can be laid out
+ * before it is chosen. A draft leaves out business events, which are not
+ * for visitors, and venues, which are always chosen by hand.
+ */
+export async function guideSelection(opts: { draft?: boolean } = {}) {
+  const chosen = (col: typeof events.inclusion) => (opts.draft ? ne(col, 'excluded') : eq(col, 'included'));
   const [chosenEvents, chosenVenues] = await Promise.all([
     db
       .select({ event: events, venue: places })
       .from(events)
       .leftJoin(places, eq(places.id, events.placeId))
-      .where(and(eq(events.inclusion, 'included'), eq(events.review, 'approved')))
+      .where(and(chosen(events.inclusion), eq(events.review, 'approved'), ...(opts.draft ? [sql`not ('Business & networking' = any(${events.eventTypes}))`] : [])))
       .orderBy(asc(events.startsOn), asc(events.title)),
     db.select().from(places).where(and(eq(places.inclusion, 'included'), eq(places.review, 'approved'))).orderBy(asc(places.category), asc(places.name)),
   ]);
@@ -175,10 +182,10 @@ export async function listProviders() {
   return db.select({ provider: providers, total, included }).from(providers).orderBy(sql`${providers.code} asc nulls last`, asc(providers.name));
 }
 
-export async function includedExperiences() {
+export async function includedExperiences(opts: { draft?: boolean } = {}) {
   return db
     .select({ experience: experiences, provider: providers })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
-    .where(and(eq(experiences.inclusion, 'included'), eq(experiences.review, 'approved')));
+    .where(and(opts.draft ? ne(experiences.inclusion, 'excluded') : eq(experiences.inclusion, 'included'), eq(experiences.review, 'approved')));
 }

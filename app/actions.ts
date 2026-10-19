@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -8,6 +8,8 @@ import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
 import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers, type Image } from '@/lib/db/schema';
 import { storeListingImage } from '@/lib/images/upload';
+import { guideSelection, includedExperiences } from '@/lib/db/queries';
+import { guideEvent, guideTour } from '@/lib/domain/guide-entry';
 import { EVENT_TYPES } from '@/lib/domain/categorise';
 import { GENRES } from '@/lib/domain/genre';
 import { OCCURRENCES } from '@/lib/domain/occurrence';
@@ -327,4 +329,29 @@ export async function takeOffSite(form: FormData) {
     .returning({ slug: table.slug });
   revalidatePath('/', 'layout');
   redirect(row ? `/admin/${kind === 'event' ? 'whats-on' : 'tours'}/${row.slug}` : '/admin');
+}
+
+const includeAllSchema = z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), what: z.enum(['events', 'tours']) });
+
+/**
+ * The draft becomes the selection: every event (or tour) the draft prints
+ * for these dates that nobody has decided on yet is included, in one go.
+ * Anything left out stays left out; staff take out what they do not want.
+ */
+export async function includeDraft(form: FormData) {
+  const user = await requireStaff();
+  const { from, to, what } = includeAllSchema.parse(Object.fromEntries(form));
+  const window = { from, to };
+  const now = new Date();
+  const set = { inclusion: 'included' as const, inclusionSetBy: user.email, inclusionSetAt: now, updatedAt: now };
+  if (what === 'events') {
+    const { events: rows } = await guideSelection({ draft: true });
+    const ids = rows.filter((r) => r.event.inclusion === 'candidate' && guideEvent(r.event, r.venue, window)).map((r) => r.event.id);
+    if (ids.length) await db.update(events).set(set).where(inArray(events.id, ids));
+  } else {
+    const rows = await includedExperiences({ draft: true });
+    const ids = rows.filter((r) => r.experience.inclusion === 'candidate' && guideTour(r.experience, r.provider, window)).map((r) => r.experience.id);
+    if (ids.length) await db.update(experiences).set(set).where(inArray(experiences.id, ids));
+  }
+  revalidatePath('/admin/guide');
 }

@@ -15,6 +15,22 @@ import { printContact, printWebsite } from '@/lib/domain/house-style';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * The guide's four editions a year. Winter runs into the next year, so
+ * Winter 2026 is November 2026 to February 2027.
+ */
+export function editions(year: number): { name: string; window: Window }[] {
+  return [
+    { name: `Spring ${year}`, window: { from: `${year}-03-01`, to: `${year}-05-31` } },
+    { name: `Summer ${year}`, window: { from: `${year}-06-01`, to: `${year}-08-31` } },
+    { name: `Autumn ${year}`, window: { from: `${year}-09-01`, to: `${year}-10-31` } },
+    { name: `Winter ${year}`, window: { from: `${year}-11-01`, to: `${year + 1}-02-${(year + 1) % 4 === 0 ? 29 : 28}` } },
+  ];
+}
+
+/** ?draft=1: lay out everything eligible, not only what has been included. */
+export const isDraft = (v: string | null | undefined) => v === '1';
+
 /** The edition's dates from ?from=&to=, or the coming three months. */
 export function windowFrom(params: { from?: string; to?: string }): Window {
   const fallback = defaultWindow();
@@ -45,8 +61,8 @@ const genreOrder = (g: string) => {
  * on-demand ones by genre; the provider key only for providers with a
  * tour in this edition.
  */
-export async function buildGuide(window: Window): Promise<Guide> {
-  const [selection, tourRows] = await Promise.all([guideSelection(), includedExperiences()]);
+export async function buildGuide(window: Window, opts: { draft?: boolean } = {}): Promise<Guide> {
+  const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
   const all = selection.events
     .map(({ event, venue }) => guideEvent(event, venue, window))
