@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
@@ -10,6 +11,9 @@ import { printPrice, printTimes } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { webWhen } from '@/lib/domain/web-dates';
+import { JsonLd } from '@/components/site/json-ld';
+import { tourOut } from '@/lib/agents/data';
+import { breadcrumbs, tourLd } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t.title,
     description: t.summary ?? undefined,
+    alternates: alternates(`/tours/${t.slug}`),
     openGraph: { title: t.title, description: t.summary ?? undefined, images: t.headerImage ? [webImage(t.headerImage, 1200, 630)] : [] },
   };
 }
@@ -38,6 +43,7 @@ export default async function TourPage({ params }: Props) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLd data={[tourLd(tourOut(t, provider, today)), breadcrumbs([['Tours & experiences', '/tours'], [t.title, `/tours/${t.slug}`]])]} />
       {staff && <StaffEdit kind="experience" id={t.id} title={t.title} summary={t.summary} description={t.description} genre={t.genre} genres={GENRES} adminHref={`/admin/tours/${t.slug}`} />}
       <Link href="/tours" className="text-sm text-harbour/60 hover:text-brand">← Tours &amp; experiences</Link>
       <header className="mb-6 mt-3">

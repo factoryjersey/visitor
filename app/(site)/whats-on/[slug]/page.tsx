@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, DateList, Facts, Hero, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
@@ -11,6 +12,9 @@ import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain
 import { webImage } from '@/lib/domain/images';
 import { slugify } from '@/lib/domain/slug';
 import { cardWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
+import { JsonLd } from '@/components/site/json-ld';
+import { eventOut } from '@/lib/agents/data';
+import { breadcrumbs, eventLd } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: e.title,
     description: e.summary ?? undefined,
+    alternates: alternates(`/whats-on/${e.slug}`),
     openGraph: { title: e.title, description: e.summary ?? undefined, images: e.headerImage ? [webImage(e.headerImage, 1200, 630)] : [] },
   };
 }
@@ -38,19 +43,8 @@ export default async function EventPage({ params }: Props) {
   const directions = directionsUrl(e.lat ?? venue?.lat ?? null, e.lon ?? venue?.lon ?? null, venueName);
   const price = printPrice(e.fromPricePence, e.toPricePence, { free: e.free });
 
-  // Structured data, so search results can show the dates and the venue.
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Event',
-    name: e.title,
-    description: e.summary ?? undefined,
-    startDate: upcoming[0] ?? e.startsOn ?? undefined,
-    endDate: upcoming.at(-1) ?? e.endsOn ?? undefined,
-    eventStatus: 'https://schema.org/EventScheduled',
-    image: e.headerImage ? [webImage(e.headerImage, 1200, 800)] : undefined,
-    location: venueName ? { '@type': 'Place', name: venueName, address: address ?? undefined } : undefined,
-    offers: e.fromPricePence !== null ? { '@type': 'Offer', price: (e.fromPricePence / 100).toFixed(2), priceCurrency: 'GBP', url: e.website ?? undefined } : undefined,
-  };
+  // Structured data, so search results and agents can show the dates and the venue.
+  const jsonLd = [eventLd(eventOut(e, venue, today)), breadcrumbs([['What’s on', '/whats-on'], [e.title, `/whats-on/${e.slug}`]])];
 
   const [atVenue, staff] = await Promise.all([publicVenueEvents(e), staffViewer()]);
   // Not what the sidebar already lists.
@@ -68,7 +62,7 @@ export default async function EventPage({ params }: Props) {
       {staff && (
         <StaffEdit kind="event" id={e.id} title={e.title} summary={e.summary} description={e.description} eventTypes={e.eventTypes} allTypes={EVENT_TYPES} adminHref={`/admin/whats-on/${e.slug}`} />
       )}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <JsonLd data={jsonLd} />
       <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
         <div className="min-w-0 px-4 py-8 md:pr-10">
           <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-brand">← What&apos;s on</Link>

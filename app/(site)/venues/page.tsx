@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { publicVenuesWithEvents } from '@/lib/db/public';
 import { printParish } from '@/lib/domain/house-style';
@@ -6,7 +7,7 @@ import { webImage } from '@/lib/domain/images';
 import { CATEGORY_LABEL } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Venues', description: 'Theatres, halls, pubs and places in Jersey with events coming up.' };
+export const metadata: Metadata = { title: 'Venues', description: 'Theatres, halls, pubs and places in Jersey with events coming up.', alternates: alternates('/venues') };
 
 /** Every venue with something coming up, the busiest first. */
 export default async function VenuesPage() {

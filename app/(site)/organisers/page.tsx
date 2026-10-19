@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { publicOrganisers } from '@/lib/db/public';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Organisers', description: 'Charities, promoters and tour operators putting things on in Jersey.' };
+export const metadata: Metadata = { title: 'Organisers', description: 'Charities, promoters and tour operators putting things on in Jersey.', alternates: alternates('/organisers') };
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 

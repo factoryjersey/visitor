@@ -279,3 +279,24 @@ InDesign does that.
 pnpm check    # typecheck + tests
 pnpm build
 ```
+
+## For agents and AI search
+
+The public site is built to be read by programs as well as people (what
+ora.ai and similar agent-readiness checks look for). All of it is
+read-only and needs no key.
+
+| Address | What |
+|---|---|
+| `/robots.txt` | every crawler welcome on the public site, the AI ones by name; Content Signals; the sitemap |
+| `/sitemap.xml` | every section, event, tour, venue and organiser page |
+| `/llms.txt`, `/llms-full.txt` | the site described for language models; every listing in one Markdown file |
+| any page + `.md`, or `Accept: text/markdown` | that page as Markdown (`lib/agents/markdown.ts`); HTML pages say so in a `Link` header |
+| `/api/v1/events`, `/events/{slug}`, `/tours`, `/tours/{slug}`, `/venues` | JSON, open to any origin |
+| `/openapi.json`, `/.well-known/api-catalog` | the API described (OpenAPI 3.1) and catalogued (RFC 9727) |
+| `/mcp`, `/.well-known/mcp/server-card.json` | an MCP server over streamable HTTP: `search_events`, `get_event`, `search_tours`, `get_tour`, `list_venues` |
+
+Every page carries schema.org data (`lib/agents/schema-org.ts`): Event,
+TouristTrip, Place, Organization and WebSite with a search action,
+breadcrumbs, and item lists. The API, the MCP tools, the Markdown and the
+JSON-LD all describe a listing from the same fields (`lib/agents/data.ts`).

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
@@ -7,9 +8,12 @@ import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { one, type SearchParams } from '@/lib/params';
+import { JsonLd } from '@/components/site/json-ld';
+import { SITE } from '@/lib/agents/data';
+import { itemList } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: "What's on", description: 'Events in Jersey: festivals, concerts, markets, shows and more.' };
+export const metadata: Metadata = { title: "What's on", description: 'Events in Jersey: festivals, concerts, markets, shows and more.', alternates: alternates('/whats-on') };
 
 function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
   const m = new Map<string, T[]>();
@@ -59,6 +63,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">What&apos;s on</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
       <FilterBar

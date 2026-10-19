@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Copy, Facts, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
@@ -7,6 +8,10 @@ import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
 import { printAddress, printPrice, printWebsite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
+import { JsonLd } from '@/components/site/json-ld';
+import { webImage } from '@/lib/domain/images';
+import { eventOut, venueOut } from '@/lib/agents/data';
+import { breadcrumbs, venueLd } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +19,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const v = await publicVenue((await params).slug);
-  return v ? { title: v.name, description: v.summary ?? undefined } : {};
+  return v ? { title: v.name, description: v.summary ?? undefined, alternates: alternates(`/venues/${v.slug}`) } : {};
 }
 
 /** A venue: what it is, how to get there, and everything on there. */
@@ -45,6 +50,12 @@ export default async function VenuePage({ params }: Props) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLd
+        data={[
+          venueLd({ ...venueOut(venue), image: venue.headerImage ? webImage(venue.headerImage, 1200, 800) : null }, rows.map((r) => eventOut(r.event, r.venue, today))),
+          breadcrumbs([['Venues', '/venues'], [venue.name, `/venues/${venue.slug}`]]),
+        ]}
+      />
       <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
       <header className="mb-6 mt-3">
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>

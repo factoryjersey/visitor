@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { alternates } from '@/lib/agents/data';
 import { redirect } from 'next/navigation';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { GuideAd } from '@/components/site/guide-ad';
@@ -9,8 +11,11 @@ import { webImage } from '@/lib/domain/images';
 import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen, webWhen } from '@/lib/domain/web-dates';
+import { JsonLd } from '@/components/site/json-ld';
+import { organisation } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: alternates('/') };
 
 /** The front page: the lead highlight, what's coming up, and tours on particular dates. */
 export default async function Home({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
@@ -32,6 +37,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   return (
     <>
+      <JsonLd data={organisation()} />
       {lead && (
         <section className="relative isolate overflow-hidden bg-harbour text-white">
           {lead.event.headerImage && (

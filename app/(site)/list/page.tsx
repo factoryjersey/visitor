@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { ClaimForm } from '@/components/site/claim-form';
 import { KIND_PATH } from '@/lib/account-paths';
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'List your venue, event or tour',
   description: 'Run a venue, an event or a tour in Jersey? Claim your listing or add your own, free.',
+  alternates: alternates('/list'),
 };
 
 const KIND_LABEL = { venue: 'Venue', event: 'Event', experience: 'Tour' } as const;

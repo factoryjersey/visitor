@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterBar, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
@@ -8,9 +9,12 @@ import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { one, type SearchParams } from '@/lib/params';
+import { JsonLd } from '@/components/site/json-ld';
+import { SITE } from '@/lib/agents/data';
+import { itemList } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Tours & experiences', description: 'Guided walks, tide walks, boat trips and experiences in Jersey.' };
+export const metadata: Metadata = { title: 'Tours & experiences', description: 'Guided walks, tide walks, boat trips and experiences in Jersey.', alternates: alternates('/tours') };
 
 /**
  * Tours on particular dates by default: tide walks, ghost walks,
@@ -66,6 +70,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
       <FilterBar
