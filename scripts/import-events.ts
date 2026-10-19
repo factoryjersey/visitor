@@ -3,7 +3,7 @@
  *
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
- *                                          jersey-bulls, jersey-rfc
+ *                                          jersey-bulls, jersey-rfc, stock (pictures only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -18,6 +18,9 @@
  *
  * Jersey Bulls' and Jersey RFC's home matches come from the clubs' own
  * fixture pages, each with a line of its own about the two sides.
+ *
+ * Anything still without a picture afterwards gets a royalty-free stock
+ * one, credited (lib/integrations/stock).
  *
  * Every event's copy is put in the guide's third person by Claude when its
  * words change, with ANTHROPIC_API_KEY set; without it, as the organiser wrote it.
@@ -41,6 +44,7 @@ import { BULLS_FIXTURES, JRFC_FIXTURES, isHome, parseBulls, parseJrfc, plainCopy
 import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, type LdEvent } from '@/lib/integrations/eventbrite/parse';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
+import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
@@ -353,6 +357,16 @@ for (const s of SOURCES.filter((s) => !values.only || s.source === values.only))
   } catch (e) {
     failed += 1;
     console.error(`\r${s.source} failed: ${(e as Error).message}`);
+  }
+}
+// Last, a stock picture for whatever is still without one, from any source.
+if (!values.only || values.only === 'stock') {
+  try {
+    const filled = await fillStockImages();
+    console.log(`stock pictures (${filled.source}): ${filled.events} events, ${filled.tours} tours`);
+  } catch (e) {
+    failed += 1;
+    console.error(`stock pictures failed: ${(e as Error).message}`);
   }
 }
 await client.end();

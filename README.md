@@ -146,6 +146,14 @@ all, so `pnpm import:events` adds events from elsewhere after it:
 | Jersey Bulls | the fixtures page, `bulls.je/fixtures/?team=all`: home matches only (Jersey named first), men, women and U23 | straight away |
 | Jersey RFC | the fixtures and results page, `jrfc.je/results/`: home matches still to be played | straight away |
 
+After the sources, anything still to come without a picture gets a
+royalty-free stock one (`lib/integrations/stock`): Pexels when
+`PEXELS_API_KEY` is set, otherwise Openverse's public-domain photographs.
+It is searched for by what the listing is (football for a Bulls match,
+live music for a concert), credited on the page as illustrative, kept
+until the source sends a picture of its own, and left out of the print
+export.
+
 Each match gets copy of its own from Claude (`lib/integrations/claude/fixture.ts`),
 a line about the two clubs meeting and the card's sentence, written once
 and kept until the opponent, competition or ground changes. Without a key,

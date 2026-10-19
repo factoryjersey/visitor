@@ -28,6 +28,8 @@ export type Image = {
   publicId: string | null;
   alt: string | null;
   originalFilename: string | null;
+  /** A stock picture's photographer and where it came from, when it is not the listing's own. */
+  credit?: { name: string; url: string | null; source: string } | null;
 };
 
 /** Where one field's current value came from. */

@@ -31,6 +31,8 @@ const envSchema = z.object({
   // Resend, for invites and claim emails. Without the key nothing is sent:
   // invite links are shown to copy, as before.
   RESEND_API_KEY: z.string().optional(),
+  /** Stock pictures for listings with none (pexels.com, free). Without it, Openverse's public-domain photos. */
+  PEXELS_API_KEY: z.string().optional(),
   // The sender: an address on a domain verified in Resend.
   EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
   // Who hears about new claims, comma-separated. Unset: every staff account.

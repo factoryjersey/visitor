@@ -58,7 +58,8 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     address: address ?? '',
     contact: printContact(e.phone ?? venue?.phone ?? null, e.email) ?? '',
     website: printWebsite(e.website ?? venue?.website ?? null) ?? '',
-    imageUrl: e.headerImage?.url ?? '',
+    // A stock picture is for the web only: print uses the listing's own or none.
+    imageUrl: e.headerImage && !e.headerImage.credit ? e.headerImage.url : '',
     block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',
     highlight: e.highlight,
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',

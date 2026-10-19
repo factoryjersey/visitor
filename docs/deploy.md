@@ -20,6 +20,7 @@ One Railway project, `visitor`, with:
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
 | `ANTHROPIC_API_KEY` | optional: puts providers' and imported copy in the third person |
 | `RESEND_API_KEY` | optional: sends invites and claim emails (Resend, with visitor.je verified) |
+| `PEXELS_API_KEY` | optional, on `import`: stock pictures for listings with none come from Pexels; without it, Openverse public-domain photos |
 | `EMAIL_FROM` | optional, default `Visitor <hello@visitor.je>` |
 | `STAFF_NOTIFY_EMAILS` | optional, comma-separated: who hears about new claims (default every staff account) |
 
