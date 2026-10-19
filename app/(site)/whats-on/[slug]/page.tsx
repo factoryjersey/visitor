@@ -60,7 +60,7 @@ export default async function EventPage({ params }: Props) {
   return (
     <article>
       {staff && (
-        <StaffEdit kind="event" id={e.id} title={e.title} summary={e.summary} description={e.description} image={e.headerImage ? { url: webImage(e.headerImage, 800, 400), alt: e.headerImage.alt, stock: !!e.headerImage.credit } : null} eventTypes={e.eventTypes} allTypes={EVENT_TYPES} adminHref={`/admin/whats-on/${e.slug}`} />
+        <StaffEdit kind="event" id={e.id} title={e.title} summary={e.summary} description={e.description} image={e.headerImage ? { url: webImage(e.headerImage, 800, 400), alt: e.headerImage.alt, stock: !!e.headerImage.credit } : null} printLine={e.printLine} eventTypes={e.eventTypes} allTypes={EVENT_TYPES} adminHref={`/admin/whats-on/${e.slug}`} />
       )}
       <JsonLd data={jsonLd} />
       <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">

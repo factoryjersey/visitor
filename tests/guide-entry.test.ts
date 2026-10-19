@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour } from '@/lib/domain/guide-entry';
+import { guideEvent, guideTour, layoutEvents, type GuideEvent } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -12,7 +12,7 @@ const base: Event = {
   eventTypes: [], free: false, occurrence: 'ongoing', placeId: null, lat: null, lon: null,
   dates: Array.from({ length: 59 }, (_, i) => ({ date: new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10), start: '10:00', end: '16:00' })),
   startsOn: '2026-09-01', endsOn: '2026-10-29', fromPricePence: 1145, toPricePence: 2450,
-  printDates: null, printTimes: null, printPrice: null, highlight: false,
+  printDates: null, printTimes: null, printPrice: null, printLine: null, printLineKey: null, highlight: false,
   headerImage: null, sourceLink: null, organiser: null, businessId: null, review: 'approved', reviewNote: null, inclusion: 'included', inclusionNote: null,
   inclusionSetBy: null, inclusionSetAt: null, editedBy: null, editedAt: null,
   fieldSources: {}, lockedFields: [], sourceModifiedAt: null, createdAt: new Date(), updatedAt: new Date(),
@@ -120,5 +120,31 @@ describe('fitting copy to its printed frame', () => {
     const run = 'An unbroken sentence that goes on for far longer than any frame could ever hold without a stop';
     expect(printCopy({ guideCopy: null, summary: 'A museum of island life.', description: run }, 70)).toBe('A museum of island life.');
     expect(printCopy({ guideCopy: 'Ours, for print.', summary: 'Theirs.', description }, 70)).toBe('Ours, for print.');
+  });
+});
+
+describe('events six to a page', () => {
+  const ev = (title: string, opts: { image?: boolean; community?: boolean } = {}) =>
+    ({ title, imageUrl: opts.image ? `https://x/${title}.jpg` : '', community: !!opts.community, fits: { picture: `${title} short`, listing: `${title} long` }, frame: 'listing', copy: '' }) as unknown as GuideEvent;
+
+  it('puts two pictured events across the top, a community one only when nothing else has a picture', () => {
+    const page = [ev('a'), ev('b', { image: true, community: true }), ev('c', { image: true }), ev('d'), ev('e', { image: true }), ev('f'), ev('g', { image: true })];
+    const pages = layoutEvents(page);
+    expect(pages.map((p) => p.length)).toEqual([6, 1]);
+    expect(pages[0]!.map((e) => `${e.title}:${e.frame}`)).toEqual(['c:picture', 'e:picture', 'a:listing', 'b:listing', 'd:listing', 'f:listing']);
+    expect(pages[0]![0]!.copy).toBe('c short');
+    expect(pages[0]![2]!.copy).toBe('a long');
+    expect(layoutEvents([ev('x'), ev('y', { image: true, community: true })])[0]!.map((e) => e.frame)).toEqual(['picture', 'listing']);
+  });
+});
+
+describe('the guide line', () => {
+  it('prints in a small frame when nothing longer fits whole, and nothing rather than a stub', async () => {
+    const { printCopy } = await import('@/lib/domain/guide-entry');
+    const long = 'An evening of chamber music by candlelight in the old parish church, with mulled wine served in the interval.';
+    const line = 'Chamber music by candlelight in the parish church.';
+    expect(printCopy({ guideCopy: null, summary: long, description: null, printLine: line }, 70)).toBe(line);
+    expect(printCopy({ guideCopy: null, summary: long, description: null }, 40)).toBe('');
+    expect(printCopy({ guideCopy: null, summary: long, description: null, printLine: line }, 0)).toBe('');
   });
 });

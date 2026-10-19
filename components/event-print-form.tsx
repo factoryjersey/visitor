@@ -2,14 +2,14 @@ import { saveEventPrint } from '@/app/actions';
 import type { GuideEvent } from '@/lib/domain/guide-entry';
 
 /**
- * The entry as it will print, and the three fields a person can override.
+ * The entry as it will print, and the fields a person can override.
  * Each box shows the computed value as its placeholder; leave it blank to keep it.
  */
 export function EventPrintForm({ id, entry, computed, current }: {
   id: string;
   entry: GuideEvent | null;
   computed: { dates: string | null; times: string | null; price: string | null };
-  current: { dates: string | null; times: string | null; price: string | null };
+  current: { dates: string | null; times: string | null; price: string | null; line: string | null };
 }) {
   const field = (name: string, label: string, placeholder: string | null, value: string | null) => (
     <label className="block">
@@ -40,6 +40,7 @@ export function EventPrintForm({ id, entry, computed, current }: {
         {field('printDates', 'Dates', computed.dates, current.dates)}
         {field('printTimes', 'Times', computed.times, current.times)}
         {field('printPrice', 'Price', computed.price, current.price)}
+        {field('printLine', 'Guide line: one sentence of 80 characters or fewer, for when the longer copy will not fit', null, current.line)}
         <button type="submit" className="rounded border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100">Save print details</button>
       </form>
     </div>

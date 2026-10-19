@@ -17,7 +17,7 @@ import { GENRE_MARKERS, MARKERS } from './category-markers';
 
 type Common = { id: string; title: string; summary: string | null; description: string | null; image: { url: string; alt: string | null; stock: boolean } | null; adminHref: string };
 type Props =
-  | (Common & { kind: 'event'; eventTypes: string[]; allTypes: readonly string[] })
+  | (Common & { kind: 'event'; eventTypes: string[]; allTypes: readonly string[]; printLine: string | null })
   | (Common & { kind: 'experience'; genre: string | null; genres: readonly string[] });
 
 function Save({ label = 'Save' }: { label?: string }) {
@@ -197,6 +197,13 @@ export function StaffEdit(props: Props) {
                 <label className={label} htmlFor="qe-summary">Card sentence</label>
                 <textarea id="qe-summary" name="summary" defaultValue={props.summary ?? ''} rows={2} className={field} />
               </div>
+              {props.kind === 'event' && (
+                <div>
+                  <label className={label} htmlFor="qe-print-line">Guide line</label>
+                  <input id="qe-print-line" name="printLine" defaultValue={props.printLine ?? ''} maxLength={120} className={field} />
+                  <p className="mt-1 text-xs text-ink/50">One sentence of 80 characters or fewer, for the printed guide when the longer copy will not fit.</p>
+                </div>
+              )}
               <div>
                 <label className={label} htmlFor="qe-description">Description</label>
                 <textarea id="qe-description" name="description" defaultValue={props.description ?? ''} rows={9} className={field} />

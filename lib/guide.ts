@@ -6,6 +6,7 @@ import {
   guideEvent,
   guideTour,
   guideVenue,
+  layoutEvents,
   type GuideEvent,
   type GuideTour,
   type GuideVenue,
@@ -44,6 +45,7 @@ export type GuideProvider = { code: string; name: string; contact: string; websi
 export type Guide = {
   /** Highlights, each a full page, ahead of the listings and not repeated in them. */
   highlights: GuideEvent[];
+  /** In page order: every six a page, its pictured pair first. */
   events: GuideEvent[];
   tours: GuideTour[];
   providers: GuideProvider[];
@@ -68,8 +70,8 @@ export async function buildGuide(window: Window, opts: { draft?: boolean } = {})
     .map(({ event, venue }) => guideEvent(event, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  // By their first date in the edition, long runs among the rest, as the 2026 pages print them.
-  const events = all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title));
+  // By their first date in the edition, long runs among the rest; six to a page, two of them pictured.
+  const events = layoutEvents(all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title))).flat();
 
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
   for (const { experience, provider } of tourRows) {
@@ -98,7 +100,8 @@ export async function buildGuide(window: Window, opts: { draft?: boolean } = {})
   return { highlights, events, tours, providers, venues };
 }
 
-export const EVENT_COLUMNS = ['Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
+/** In page order, six rows a page: Frame says which take the picture cells. */
+export const EVENT_COLUMNS = ['Frame', 'Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
 /** Highlights merge into their own full-page template. */
 export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL'] as const;
 export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider'] as const;

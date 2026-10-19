@@ -37,33 +37,45 @@ export type GuideEvent = {
   sortKey: string;
   /** A web-sized copy of the picture for the on-screen proof; the export keeps the original. Not printed. */
   preview: string;
+  /** A charity or community event: listed, but a picture slot goes to something else first. Not printed. */
+  community: boolean;
+  /** The copy cut for each frame it might take, a picture cell's or a listing's; the page layout picks. Not printed. */
+  fits: { picture: string; listing: string };
+  /** Which frame it takes on its page, set by the page layout. */
+  frame: 'picture' | 'listing';
 };
 
 export type Window = { from: string; to: string };
 
 /**
- * Room in an event's printed frame, 2026 layout: a 45.5 × 70mm cell
- * holding a 16mm picture, the date line, the title, the copy and the
- * venue block. Line counts are estimated from characters at the
+ * The frames an event prints in, six to a page: a top row of two 45.5 ×
+ * 52mm cells with a 16mm picture, then four 45.5 × 43mm listings without.
+ * The 2026 editions' 70mm picture cell is the default.
+ */
+export type Frame = { height: number; picture: boolean };
+export const FRAMES = { picture: { height: 52, picture: true }, listing: { height: 43, picture: false } } as const satisfies Record<string, Frame>;
+
+/**
+ * Room in an event's printed frame: the picture if it has one, the date
+ * line, the title, the copy and the venue block. Line counts are estimated from characters at the
  * frame's width, a little short of the real figure so that what fits here
  * fits in InDesign too.
  */
-const FRAME_MM = 70;
 const LINE = { date: 3.6, title: 3.4, copy: 3.24, small: 2.75 };
-const PER_LINE = { date: 30, title: 30, copy: 34, small: 40 };
+const PER_LINE = { date: 30, title: 30, copy: 32, small: 40 };
 const lines = (text: string, per: number) => (text ? Math.ceil(text.length / per) : 0);
 
-export function copyBudget(e: { dates: string; times: string; title: string; price: string; venue: string; address: string; contact: string; website: string }): number {
+export function copyBudget(e: { dates: string; times: string; title: string; price: string; venue: string; address: string; contact: string; website: string }, frame: Frame = { height: 70, picture: true }): number {
   const used =
-    18.7 + // the picture, its rule and the space under it
+    (frame.picture ? 18.7 : 2) + // the picture, its rule and the space under it; a listing's rule
     lines(`${e.dates}  ${e.times}`.trim(), PER_LINE.date) * LINE.date +
     lines(e.title, PER_LINE.title) * LINE.title + 0.5 +
     (e.venue ? 2.2 + lines(e.venue, PER_LINE.small) * LINE.small : 0) +
     lines(e.address, PER_LINE.small) * LINE.small +
     lines(e.contact, PER_LINE.small) * LINE.small +
     (e.website ? 1.4 + lines(e.website, PER_LINE.small) * LINE.small : 0);
-  const copyLines = Math.max(1, Math.floor((FRAME_MM - used) / LINE.copy));
-  return copyLines * PER_LINE.copy - (e.price ? e.price.length + 1 : 0);
+  const copyLines = Math.max(0, Math.floor((frame.height - used) / LINE.copy));
+  return copyLines ? copyLines * PER_LINE.copy - (e.price ? e.price.length + 1 : 0) : 0;
 }
 
 /**
@@ -93,19 +105,23 @@ export function fitCopy(text: string, budget: number): string {
 /**
  * The copy a frame prints. Ours, when it fits, as an editor wrote it for
  * print. Otherwise the fullest that fits in whole sentences: the
- * description cut at a sentence, or the card's one-sentence version,
- * whichever says more. Only if neither fits whole is a sentence cut.
+ * description cut at a sentence, the card's one-sentence version, or the
+ * print line written to fit the smallest frame, whichever says more. Only if neither fits whole is a sentence cut.
  */
-export function printCopy(e: { guideCopy: string | null; summary: string | null; description: string | null }, budget: number): string {
+export function printCopy(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }, budget: number): string {
+  // No room for a line of copy: the dates, title and venue say it.
+  if (budget <= 0) return '';
   const tidy = (t: string | null) => (t ?? '').replace(/\s+/g, ' ').trim();
   const ours = tidy(e.guideCopy);
   if (ours && ours.length <= budget) return ours;
-  const whole = [ours, tidy(e.description), tidy(e.summary)]
+  const whole = [ours, tidy(e.description), tidy(e.summary), tidy(e.printLine ?? null)]
     .filter(Boolean)
     .map((t) => fitCopy(t, budget))
     .filter((t) => !t.endsWith('…'));
   if (whole.length) return whole.sort((a, b) => b.length - a.length)[0]!;
-  return fitCopy(tidy(e.summary) || ours || tidy(e.description), budget);
+  // A sentence cut to a stub says less than none: the dates, title and venue say it.
+  const cut = fitCopy(tidy(e.summary) || ours || tidy(e.description), budget);
+  return cut.length < 50 ? '' : cut;
 }
 
 /** Sites that sell for everyone: in print they say nothing about the event. */
@@ -154,7 +170,42 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
     sortKey: inside[0]?.date ?? e.startsOn ?? '',
   };
-  return { ...entry, copy: printCopy(e, copyBudget(entry)) };
+  const fits = { picture: printCopy(e, copyBudget(entry, FRAMES.picture)), listing: printCopy(e, copyBudget(entry, FRAMES.listing)) };
+  const community = e.eventTypes.includes('Charity');
+  return { ...entry, community, fits, frame: 'listing', copy: fits.listing };
+}
+
+export const PER_PAGE = 6;
+const PICTURES_PER_PAGE = 2;
+/** Its copy would be cut mid-sentence, or dropped, in a picture cell. */
+const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
+
+/**
+ * Events onto pages, six at a time in date order. On each page the two
+ * with the strongest claim to a picture take the top row: one with its
+ * own picture, not a community event unless nothing else has one, and
+ * one whose copy fits the smaller frame in whole sentences before one
+ * that would be cut.
+ * The rest follow as listings, still in date order.
+ */
+export function layoutEvents(events: GuideEvent[]): GuideEvent[][] {
+  const pages: GuideEvent[][] = [];
+  for (let i = 0; i < events.length; i += PER_PAGE) {
+    const page = events.slice(i, i + PER_PAGE);
+    const ranked = page
+      .map((e, at) => ({ e, at }))
+      .filter(({ e }) => e.imageUrl)
+      .sort((a, b) => Number(a.e.community) - Number(b.e.community) || Number(cut(a.e)) - Number(cut(b.e)) || a.at - b.at)
+      .slice(0, PICTURES_PER_PAGE)
+      .sort((a, b) => a.at - b.at)
+      .map(({ e }) => e);
+    const pictured = new Set(ranked);
+    pages.push([
+      ...ranked.map((e) => ({ ...e, frame: 'picture' as const, copy: e.fits.picture })),
+      ...page.filter((e) => !pictured.has(e)).map((e) => ({ ...e, frame: 'listing' as const, copy: e.fits.listing })),
+    ]);
+  }
+  return pages;
 }
 
 /** The current season if none is chosen: today to three months on. */

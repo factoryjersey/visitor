@@ -231,6 +231,14 @@ export const events = pgTable('events', {
   printDates: text('print_dates'),
   printTimes: text('print_times'),
   printPrice: text('print_price'),
+  /**
+   * The guide's shortest copy: one sentence that fits the smallest printed
+   * frame. Written by Claude from the listing's words after each import,
+   * again when those words change (printLineKey), never once a person has
+   * set it (a locked field).
+   */
+  printLine: text('print_line'),
+  printLineKey: text('print_line_key'),
   /** A highlight: a full page in the guide with the extended listing and a large image, featured first online. Ours. */
   highlight: boolean('highlight').notNull().default(false),
 

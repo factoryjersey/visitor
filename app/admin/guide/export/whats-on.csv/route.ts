@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const window = windowFrom({ from: sp.get('from') ?? undefined, to: sp.get('to') ?? undefined });
   const { events } = await buildGuide(window, { draft: isDraft(sp.get('draft')) });
-  const csv = toCsv(EVENT_COLUMNS, events.map((e) => [e.dates, e.times, e.title, e.copy, e.price, e.venue, e.address, e.contact, e.website, e.imageUrl, e.block]));
+  const csv = toCsv(EVENT_COLUMNS, events.map((e) => [e.frame, e.dates, e.times, e.title, e.copy, e.price, e.venue, e.address, e.contact, e.website, e.frame === 'picture' ? e.imageUrl : '', e.block]));
   return new Response(utf16le(csv), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-16le',

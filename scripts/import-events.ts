@@ -3,7 +3,8 @@
  *
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
- *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only)
+ *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
+ *                                          print-lines (the guide's one-line copy only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -45,6 +46,7 @@ import { ldEvents, eventbriteId, isJerseyInPerson, toEvent as fromEventbrite, ty
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
+import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
 import { SITES as TRIBE_SITES, eventsUrl, joinPerformances, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
@@ -397,6 +399,16 @@ if (!values.only || values.only === 'stock') {
   } catch (e) {
     failed += 1;
     console.error(`stock pictures failed: ${(e as Error).message}`);
+  }
+}
+// And the guide's one-line copy for whatever is new or has new words.
+if (!values.only || values.only === 'print-lines') {
+  try {
+    const lines = await fillPrintLines();
+    console.log(`print lines: ${lines.written} of ${lines.wanted} written`);
+  } catch (e) {
+    failed += 1;
+    console.error(`print lines failed: ${(e as Error).message}`);
   }
 }
 await client.end();

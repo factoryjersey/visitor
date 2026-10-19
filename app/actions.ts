@@ -95,12 +95,22 @@ const eventPrintSchema = z.object({
   printDates: z.string().max(200),
   printTimes: z.string().max(200),
   printPrice: z.string().max(200),
+  printLine: z.string().max(120),
 });
 
-/** What the guide prints instead of the computed dates, times or price. Blank means use the computed one. */
+/**
+ * What the guide prints instead of the computed dates, times or price.
+ * Blank means use the computed one. A guide line set by hand is kept
+ * from Claude; cleared, Claude writes one again after the next import.
+ */
 export async function saveEventPrint(form: FormData) {
   const user = await requireStaff();
   const v = eventPrintSchema.parse(Object.fromEntries(form));
+  const [row] = await db.select({ printLine: events.printLine, lockedFields: events.lockedFields }).from(events).where(eq(events.id, v.id));
+  if (!row) return;
+  const printLine = v.printLine.trim() || null;
+  const others = row.lockedFields.filter((f) => f !== 'printLine');
+  const lockedFields = printLine === row.printLine ? row.lockedFields : printLine ? [...others, 'printLine'] : others;
   const now = new Date();
   await db
     .update(events)
@@ -108,6 +118,9 @@ export async function saveEventPrint(form: FormData) {
       printDates: v.printDates.trim() || null,
       printTimes: v.printTimes.trim() || null,
       printPrice: v.printPrice.trim() || null,
+      printLine,
+      ...(printLine ? {} : { printLineKey: null }),
+      lockedFields,
       editedBy: user.email,
       editedAt: now,
       updatedAt: now,
@@ -226,6 +239,7 @@ const quickEventSchema = z.object({
   title: z.string().trim().min(1).max(300),
   summary: z.string().trim().max(600),
   description: z.string().trim().max(6000),
+  printLine: z.string().trim().max(120),
   eventTypes: z.array(z.enum(EVENT_TYPES as [string, ...string[]])),
 });
 
@@ -239,13 +253,21 @@ export async function quickEditEvent(form: FormData) {
   const v = quickEventSchema.parse({ ...Object.fromEntries(form), eventTypes: checked(form, 'eventTypes') });
   const [row] = await db.select().from(events).where(eq(events.id, v.id));
   if (!row) return;
-  const next = { title: v.title, summary: v.summary || null, description: v.description || null, eventTypes: v.eventTypes };
+  const next = { title: v.title, summary: v.summary || null, description: v.description || null, printLine: v.printLine || null, eventTypes: v.eventTypes };
   const changed = (Object.keys(next) as (keyof typeof next)[]).filter((k) => JSON.stringify(row[k]) !== JSON.stringify(next[k]));
   if (!changed.length) return;
   const now = new Date();
   await db
     .update(events)
-    .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
+    .set({
+      ...next,
+      // A guide line cleared is Claude's to write again; any other change stays as set.
+      ...(next.printLine ? {} : { printLineKey: null }),
+      lockedFields: [...new Set([...row.lockedFields, ...changed])].filter((f) => f !== 'printLine' || next.printLine),
+      editedBy: user.email,
+      editedAt: now,
+      updatedAt: now,
+    })
     .where(eq(events.id, v.id));
   revalidatePath('/', 'layout');
 }

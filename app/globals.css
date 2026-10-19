@@ -76,10 +76,10 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-page.gp-right .gp-content { left: 12mm; right: 8.1mm; }
 
 /* Events: four fixed frames. */
-.gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 70mm 70mm; row-gap: 2mm; }
+.gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 52mm 43mm 43mm; row-gap: 2mm; }
+.gp-listing { border-top: 0.6pt solid var(--gp-orange); padding-top: 1.6mm; }
 .gp-event { overflow: hidden; font-size: 8.5pt; line-height: 1.08; }
 .gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-orange); margin-bottom: 2.6mm; }
-.gp-noimage { background: #f5f5f4; color: #a8a29e; font-size: 7pt; display: flex; align-items: center; justify-content: center; font-family: var(--gp-sans); }
 .gp-event-when { font-weight: 600; font-size: 9pt; text-transform: uppercase; }
 .gp-event-when em { font-weight: 500; font-style: italic; color: var(--gp-ink80); margin-left: 2mm; text-transform: none; }
 .gp-event-title { font-weight: 700; font-size: 9pt; color: var(--gp-orange); margin: 0.2mm 0 0.3mm; }
@@ -133,5 +133,4 @@ body { @apply bg-white text-stone-900 antialiased; }
   .gp-spread { page: gpspread; box-shadow: none; break-after: page; }
   .gp-page.gp-left { border-right: 0; }
   .gp-overset { outline: none; }
-  .gp-noimage { color: transparent; }
 }

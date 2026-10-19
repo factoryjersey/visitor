@@ -2,18 +2,19 @@
 
 import { BadgeCheck, Clock, MapPin } from 'lucide-react';
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { GuideEvent, GuideTour, GuideVenue } from '@/lib/domain/guide-entry';
+import { PER_PAGE, type GuideEvent, type GuideTour, type GuideVenue } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 
 /**
  * The guide's pages as the 2026 editions print them, from the InDesign
- * merge files: 230 × 165mm spreads of two 115 × 165mm pages. Events four
- * to a page on a two-by-two grid, orange; walks and tours in one ruled
+ * merge files: 230 × 165mm spreads of two 115 × 165mm pages. Events on a
+ * two-column grid, orange; walks and tours in one ruled
  * column, green, after the providers' key. A coloured tab and the folio
  * on each outer edge. Proxima Nova where the browser has it (Adobe
  * Fonts), Barlow Semi Condensed where it does not.
  *
- * Event cells are fixed, as the merge frames are; tours and the key flow,
+ * Events six to a page now: the pictured pair across the top, four
+ * listings under them. Event cells are fixed, as the merge frames are; tours and the key flow,
  * so they are measured here and poured page by page. What will not fit a
  * frame is outlined red on screen, as InDesign marks overset text.
  */
@@ -51,12 +52,10 @@ function EventCell({ e }: { e: GuideEvent }) {
     if (el) setOverset(el.scrollHeight > el.clientHeight + 1);
   }, [e]);
   return (
-    <article ref={ref} className={`gp-event${overset ? ' gp-overset' : ''}`} title={overset ? 'Overset: this entry will not fit its frame' : undefined}>
-      {e.preview ? (
+    <article ref={ref} className={`gp-event gp-${e.frame}${overset ? ' gp-overset' : ''}`} title={overset ? 'Overset: this entry will not fit its frame' : undefined}>
+      {e.frame === 'picture' && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={e.preview} alt="" className="gp-event-image" />
-      ) : (
-        <div className="gp-event-image gp-noimage">No picture</div>
       )}
       <p className="gp-event-when">{e.dates}{e.times && <em>{e.times}</em>}</p>
       <h4 className="gp-event-title">{e.title}</h4>
@@ -210,12 +209,12 @@ export function GuideBook(props: {
   const pages: Page[] = [];
   if (events.length || highlights.length) pages.push({ section: EVENTS, bleed: true, body: <Opener e={lead} /> });
   for (const h of highlights) pages.push({ section: EVENTS, body: <HighlightBody e={h} /> });
-  for (let i = 0; i < events.length; i += 4) {
+  for (let i = 0; i < events.length; i += PER_PAGE) {
     pages.push({
       section: EVENTS,
       body: (
         <div className="gp-content gp-grid">
-          {events.slice(i, i + 4).map((e) => <EventCell key={e.title + e.sortKey} e={e} />)}
+          {events.slice(i, i + PER_PAGE).map((e) => <EventCell key={e.title + e.sortKey} e={e} />)}
         </div>
       ),
     });
