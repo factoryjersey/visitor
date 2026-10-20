@@ -147,13 +147,39 @@ all, so `pnpm import:events` adds events from elsewhere after it:
 | Jersey Bulls | the fixtures page, `bulls.je/fixtures/?team=all`: home matches only (Jersey named first), men, women and U23 | straight away |
 | Jersey RFC | the fixtures and results page, `jrfc.je/results/`: home matches still to be played | straight away |
 
-After the sources, anything still to come without a picture gets a
-royalty-free stock one (`lib/integrations/stock`): Pexels when
-`PEXELS_API_KEY` is set, otherwise Openverse's public-domain photographs.
-It is searched for by what the listing is (football for a Bulls match,
-live music for a concert), credited on the page as illustrative, kept
-until the source sends a picture of its own, and left out of the print
-export.
+A show sold night by night ("Legally Blonde Tuesday 1st December", "…
+Wednesday 2nd December") or as a matinee and an evening is one event with
+every date, whichever source it comes from: same venue, same title once
+the words naming the performance are taken out (`lib/domain/join-runs.ts`).
+The nights' own events come off the site with a note saying where they went.
+
+After the sources, anything still to come without a picture of its own
+gets one, in this order (`lib/images/fallback.ts`, `lib/integrations/stock`):
+
+1. its organiser's fallback picture, when staff have set one (the Bulls
+   and Jersey RFC have their own photographs, credited to the club);
+2. its venue's: the fallback staff set on the venue page, or failing that
+   the venue's own Visit Jersey picture;
+3. a royalty-free stock photograph: Pexels when `PEXELS_API_KEY` is set,
+   otherwise Openverse's public-domain ones, searched for by what the
+   listing is and credited on the page as illustrative.
+
+A fallback set as a link to someone else's site is copied into our storage,
+so it does not break when they move theirs. A source's own picture, or one
+a person chose, always wins. Stock and club photographs stay out of print.
+
+Then two passes by Claude for the printed guide (`lib/integrations/claude`):
+
+- **Guide snippets** (`print-line.ts`): two sentences summing up each event,
+  the first at most 80 characters and able to stand alone, both at most
+  170. Written again only when the event's words change; one a person has
+  set in quick edit or on the admin print form is never replaced.
+- **Pictures with text** (`image-text.ts`): each event picture is looked at
+  once; posters, flyers and pictures with titles or dates over them stay on
+  the website but are not printed, as they crop badly.
+
+Both need `ANTHROPIC_API_KEY`; without it they are skipped and the guide
+falls back to whole sentences of the listing's own copy.
 
 Each match gets copy of its own from Claude (`lib/integrations/claude/fixture.ts`),
 a line about the two clubs meeting and the card's sentence, written once
@@ -176,6 +202,8 @@ it is quick to turn down in review and never offered as a public filter.
 
 Railway's `import` service runs `pnpm import:visit-jersey`, then
 `pnpm seed:provider-codes`, then `pnpm import:events`, daily at 05:17 UTC.
+`pnpm import:events --only <step>` runs one part: a source, or `stock`
+(pictures), `print-lines` (snippets) or `pictures` (the text check).
 
 ## Public site
 
@@ -188,6 +216,19 @@ The site visitors see is at the root, with no sign-in:
   bookable any day
 - `/whats-on/[slug]`, `/tours/[slug]` — the listing, all its dates,
   booking and directions; events carry schema.org Event data
+- `/venues` — venues and businesses with events or tours coming up; "See
+  all" lists every one we have (all of Visit Jersey's), by the guide's
+  sections, the Visitor recommended first
+- `/organisers`, `/organisers/[slug]` — who puts events on, and what they have coming up
+
+Listing headings are in title case on the site and in print
+(`printTitle` in `lib/domain/house-style.ts`), keeping acronyms and names
+as their source wrote them.
+
+Staff signed in see a pencil on every event and tour page for quick fixes
+(picture, categories, title, card sentence, guide snippet, description,
+taking it off the site), and a fallback picture panel on organiser and
+venue pages.
 
 It shows everything not left out (the site is the whole picture; the guide
 is the edited selection), only what is still to come, and highlights
@@ -214,13 +255,19 @@ public listings. Set it on the event or tour page in the admin.
 
 - `/admin/whats-on` — every event, filter by month and status, include or leave out
 - `/admin/whats-on/[slug]` — details, venue, our copy, source freshness
-- `/admin/venues` — places hosting events (or every listing), include or leave out
+- `/admin/venues` — places hosting events (or every listing), include or leave out; filter by tag
+- Venue tags, on each venue's admin page: **Visitor recommended** (shown on
+  the site: the edition of the printed guide it was last in) and **Client**
+  (admin only, with a note). `pnpm tag:venues --file names.txt
+  (--recommended "Autumn 2026" | --client) [--apply]` tags from a list of
+  names and reports what it cannot match. Client lists hold contacts and
+  billing: keep them out of the repository.
 - `/admin/venues/[slug]` — contact, months open, rates, facilities, events held there
 - `/admin/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
 - `/admin/tours/providers` — provider codes for the guide's key
-- `/admin/guide` — the selection for an edition's dates, set as the printed guide
-  sets it (115 × 165mm pages, the printed field order), with the InDesign
-  exports
+- `/admin/guide` — the selection for an edition's dates (Spring, Summer,
+  Autumn, Winter presets; Draft lays out everything eligible), set as the
+  2026 editions print it, with the InDesign exports
 - `/admin/map` — event venues, green for those in the guide
 
 ## Unique first: events and tours
@@ -272,13 +319,21 @@ The files are UTF-16 with a byte-order mark: from UTF-8, InDesign garbles
 every curly apostrophe and accent. The venues export carries section, area,
 label (`CASUAL`, `SPANISH`), listing size and copy, set on each venue page.
 
-The proof page lays entries out in two columns but does not paginate them;
-InDesign does that.
+The proof page lays the pages out as the 2026 editions print them: 230 ×
+165mm spreads, coloured tabs and folios, events six to a page (two with
+pictures across the top, four listings under them), walks and tours poured
+into ruled columns after the providers' key. Picture slots go to events
+with a photograph of their own, not a community event unless nothing else
+on the page has one. Each frame measures itself and prints the fullest
+whole-sentence copy that fits (ours, then the guide snippet, whole or its
+first sentence), dropping the phone line before the copy; copy that trails
+off is never printed. Print it to PDF from the browser. The What's On
+export gives each row its frame (picture or listing), in page order.
 
 ## Not built yet
 
 - Editions: a dated, signed-off snapshot of the selection.
-- factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
+- factoryOS link (`factoryos_contact_id`) and UPRNs. Clients are tagged by hand or from a list for now.
 - Emailing review outcomes on providers' listings.
 - Images on providers' listings: they need somewhere to upload to.
 

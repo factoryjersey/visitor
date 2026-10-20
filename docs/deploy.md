@@ -5,20 +5,20 @@ One Railway project, `visitor`, with:
 | Service | What | Notes |
 |---|---|---|
 | `web` | this repo, `main` branch | builds with `pnpm build`; runs migrations before each deploy (pre-deploy command `pnpm db:migrate`), then `pnpm start`; healthcheck `/` |
-| `import` | this repo, cron | `pnpm import:visit-jersey`, daily (e.g. `17 5 * * *`). Agree the schedule with Visit Jersey first. |
+| `import` | this repo, cron | `sh -c "pnpm import:visit-jersey; pnpm seed:provider-codes; pnpm import:events"`, daily at `17 5 * * *`. It runs on its schedule; a redeploy rebuilds it but does not reliably run it. |
 | Postgres | Railway's Postgres plugin, or Supabase | `DATABASE_URL` |
 
-## Variables on `web` (and `DATABASE_URL` on `import`)
+## Variables on `web` (and on `import`: `DATABASE_URL`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` as `${{visitor.SUPABASE_SERVICE_ROLE_KEY}}` so it can copy fallback pictures into storage)
 
 | Variable | Value |
 |---|---|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}`, or the Supabase connection string |
 | `NEXT_PUBLIC_SUPABASE_URL` | visitor's own Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | its anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | its service role key; needed to accept an invite with a password. Secret. |
+| `SUPABASE_SERVICE_ROLE_KEY` | its service role key; needed to accept an invite with a password, and for picture uploads to the `listing-images` storage bucket. Secret. |
 | `NEXT_PUBLIC_APP_URL` | the public URL: `https://visitor.je` (www.visitor.je redirects there) |
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
-| `ANTHROPIC_API_KEY` | optional: puts providers' and imported copy in the third person |
+| `ANTHROPIC_API_KEY` | optional: puts providers' and imported copy in the third person; on `import`, also writes the guide snippets, the club fixtures' copy, and checks event pictures for text |
 | `RESEND_API_KEY` | optional: sends invites and claim emails (Resend, with visitor.je verified) |
 | `PEXELS_API_KEY` | optional, on `import`: stock pictures for listings with none come from Pexels; without it, Openverse public-domain photos |
 | `EMAIL_FROM` | optional, default `Visitor <hello@visitor.je>` |
