@@ -4,10 +4,11 @@ import { events, organiserProfiles, places, type FieldSources, type Image } from
 import { organiserKey } from '@/lib/domain/organiser';
 
 /**
- * An event without a picture of its own shows its organiser's fallback
- * picture, else its venue's (the one staff set, or failing that the
- * venue's own listing picture), before any stock photograph: a Jersey RFC
- * fixture shows Jersey RFC's picture, not a stranger's rugby match.
+ * An event without a picture of its own shows its venue's picture (the
+ * fallback staff set, or failing that the venue's own listing picture),
+ * else its organiser's fallback, before any stock photograph: a show at
+ * the Opera House shows the Opera House, and a Jersey RFC fixture, at a
+ * ground we have no listing for, Jersey RFC's picture.
  *
  * Recorded as the "fallback" source, so it gives way to a picture a
  * source sends and never to stock, follows the organiser or venue when
@@ -23,11 +24,11 @@ export function fallbackFor(
   byOrganiser: Map<string, Image>,
   byVenue: Map<string, Image>,
 ): { image: Image; ref: string } | null {
+  const fromVenue = e.placeId ? byVenue.get(e.placeId) : undefined;
+  if (fromVenue) return { image: fromVenue, ref: `venue/${e.placeId}` };
   const key = e.organiser ? organiserKey(e.organiser) : '';
   const fromOrganiser = key ? byOrganiser.get(key) : undefined;
   if (fromOrganiser) return { image: fromOrganiser, ref: `organiser/${key}` };
-  const fromVenue = e.placeId ? byVenue.get(e.placeId) : undefined;
-  if (fromVenue) return { image: fromVenue, ref: `venue/${e.placeId}` };
   return null;
 }
 

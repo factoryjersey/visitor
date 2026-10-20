@@ -52,8 +52,8 @@ export function StaffFallback({ kind, id, name, image }: { kind: 'organiser' | '
     <details className="mb-8 rounded-lg border border-dashed border-harbour/25 p-4 text-sm">
       <summary className="cursor-pointer font-semibold text-ink">Staff: fallback picture for {name}&rsquo;s events</summary>
       <p className="mt-2 text-xs text-ink/60">
-        Shown on {kind === 'organiser' ? 'their' : 'its'} events that come without a picture, in place of a stock photograph.
-        {kind === 'venue' && ' Without one, the venue’s own picture is used. An organiser’s fallback comes first.'} An event&rsquo;s own picture always wins.
+        Shown on {kind === 'organiser' ? 'their' : 'its'} events that come without a picture, in place of a stock photograph{kind === 'organiser' ? ', when the venue has no picture of its own' : ''}.
+        {kind === 'venue' && ' Without one, the venue’s own picture is used. It comes before an organiser’s fallback.'} An event&rsquo;s own picture always wins.
       </p>
       <div className="mt-3 grid gap-4 md:grid-cols-[240px_1fr]">
         {preview ? (

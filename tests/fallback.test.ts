@@ -9,13 +9,13 @@ describe('fallback pictures', () => {
   const byOrganiser = new Map([['jerseyrfc', img('https://x/rfc.jpg')]]);
   const byVenue = new Map([['v1', img('https://x/ground.jpg')]]);
 
-  it('takes the organiser’s first, however the source spells them', () => {
-    expect(fallbackFor({ organiser: 'Jersey RFC', placeId: 'v1' }, byOrganiser, byVenue)).toEqual({ image: img('https://x/rfc.jpg'), ref: 'organiser/jerseyrfc' });
-    expect(fallbackFor({ organiser: 'The Jersey R.F.C.', placeId: null }, byOrganiser, byVenue)?.ref).toBe('organiser/jerseyrfc');
+  it('takes the venue’s first', () => {
+    expect(fallbackFor({ organiser: 'Jersey RFC', placeId: 'v1' }, byOrganiser, byVenue)).toEqual({ image: img('https://x/ground.jpg'), ref: 'venue/v1' });
   });
 
-  it('then the venue’s, then none', () => {
-    expect(fallbackFor({ organiser: 'Someone else', placeId: 'v1' }, byOrganiser, byVenue)?.ref).toBe('venue/v1');
+  it('then the organiser’s, however the source spells them, then none', () => {
+    expect(fallbackFor({ organiser: 'The Jersey R.F.C.', placeId: null }, byOrganiser, byVenue)?.ref).toBe('organiser/jerseyrfc');
+    expect(fallbackFor({ organiser: 'Jersey RFC', placeId: 'v2' }, byOrganiser, byVenue)?.ref).toBe('organiser/jerseyrfc');
     expect(fallbackFor({ organiser: null, placeId: 'v2' }, byOrganiser, byVenue)).toBeNull();
   });
 });
