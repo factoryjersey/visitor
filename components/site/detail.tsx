@@ -11,12 +11,12 @@ export function Hero({ image, title }: { image: Image | null; title: string }) {
     <figure>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={webImage(image, 1600, 760)} alt={image.alt ?? title} className="aspect-[2/1] w-full rounded-lg object-cover" />
-      {/* A stock picture, not the listing's own: say so, and whose it is. */}
+      {/* Not the listing's own picture: say whose it is, and if it is stock, that it only illustrates. */}
       {image.credit && (
         <figcaption className="mt-1.5 text-right text-xs text-harbour/50">
-          Illustrative photo:{' '}
+          {image.credit.source === 'club' ? 'Photo: ' : 'Illustrative photo: '}
           {image.credit.url ? <a href={image.credit.url} rel="nofollow noopener" target="_blank" className="hover:text-brand">{image.credit.name}</a> : image.credit.name}
-          {' '}/ {image.credit.source}
+          {image.credit.source !== 'club' && ` / ${image.credit.source}`}
         </figcaption>
       )}
     </figure>
