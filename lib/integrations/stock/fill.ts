@@ -2,16 +2,19 @@ import { and, eq, gte, isNull, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { events, experiences } from '@/lib/db/schema';
 import { env } from '@/lib/env';
+import { applyFallbacks } from '@/lib/images/fallback';
 import { stockLibrary, stockQuery } from './images';
 
 /**
- * Every public event and tour still to come that has no picture gets a
- * stock one, credited, after the day's import. Recorded as the "stock"
+ * Every public event and tour still to come that has no picture gets its
+ * organiser's or venue's fallback picture (lib/images/fallback.ts), or
+ * failing that a stock one, credited, after the day's import. Recorded as the "stock"
  * source, so a source that sends nothing leaves it be, a source's own
  * picture replaces it, and a person's choice (a locked field) is never
  * touched.
  */
-export async function fillStockImages(): Promise<{ events: number; tours: number; source: string }> {
+export async function fillStockImages(): Promise<{ fallbacks: number; events: number; tours: number; source: string }> {
+  const fallbacks = await applyFallbacks();
   const library = stockLibrary(env.PEXELS_API_KEY);
   const today = new Date().toISOString().slice(0, 10);
   const notLocked = (col: typeof events.lockedFields | typeof experiences.lockedFields) => sql`not ('headerImage' = any(${col}))`;
@@ -40,5 +43,5 @@ export async function fillStockImages(): Promise<{ events: number; tours: number
     await db.update(experiences).set({ headerImage: image, fieldSources: { ...t.fieldSources, headerImage: stamp(stockQuery(t)) } }).where(eq(experiences.id, t.id));
     filledTours += 1;
   }
-  return { events: filledEvents, tours: filledTours, source: library.source };
+  return { fallbacks, events: filledEvents, tours: filledTours, source: library.source };
 }

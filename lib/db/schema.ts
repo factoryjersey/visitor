@@ -162,6 +162,8 @@ export const places = pgTable('places', {
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
+  /** The picture an event here shows when it has none of its own and its organiser sets none. Ours. */
+  fallbackImage: jsonb('fallback_image').$type<Image | null>(),
   sourceLink: text('source_link'),
 
   /** The business that looks after it, when one does. */
@@ -408,6 +410,20 @@ export type Provider = typeof providers.$inferSelect;
  * its own. Staff decide. Approving gives the listing to a business and,
  * for someone without an account, makes their invite.
  */
+/**
+ * What we keep about an organiser. Organisers are the names events give
+ * (events.organiser), matched loosely (lib/domain/organiser.ts), so this
+ * is keyed by that match, not by an id an event points to.
+ */
+export const organiserProfiles = pgTable('organiser_profiles', {
+  key: text('key').primaryKey(),
+  name: text('name').notNull(),
+  /** The picture their events show when they have none of their own. */
+  fallbackImage: jsonb('fallback_image').$type<Image | null>(),
+  editedBy: text('edited_by'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const claims = pgTable(
   'claims',
   {

@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { Copy, Facts, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
+import { StaffFallback } from '@/components/site/staff-fallback';
+import { staffViewer } from '@/lib/auth/session';
 import { printAddress, printPrice, printWebsite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VenuePage({ params }: Props) {
   const venue = await publicVenue((await params).slug);
   if (!venue) notFound();
-  const rows = await publicEventsAt(venue.id);
+  const [rows, staff] = await Promise.all([publicEventsAt(venue.id), staffViewer()]);
   const today = todayIso();
   const address = printAddress(venue);
   const directions = directionsUrl(venue.lat, venue.lon, venue.name);
@@ -61,6 +63,7 @@ export default async function VenuePage({ params }: Props) {
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
         {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
       </header>
+      {staff && <StaffFallback kind="venue" id={venue.id} name={venue.name} image={venue.fallbackImage && { url: venue.fallbackImage.url, alt: venue.fallbackImage.alt }} />}
       <Hero image={venue.headerImage} title={venue.name} />
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
         <Copy lead={venue.guideCopy ?? venue.summary} body={venue.description} />

@@ -71,6 +71,13 @@
       "when": 1792449450373,
       "tag": "0009_event_print_line",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792484375996,
+      "tag": "0010_fallback_images",
+      "breakpoints": true
     }
   ]
 }

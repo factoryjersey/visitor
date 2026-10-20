@@ -1,6 +1,7 @@
+import { organiserKey } from '@/lib/domain/organiser';
 import { and, asc, eq, ne, or, inArray, notInArray, sql, type SQL } from 'drizzle-orm';
 import { db } from './index';
-import { events, experiences, places, providers, type Event } from './schema';
+import { events, experiences, organiserProfiles, places, providers, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
@@ -184,7 +185,6 @@ export async function publicVenuesWithEvents(opts: { withOngoing?: boolean } = {
 export type Organiser = { slug: string; name: string; names: string[]; providerIds: string[]; website: string | null; events: number; tours: number };
 
 /** Names as one: "The National Trust for Jersey" and "National Trust for Jersey" are the same people. */
-const sameName = (s: string) => s.toLowerCase().replace(/&amp;/g, '&').replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, '');
 
 /**
  * Who puts things on: the organisers the sources name on events
@@ -207,7 +207,7 @@ export async function publicOrganisers(): Promise<Organiser[]> {
   ]);
   const all = new Map<string, Organiser>();
   const add = (name: string, f: (o: Organiser) => void) => {
-    const key = sameName(name);
+    const key = organiserKey(name);
     if (!key) return;
     const o = all.get(key) ?? { slug: '', name, names: [], providerIds: [], website: null, events: 0, tours: 0 };
     f(o);
@@ -264,4 +264,10 @@ export async function publicVenueNamed(...names: (string | null | undefined)[]) 
     .from(places)
     .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), inArray(sql`lower(${places.name})`, names.filter((n): n is string => !!n?.trim()).map((n) => n.trim().toLowerCase()))));
   return rows.find((r) => wanted.includes(normaliseName(r.name))) ?? null;
+}
+
+/** The picture an organiser's events fall back on, if staff have set one. */
+export async function organiserFallback(name: string) {
+  const [row] = await db.select({ image: organiserProfiles.fallbackImage }).from(organiserProfiles).where(eq(organiserProfiles.key, organiserKey(name)));
+  return row?.image ?? null;
 }

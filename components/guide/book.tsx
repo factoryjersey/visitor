@@ -1,7 +1,7 @@
 'use client';
 
 import { BadgeCheck, Clock, MapPin } from 'lucide-react';
-import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PER_PAGE, type GuideEvent, type GuideTour, type GuideVenue } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 
@@ -44,13 +44,34 @@ function Frame({ page, n }: { page: Page; n: number }) {
   );
 }
 
+/**
+ * A fixed frame that fits its own copy: it tries the fullest version,
+ * measures, and steps to the next shorter until one fits, again once the
+ * typeface has loaded. A sentence matters more than the phone number, so
+ * if none fits with the phone line, it tries again without it. Overset
+ * only if even the dates, title and venue will not fit.
+ */
 function EventCell({ e }: { e: GuideEvent }) {
   const ref = useRef<HTMLDivElement>(null);
+  const said = (e.options.length ? e.options : [e.copy]).filter(Boolean);
+  const options: [string, boolean][] = [...said.map((c): [string, boolean] => [c, true]), ...(e.contact ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
+  const [pick, setPick] = useState(0);
+  const [fonts, setFonts] = useState(false);
   const [overset, setOverset] = useState(false);
+  useEffect(() => {
+    void document.fonts.ready.then(() => {
+      setPick(0);
+      setFonts(true);
+    });
+  }, []);
   useLayoutEffect(() => {
     const el = ref.current;
-    if (el) setOverset(el.scrollHeight > el.clientHeight + 1);
-  }, [e]);
+    if (!el) return;
+    const over = el.scrollHeight > el.clientHeight + 1;
+    if (over && pick < options.length - 1) setPick(pick + 1);
+    else setOverset(over);
+  }, [pick, fonts, options.length]);
+  const [copy, withContact] = options[pick] ?? ['', true];
   return (
     <article ref={ref} className={`gp-event gp-${e.frame}${overset ? ' gp-overset' : ''}`} title={overset ? 'Overset: this entry will not fit its frame' : undefined}>
       {e.frame === 'picture' && (
@@ -59,10 +80,10 @@ function EventCell({ e }: { e: GuideEvent }) {
       )}
       <p className="gp-event-when">{e.dates}{e.times && <em>{e.times}</em>}</p>
       <h4 className="gp-event-title">{e.title}</h4>
-      <p className="gp-event-copy">{e.copy} {e.price && <span className="gp-price">{e.price}</span>}</p>
+      <p className="gp-event-copy">{copy} {e.price && <span className="gp-price">{e.price}</span>}</p>
       {e.venue && <p className="gp-event-venue"><MapPin aria-hidden="true" />{e.venue}</p>}
       {e.address && <p className="gp-event-address">{e.address}</p>}
-      {e.contact && <p className="gp-event-contact">{e.contact}</p>}
+      {e.contact && withContact && <p className="gp-event-contact">{e.contact}</p>}
       {e.website && <p className="gp-event-web">{e.website}</p>}
     </article>
   );

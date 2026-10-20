@@ -34,7 +34,7 @@ const label = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-i
 const ICONS = new Map<string, LucideIcon>([...MARKERS, ...(Object.entries(GENRE_MARKERS) as [string, LucideIcon][])]);
 
 /** A picture scaled in the browser to 1920 wide at most, as a JPEG: what the site shows, not what the camera took. */
-async function webSized(file: File): Promise<File> {
+export async function webSized(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) return file;
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1920 / bitmap.width);

@@ -395,7 +395,7 @@ for (const s of SOURCES.filter((s) => !values.only || s.source === values.only))
 if (!values.only || values.only === 'stock') {
   try {
     const filled = await fillStockImages();
-    console.log(`stock pictures (${filled.source}): ${filled.events} events, ${filled.tours} tours`);
+    console.log(`fallback pictures: ${filled.fallbacks} events; stock pictures (${filled.source}): ${filled.events} events, ${filled.tours} tours`);
   } catch (e) {
     failed += 1;
     console.error(`stock pictures failed: ${(e as Error).message}`);

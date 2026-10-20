@@ -3,7 +3,9 @@ import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicOrganiser, todayIso } from '@/lib/db/public';
+import { organiserFallback, publicOrganiser, todayIso } from '@/lib/db/public';
+import { StaffFallback } from '@/components/site/staff-fallback';
+import { staffViewer } from '@/lib/auth/session';
 import { printPrice, printWebsite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
@@ -26,6 +28,8 @@ export default async function OrganiserPage({ params }: Props) {
   if (!found) notFound();
   const { organiser: o, events, tours } = found;
   const today = todayIso();
+  const staff = await staffViewer();
+  const fallback = staff ? await organiserFallback(o.name) : null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -45,6 +49,8 @@ export default async function OrganiserPage({ params }: Props) {
           </a>
         )}
       </header>
+
+      {staff && events.length > 0 && <StaffFallback kind="organiser" id={o.name} name={o.name} image={fallback && { url: fallback.url, alt: fallback.alt }} />}
 
       {events.length > 0 && (
         <section className="mb-12">

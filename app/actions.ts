@@ -6,7 +6,9 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
-import { INCLUSIONS, LISTING_SIZES, events, experiences, places, providers, type Image } from '@/lib/db/schema';
+import { INCLUSIONS, LISTING_SIZES, events, experiences, organiserProfiles, places, providers, type Image } from '@/lib/db/schema';
+import { applyFallbacks } from '@/lib/images/fallback';
+import { organiserKey } from '@/lib/domain/organiser';
 import { storeListingImage } from '@/lib/images/upload';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
 import { guideEvent, guideTour } from '@/lib/domain/guide-entry';
@@ -330,6 +332,52 @@ export async function setListingImage(form: FormData): Promise<{ ok: true } | { 
   await lockAndSet(table, v.id, 'headerImage', { headerImage }, user.email);
   revalidatePath('/', 'layout');
   return { ok: true };
+}
+
+const fallbackSchema = z.object({
+  kind: z.enum(['organiser', 'venue']),
+  /** The organiser's name, or the venue's id. */
+  id: z.string().trim().min(1).max(300),
+  mode: z.enum(['upload', 'url', 'remove']),
+  url: z.string().trim().max(1000).optional(),
+  alt: z.string().trim().max(300).optional(),
+});
+
+/**
+ * An organiser's or venue's fallback picture: uploaded, linked or taken
+ * away. Their events without a picture of their own follow at once.
+ */
+export async function setFallbackImage(form: FormData): Promise<{ ok: true; changed: number } | { ok: false; error: string }> {
+  const user = await requireStaff();
+  const v = fallbackSchema.parse({ kind: form.get('kind'), id: form.get('id'), mode: form.get('mode'), url: form.get('url') ?? undefined, alt: form.get('alt') ?? undefined });
+  if (v.kind === 'venue' && !z.string().uuid().safeParse(v.id).success) return { ok: false, error: 'No such venue.' };
+  const key = v.kind === 'organiser' ? organiserKey(v.id) : v.id;
+  if (!key) return { ok: false, error: 'No such organiser.' };
+  let image: Image | null = null;
+  try {
+    if (v.mode === 'upload') {
+      const file = form.get('file');
+      if (!(file instanceof File) || !file.size) return { ok: false, error: 'Choose a picture first.' };
+      image = { url: await storeListingImage(`fallback-${v.kind}`, v.kind === 'organiser' ? key : v.id, file), publicId: null, alt: v.alt || null, originalFilename: file.name || null };
+    } else if (v.mode === 'url') {
+      if (!v.url || !/^https:\/\/\S+$/i.test(v.url)) return { ok: false, error: 'A link starting https://, please.' };
+      image = { url: v.url, publicId: null, alt: v.alt || null, originalFilename: null };
+    }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  const now = new Date();
+  if (v.kind === 'organiser') {
+    await db
+      .insert(organiserProfiles)
+      .values({ key, name: v.id, fallbackImage: image, editedBy: user.email, updatedAt: now })
+      .onConflictDoUpdate({ target: organiserProfiles.key, set: { name: v.id, fallbackImage: image, editedBy: user.email, updatedAt: now } });
+  } else {
+    await db.update(places).set({ fallbackImage: image, editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(places.id, v.id));
+  }
+  const changed = await applyFallbacks();
+  revalidatePath('/', 'layout');
+  return { ok: true, changed };
 }
 
 const takeOffSchema = z.object({ kind: z.enum(['event', 'experience']), id: z.string().uuid() });

@@ -43,6 +43,8 @@ export type GuideEvent = {
   fits: { picture: string; listing: string };
   /** Which frame it takes on its page, set by the page layout. */
   frame: 'picture' | 'listing';
+  /** Every whole-sentence version of the copy, fullest first: the proof measures its frame and prints the first that fits. Not printed. */
+  options: string[];
 };
 
 export type Window = { from: string; to: string };
@@ -124,6 +126,26 @@ export function printCopy(e: { guideCopy: string | null; summary: string | null;
   return cut.length < 50 ? '' : cut;
 }
 
+/**
+ * The copy a frame could print, in order of preference: ours whole, then
+ * every whole-sentence version of ours, the description, the card
+ * sentence and the print line, fullest first, then none.
+ */
+export function copyOptions(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
+  const tidy = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
+  const ours = tidy(e.guideCopy);
+  const prefixes = new Set<string>();
+  for (const text of [ours, tidy(e.description), tidy(e.summary), tidy(e.printLine)]) {
+    let out = '';
+    for (const s of text.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) ?? []) {
+      out = `${out} ${s.trim()}`.trim();
+      if (out.length > 600) break;
+      prefixes.add(out);
+    }
+  }
+  return [...new Set([...(ours ? [ours] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
+}
+
 /** Sites that sell for everyone: in print they say nothing about the event. */
 const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
 
@@ -172,7 +194,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
   };
   const fits = { picture: printCopy(e, copyBudget(entry, FRAMES.picture)), listing: printCopy(e, copyBudget(entry, FRAMES.listing)) };
   const community = e.eventTypes.includes('Charity');
-  return { ...entry, community, fits, frame: 'listing', copy: fits.listing };
+  return { ...entry, community, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
 }
 
 export const PER_PAGE = 6;
