@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { printTitle } from '@/lib/domain/house-style';
 import type { EventDate, Image } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
 import { upcomingDates } from '@/lib/domain/web-dates';
@@ -106,7 +107,7 @@ export function ListingHeader(props: { when: { main: string; more: string | null
         {props.when?.main ?? 'Finished'}
         {props.when?.more && <span className="ml-2 text-base font-medium text-sea/70 md:text-lg">({props.when.more})</span>}
       </p>
-      <h1 className="mt-1 font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{props.title}</h1>
+      <h1 className="mt-1 font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{printTitle(props.title)}</h1>
       {(where || showBy) && (
         <p className="mt-2 text-lg text-harbour/70">
           {where && <>{props.whereWord ?? 'at'} {whoLink(where)}</>}

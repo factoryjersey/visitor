@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { printTitle } from '@/lib/domain/house-style';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -25,10 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!row) return {};
   const e = row.event;
   return {
-    title: e.title,
+    title: printTitle(e.title),
     description: e.summary ?? undefined,
     alternates: alternates(`/whats-on/${e.slug}`),
-    openGraph: { title: e.title, description: e.summary ?? undefined, images: e.headerImage ? [webImage(e.headerImage, 1200, 630)] : [] },
+    openGraph: { title: printTitle(e.title), description: e.summary ?? undefined, images: e.headerImage ? [webImage(e.headerImage, 1200, 630)] : [] },
   };
 }
 
@@ -131,7 +132,7 @@ export default async function EventPage({ params }: Props) {
                 <ul className="divide-y divide-harbour/10 text-sm">
                   {atVenue.map(({ event: o }) => (
                     <li key={o.id} className="py-2">
-                      <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-brand">{o.title}</Link>
+                      <Link href={`/whats-on/${o.slug}`} className="font-medium hover:text-brand">{printTitle(o.title)}</Link>
                       <span className="block text-xs text-harbour/60">{cardWhen(o.dates, o.occurrence, today)}</span>
                     </li>
                   ))}

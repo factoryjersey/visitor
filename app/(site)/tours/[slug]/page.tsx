@@ -1,3 +1,4 @@
+import { printTitle } from '@/lib/domain/house-style';
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!row) return {};
   const t = row.tour;
   return {
-    title: t.title,
+    title: printTitle(t.title),
     description: t.summary ?? undefined,
     alternates: alternates(`/tours/${t.slug}`),
     openGraph: { title: t.title, description: t.summary ?? undefined, images: t.headerImage ? [webImage(t.headerImage, 1200, 630)] : [] },
