@@ -8,6 +8,7 @@ import {
   printPrice,
   printTimes,
   printTourDates,
+  printTitle,
   printWebsite,
 } from './house-style';
 
@@ -113,17 +114,7 @@ export function fitCopy(text: string, budget: number): string {
 export function printCopy(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }, budget: number): string {
   // No room for a line of copy: the dates, title and venue say it.
   if (budget <= 0) return '';
-  const tidy = (t: string | null) => (t ?? '').replace(/\s+/g, ' ').trim();
-  const ours = tidy(e.guideCopy);
-  if (ours && ours.length <= budget) return ours;
-  const whole = [ours, tidy(e.description), tidy(e.summary), tidy(e.printLine ?? null)]
-    .filter(Boolean)
-    .map((t) => fitCopy(t, budget))
-    .filter((t) => !t.endsWith('…'));
-  if (whole.length) return whole.sort((a, b) => b.length - a.length)[0]!;
-  // A sentence cut to a stub says less than none: the dates, title and venue say it.
-  const cut = fitCopy(tidy(e.summary) || ours || tidy(e.description), budget);
-  return cut.length < 50 ? '' : cut;
+  return copyOptions(e).find((c) => c.length <= budget) ?? '';
 }
 
 /**
@@ -134,17 +125,30 @@ export function printCopy(e: { guideCopy: string | null; summary: string | null;
 export function copyOptions(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
   const tidy = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
   const ours = tidy(e.guideCopy);
+  const snippet = tidy(e.printLine);
+  // The snippet sums the listing up for print: whole, or its first sentence alone.
+  const texts = snippet ? [snippet] : [tidy(e.description), tidy(e.summary)];
   const prefixes = new Set<string>();
-  for (const text of [ours, tidy(e.description), tidy(e.summary), tidy(e.printLine)]) {
+  for (const text of [ours, ...texts]) {
     let out = '';
-    for (const s of text.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) ?? []) {
-      out = `${out} ${s.trim()}`.trim();
+    for (const s of sentences(text)) {
+      out = `${out} ${s}`.trim();
       if (out.length > 600) break;
-      prefixes.add(out);
+      if (!trailsOff(out)) prefixes.add(out);
     }
   }
   return [...new Set([...(ours ? [ours] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
 }
+
+/** Copy the source cut short ("…", "..."): never printed. */
+const trailsOff = (t: string) => /(\.\.|…)\s*$/.test(t) || /(\.\.|…)\s/.test(t);
+const sentences = (t: string) => (t.match(/[^.!?…]+(?:[.!?…]+|$)(?=\s|$)/g) ?? []).map((s) => s.trim()).filter(Boolean);
+
+/**
+ * A picture the guide prints: the listing's own (not stock or a club's
+ * photograph we credit), and not a poster or flyer, which crops badly.
+ */
+const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
 
 /** Sites that sell for everyone: in print they say nothing about the event. */
 const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
@@ -178,15 +182,15 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
   const entry = {
     dates,
     times: e.printTimes ?? printTimes(inside.length ? inside : e.dates) ?? '',
-    title: e.title,
+    title: printTitle(e.title),
     price: e.printPrice ?? printPrice(e.fromPricePence, e.toPricePence, { free: e.free }) ?? '',
     venue: e.venueName ?? venue?.name ?? e.venue?.split(',')[0] ?? '',
     address: address ?? '',
     contact: printContact(e.phone ?? venue?.phone ?? null, e.email) ?? '',
     website: printWebsite(guideWebsite(e.website, venue?.website ?? null)) ?? '',
-    // A stock picture is for the web only: print uses the listing's own or none.
-    imageUrl: e.headerImage && !e.headerImage.credit ? e.headerImage.url : '',
-    preview: e.headerImage && !e.headerImage.credit ? webImage(e.headerImage, 520, 182) : '',
+    // Stock, credited and poster pictures are for the web only: print uses the listing's own photograph or none.
+    imageUrl: printable(e.headerImage) ? e.headerImage!.url : '',
+    preview: printable(e.headerImage) ? webImage(e.headerImage!, 520, 182) : '',
     block: (UNIQUE.includes(e.occurrence) ? 'dated' : 'all season') as GuideEvent['block'],
     highlight: e.highlight,
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
@@ -309,7 +313,7 @@ export function guideTour(
     kind: dated ? 'dated' : 'on demand',
     genre: x.genre ?? '',
     dates: dates ?? '',
-    title: x.title,
+    title: printTitle(x.title),
     code: provider?.code ?? '',
     provider: provider?.name ?? '',
     duration: x.duration ?? '',

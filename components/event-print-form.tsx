@@ -40,7 +40,7 @@ export function EventPrintForm({ id, entry, computed, current }: {
         {field('printDates', 'Dates', computed.dates, current.dates)}
         {field('printTimes', 'Times', computed.times, current.times)}
         {field('printPrice', 'Price', computed.price, current.price)}
-        {field('printLine', 'Guide line: one sentence of 80 characters or fewer, for when the longer copy will not fit', null, current.line)}
+        {field('printLine', 'Guide snippet: two sentences, the first 80 characters or fewer and able to stand alone, both 170 or fewer', null, current.line)}
         <button type="submit" className="rounded border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100">Save print details</button>
       </form>
     </div>

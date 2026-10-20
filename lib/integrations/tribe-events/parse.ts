@@ -1,5 +1,6 @@
 import type { EventDate } from '@/lib/db/schema';
 import { classifyOccurrence } from '@/lib/domain/occurrence';
+import { joinRuns } from '@/lib/domain/join-runs';
 import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { decodeEntities, htmlToText } from '@/lib/integrations/jersey-com/parse';
 
@@ -120,39 +121,5 @@ export function toEvent(e: TribeEvent, site: TribeSite): VjEvent | null {
   };
 }
 
-/** A title without the words that tell one performance of a show from another. */
-const showName = (title: string) =>
-  title.toLowerCase().replace(/\b(fundraiser|matinee|evening|afternoon|morning|relaxed performance|performance|show|early|late)\b/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
-
-/** "Fundraiser Evening – Midnight Joanna", once it is both performances: "Fundraiser – Midnight Joanna". */
-const bothTimes = (title: string) =>
-  title.replace(/\s*\b(matinee|evening|afternoon)\b\s*/gi, ' ').replace(/\s+([–-])\s+([–-])\s+/g, ' $1 ').replace(/\s{2,}/g, ' ').trim();
-
-/**
- * Ticket sites sell each performance on its own, a matinee and an evening
- * as two events. The guide lists the show once, with both times: same
- * venue, same show name, the dates together and the first one's id.
- */
-export function joinPerformances(events: VjEvent[]): VjEvent[] {
-  const byShow = new Map<string, VjEvent>();
-  for (const e of events) {
-    const key = `${(e.venueName ?? '').toLowerCase()}|${showName(e.title)}`;
-    const seen = byShow.get(key);
-    if (!seen || !showName(e.title)) {
-      byShow.set(seen ? `${key}|${e.externalId}` : key, e);
-      continue;
-    }
-    const dates = [...seen.dates, ...e.dates].sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
-    byShow.set(key, {
-      ...seen,
-      title: bothTimes(seen.title.length <= e.title.length ? seen.title : e.title),
-      dates,
-      startsOn: dates[0]!.date,
-      endsOn: dates.at(-1)!.date,
-      occurrence: classifyOccurrence(dates.map((d) => d.date), { starts: dates.map((d) => d.start) }),
-      fromPricePence: [seen.fromPricePence, e.fromPricePence].filter((p): p is number => p !== null).sort((a, b) => a - b)[0] ?? null,
-      toPricePence: Math.max(seen.toPricePence ?? 0, e.toPricePence ?? 0, seen.fromPricePence ?? 0, e.fromPricePence ?? 0) || null,
-    });
-  }
-  return [...byShow.values()];
-}
+/** A matinee and an evening of the same show, listed once: see lib/domain/join-runs.ts. */
+export const joinPerformances = (events: VjEvent[]): VjEvent[] => joinRuns(events).events;

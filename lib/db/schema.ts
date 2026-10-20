@@ -30,6 +30,12 @@ export type Image = {
   originalFilename: string | null;
   /** A stock picture's photographer and where it came from, when it is not the listing's own. */
   credit?: { name: string; url: string | null; source: string } | null;
+  /**
+   * Whether the picture is words as much as a photograph (a poster, a
+   * flyer, a title over the image): the guide does not print those, as
+   * they crop badly. Checked once per picture (lib/integrations/claude/image-text.ts).
+   */
+  text?: { found: boolean; url: string; at: string } | null;
 };
 
 /** Where one field's current value came from. */

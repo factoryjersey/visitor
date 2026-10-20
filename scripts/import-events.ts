@@ -4,7 +4,7 @@
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
- *                                          print-lines (the guide's one-line copy only)
+ *                                          print-lines (the guide's snippets only), pictures (text check only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -30,7 +30,7 @@ import '@/lib/load-env';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { and, eq, notInArray } from 'drizzle-orm';
+import { and, eq, inArray, ne, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, places, sourceRecords, type Event, type Place, type Review } from '@/lib/db/schema';
 import { withCategories } from '@/lib/domain/categorise';
@@ -47,7 +47,9 @@ import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
-import { SITES as TRIBE_SITES, eventsUrl, joinPerformances, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
+import { checkEventPictures } from '@/lib/integrations/claude/image-text';
+import { SITES as TRIBE_SITES, eventsUrl, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
+import { joinRuns } from '@/lib/domain/join-runs';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
 
 const { values } = parseArgs({ options: { only: { type: 'string' }, fixture: { type: 'string' } } });
@@ -192,7 +194,7 @@ async function loadTribe(site: TribeSite): Promise<Item[]> {
   if (!all.length) throw new Error(`no events from ${site.base}: has the site changed?`);
   const raw = new Map(all.map((e) => [String(e.id), e]));
   const parsed = all.map((e) => fromTribe(e, site)).filter((v) => v !== null);
-  return joinPerformances(parsed).map((v) => ({ v, raw: raw.get(v.externalId) }));
+  return parsed.map((v) => ({ v, raw: raw.get(v.externalId) }));
 }
 
 /**
@@ -237,7 +239,7 @@ async function loadFixtures(source: string, url: string, parse: (html: string) =
   return out;
 }
 
-const counts = { created: 0, linked: 0, updated: 0, unchanged: 0, rewritten: 0 };
+const counts = { created: 0, linked: 0, updated: 0, unchanged: 0, rewritten: 0, joined: 0 };
 
 /** Which words a rewrite was made from: a new one only when these change. */
 const wordsKey = (v: VjEvent) => createHash('sha1').update([v.title, v.summary ?? '', v.description ?? ''].join('\u0000')).digest('hex');
@@ -283,6 +285,32 @@ async function guideVoice(source: string, items: Item[]): Promise<Map<string, Ke
 function eventFields(v: VjEvent, venue: Place | null) {
   const { externalId: _id, modifiedAt: _m, portalSyncedAt: _p, ...fields } = v;
   return { ...fields, placeId: venue?.id ?? null, lat: v.lat ?? venue?.lat ?? null, lon: v.lon ?? venue?.lon ?? null };
+}
+
+/**
+ * A performance now folded into its show: the event it had on its own
+ * comes off the site, with a note saying where it went, unless it is
+ * the show's own event (an earlier import may have linked them already).
+ */
+async function retireJoined(source: string, joined: Map<string, string>, existing: Event[]) {
+  if (!joined.size) return;
+  const records = await db
+    .select({ externalId: sourceRecords.externalId, eventId: sourceRecords.eventId })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, source), eq(sourceRecords.externalType, 'events'), inArray(sourceRecords.externalId, [...joined.keys(), ...joined.values()])));
+  const eventOf = new Map(records.map((r) => [r.externalId, r.eventId]));
+  for (const [part, show] of joined) {
+    const partEvent = eventOf.get(part);
+    const showEvent = eventOf.get(show);
+    if (!partEvent || partEvent === showEvent) continue;
+    const kept = existing.find((e) => e.id === showEvent);
+    await db
+      .update(events)
+      .set({ inclusion: 'excluded', inclusionNote: `One night of ${kept ? `"${kept.title}" (/whats-on/${kept.slug})` : 'a longer run'}, now listed with all its dates.`, inclusionSetBy: 'import', inclusionSetAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(events.id, partEvent), ne(events.inclusion, 'excluded')));
+    await db.update(sourceRecords).set({ present: false }).where(and(eq(sourceRecords.source, source), eq(sourceRecords.externalType, 'events'), eq(sourceRecords.externalId, part)));
+    counts.joined += 1;
+  }
 }
 
 async function importSource(source: string, items: Item[], review: Review, allPlaces: Place[], existing: Event[], voice: boolean) {
@@ -380,11 +408,16 @@ for (const s of SOURCES.filter((s) => !values.only || s.source === values.only))
   // One source down must not stop the others.
   try {
     const before = { ...counts };
-    const items = await s.load();
+    const loaded = await s.load();
+    // A show sold night by night, or matinee and evening, is one event with every date.
+    const { events: shows, joined } = joinRuns(loaded.map((i) => i.v));
+    const rawOf = new Map(loaded.map((i) => [i.v.externalId, i.raw]));
+    const items = shows.map((v) => ({ v, raw: rawOf.get(v.externalId) }));
     await importSource(s.source, items, s.review, allPlaces, existing, s.voice !== false);
+    await retireJoined(s.source, joined, existing);
     console.log(
       `\r${s.source}: ${items.length} events; created ${counts.created - before.created}, linked to one we had ${counts.linked - before.linked}, ` +
-        `updated ${counts.updated - before.updated}, unchanged ${counts.unchanged - before.unchanged}, rewritten ${counts.rewritten - before.rewritten}`,
+        `updated ${counts.updated - before.updated}, unchanged ${counts.unchanged - before.unchanged}, rewritten ${counts.rewritten - before.rewritten}, nights joined into their show ${counts.joined - before.joined}`,
     );
   } catch (e) {
     failed += 1;
@@ -409,6 +442,16 @@ if (!values.only || values.only === 'print-lines') {
   } catch (e) {
     failed += 1;
     console.error(`print lines failed: ${(e as Error).message}`);
+  }
+}
+// And which pictures are posters and flyers, which the guide does not print.
+if (!values.only || values.only === 'pictures') {
+  try {
+    const p = await checkEventPictures();
+    console.log(`pictures checked for text: ${p.checked}, ${p.withText} kept out of print`);
+  } catch (e) {
+    failed += 1;
+    console.error(`picture check failed: ${(e as Error).message}`);
   }
 }
 await client.end();

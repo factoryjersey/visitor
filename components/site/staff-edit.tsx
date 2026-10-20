@@ -199,9 +199,9 @@ export function StaffEdit(props: Props) {
               </div>
               {props.kind === 'event' && (
                 <div>
-                  <label className={label} htmlFor="qe-print-line">Guide line</label>
-                  <input id="qe-print-line" name="printLine" defaultValue={props.printLine ?? ''} maxLength={120} className={field} />
-                  <p className="mt-1 text-xs text-ink/50">One sentence of 80 characters or fewer, for the printed guide when the longer copy will not fit.</p>
+                  <label className={label} htmlFor="qe-print-line">Guide snippet</label>
+                  <input id="qe-print-line" name="printLine" defaultValue={props.printLine ?? ''} maxLength={200} className={field} />
+                  <p className="mt-1 text-xs text-ink/50">Two sentences for the printed guide: the first 80 characters or fewer and able to stand alone, both together 170 or fewer.</p>
                 </div>
               )}
               <div>

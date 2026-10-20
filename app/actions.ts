@@ -97,7 +97,7 @@ const eventPrintSchema = z.object({
   printDates: z.string().max(200),
   printTimes: z.string().max(200),
   printPrice: z.string().max(200),
-  printLine: z.string().max(120),
+  printLine: z.string().max(200),
 });
 
 /**
@@ -260,7 +260,7 @@ const quickEventSchema = z.object({
   title: z.string().trim().min(1).max(300),
   summary: z.string().trim().max(600),
   description: z.string().trim().max(6000),
-  printLine: z.string().trim().max(120),
+  printLine: z.string().trim().max(200),
   eventTypes: z.array(z.enum(EVENT_TYPES as [string, ...string[]])),
 });
 

@@ -170,3 +170,44 @@ export function printTourDates(dates: readonly EventDate[], window?: { from: str
   }
   return groups.map((g) => `${g.days.join('/')} ${g.label}`).join(', ');
 }
+
+/** Words a title keeps small unless they open or close it, or follow a colon or dash. */
+const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'v', 'vs', 'via', 'with', 'de', 'du', 'la', 'le', 'les', 'des']);
+
+/**
+ * A heading in title case, as the guide prints them: "An Island Christmas
+ * Carol at 16 New Street", "Jersey Bulls v Hartley Wintney". What its
+ * source already wrote with care is kept: acronyms (JCG, RFC), names with
+ * capitals inside (O'Sullivan, McQueen, iNED). A title shouted in
+ * capitals is cased again from scratch.
+ */
+export function printTitle(title: string): string {
+  const letters = title.replace(/[^A-Za-z]/g, '');
+  const shouted = letters.length > 3 && letters === letters.toUpperCase();
+  const source = shouted ? title.toLowerCase() : title;
+  const words = source.split(/(\s+)/);
+  const real = words.map((w, i) => (/\S/.test(w) ? i : -1)).filter((i) => i >= 0);
+  const first = real[0];
+  const last = real.at(-1);
+  return words
+    .map((w, i) => {
+      if (!/\S/.test(w)) return w;
+      const before = words.slice(0, i).join('').trimEnd();
+      const opens = i === first || i === last || /[:–—\-(]$/.test(before);
+      return w
+        .split('-')
+        .map((part, j) => {
+          const core = part.replace(/^[^A-Za-z0-9]+/, '');
+          const lead = part.slice(0, part.length - core.length);
+          if (!core) return part;
+          // Already deliberate: an acronym or a capital inside the word.
+          if (!shouted && (/^[A-Z0-9&.]{2,}$/.test(core.replace(/[^A-Za-z0-9&.]/g, '')) || /[a-z][A-Z]/.test(core) || /^[a-z]+[A-Z]/.test(core))) return part;
+          const bare = core.toLowerCase().replace(/[^a-z]/g, '');
+          if (j === 0 && !opens && MINOR.has(bare)) return lead + core.toLowerCase();
+          if (/^\d/.test(core)) return part;
+          return lead + core.charAt(0).toUpperCase() + core.slice(1);
+        })
+        .join('-');
+    })
+    .join('');
+}

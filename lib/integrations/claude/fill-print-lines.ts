@@ -4,9 +4,10 @@ import { db } from '@/lib/db';
 import { events } from '@/lib/db/schema';
 import { printLines } from './print-line';
 
-/** Which words a line was written from: a new one only when these change. */
+/** Which words a snippet was written from, and to which brief: a new one only when either changes. */
+const BRIEF = 'snippet-2';
 export const lineKey = (e: { title: string; summary: string | null; description: string | null }) =>
-  createHash('sha1').update([e.title, e.summary ?? '', e.description ?? ''].join('\u0000')).digest('hex');
+  createHash('sha1').update([BRIEF, e.title, e.summary ?? '', e.description ?? ''].join('\u0000')).digest('hex');
 
 /**
  * After the day's import, every public event still to come gets its

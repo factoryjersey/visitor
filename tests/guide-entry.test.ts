@@ -148,3 +148,13 @@ describe('the guide line', () => {
     expect(printCopy({ guideCopy: null, summary: long, description: null, printLine: line }, 0)).toBe('');
   });
 });
+
+describe('pictures in print', () => {
+  const photo = { url: 'https://res.cloudinary.com/x/image/upload/a.jpg', publicId: null, alt: null, originalFilename: null };
+  it('prints the listing’s own photograph, but not a poster or flyer', () => {
+    expect(guideEvent({ ...base, headerImage: photo }, null)?.imageUrl).toBe(photo.url);
+    expect(guideEvent({ ...base, headerImage: { ...photo, text: { found: true, url: photo.url, at: '2026-10-20' } } }, null)?.imageUrl).toBe('');
+    // A check made for an earlier picture says nothing about this one.
+    expect(guideEvent({ ...base, headerImage: { ...photo, text: { found: true, url: 'https://old/b.jpg', at: '2026-10-20' } } }, null)?.imageUrl).toBe(photo.url);
+  });
+});
