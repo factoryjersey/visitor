@@ -164,6 +164,15 @@ export const places = pgTable('places', {
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
   /** The picture an event here shows when it has none of its own and its organiser sets none. Ours. */
   fallbackImage: jsonb('fallback_image').$type<Image | null>(),
+  /**
+   * Visitor recommended: featured in the printed guide, shown on the site.
+   * Holds the latest edition it was in ("Autumn 2026"); null when it was
+   * in none. Ours.
+   */
+  recommendedIn: text('recommended_in'),
+  /** Has worked with us. Internal: the admin only, never the public site. Ours. */
+  client: boolean('client').notNull().default(false),
+  clientNote: text('client_note'),
   sourceLink: text('source_link'),
 
   /** The business that looks after it, when one does. */

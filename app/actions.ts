@@ -159,6 +159,25 @@ export async function saveVenueGuide(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
+const venueTagsSchema = z.object({
+  id: z.string().uuid(),
+  recommendedIn: z.string().trim().max(60),
+  client: z.literal('on').optional(),
+  clientNote: z.string().trim().max(1000),
+});
+
+/** Visitor recommended (public) and client (ours only). */
+export async function saveVenueTags(form: FormData) {
+  const user = await requireStaff();
+  const v = venueTagsSchema.parse(Object.fromEntries(form));
+  const now = new Date();
+  await db
+    .update(places)
+    .set({ recommendedIn: v.recommendedIn || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
+    .where(eq(places.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
 /** Lock a source-derived field after a person sets it, so the next import keeps their answer. */
 async function lockAndSet(table: typeof events | typeof experiences, id: string, field: string, value: Record<string, unknown>, email: string) {
   const [row] = await db.select({ locked: table.lockedFields }).from(table).where(eq(table.id, id));

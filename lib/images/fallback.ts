@@ -1,11 +1,12 @@
-import { and, eq, gte, isNotNull, ne, sql } from 'drizzle-orm';
+import { and, eq, gte, isNotNull, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { events, organiserProfiles, places, type FieldSources, type Image } from '@/lib/db/schema';
 import { organiserKey } from '@/lib/domain/organiser';
 
 /**
  * An event without a picture of its own shows its organiser's fallback
- * picture, else its venue's, before any stock photograph: a Jersey RFC
+ * picture, else its venue's (the one staff set, or failing that the
+ * venue's own listing picture), before any stock photograph: a Jersey RFC
  * fixture shows Jersey RFC's picture, not a stranger's rugby match.
  *
  * Recorded as the "fallback" source, so it gives way to a picture a
@@ -42,7 +43,8 @@ export async function applyFallbacks(): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const [organisers, venues, rows] = await Promise.all([
     db.select({ key: organiserProfiles.key, image: organiserProfiles.fallbackImage }).from(organiserProfiles).where(isNotNull(organiserProfiles.fallbackImage)),
-    db.select({ id: places.id, image: places.fallbackImage }).from(places).where(isNotNull(places.fallbackImage)),
+    // A venue's own picture, the one its listing came with, unless staff have set another.
+    db.select({ id: places.id, image: sql<Image | null>`coalesce(${places.fallbackImage}, ${places.headerImage})` }).from(places).where(or(isNotNull(places.fallbackImage), isNotNull(places.headerImage))),
     db
       .select({ id: events.id, organiser: events.organiser, placeId: events.placeId, headerImage: events.headerImage, fieldSources: events.fieldSources })
       .from(events)

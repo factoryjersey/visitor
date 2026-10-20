@@ -1,7 +1,7 @@
 import { organiserKey } from '@/lib/domain/organiser';
 import { and, asc, eq, ne, or, inArray, notInArray, sql, type SQL } from 'drizzle-orm';
 import { db } from './index';
-import { events, experiences, organiserProfiles, places, providers, type Event } from './schema';
+import { events, experiences, organiserProfiles, places, providers, type Category, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
@@ -173,6 +173,7 @@ export async function publicVenuesWithEvents(opts: { withOngoing?: boolean } = {
       category: places.category,
       headerImage: places.headerImage,
       summary: places.summary,
+      recommendedIn: places.recommendedIn,
       count: sql<number>`count(${events.id})::int`,
     })
     .from(places)
@@ -180,6 +181,39 @@ export async function publicVenuesWithEvents(opts: { withOngoing?: boolean } = {
     .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), ...where))
     .groupBy(places.id);
   return rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+/**
+ * The venues page: every venue or business with events or tours coming
+ * up, the busiest first. A tour counts for its operator's own listing.
+ */
+export async function publicVenuesWithSomethingOn() {
+  const [byEvent, byTour] = await Promise.all([
+    publicVenuesWithEvents({ withOngoing: true }),
+    db
+      .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, headerImage: places.headerImage, summary: places.summary, recommendedIn: places.recommendedIn, tours: sql<number>`count(${experiences.id})::int` })
+      .from(places)
+      .innerJoin(providers, eq(providers.placeId, places.id))
+      .innerJoin(experiences, eq(experiences.providerId, providers.id))
+      .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)))
+      .groupBy(places.id),
+  ]);
+  const all = new Map(byEvent.map((v) => [v.id, { ...v, events: v.count, tours: 0 }]));
+  for (const t of byTour) {
+    const seen = all.get(t.id);
+    if (seen) seen.tours = t.tours;
+    else all.set(t.id, { ...t, count: 0, events: 0 });
+  }
+  return [...all.values()].sort((a, b) => b.events + b.tours - (a.events + a.tours) || a.name.localeCompare(b.name));
+}
+
+/** Every venue and business we list, by guide section, the visitor recommended first, then A to Z. */
+export async function publicAllVenues(category?: Category) {
+  const rows = await db
+    .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, headerImage: places.headerImage, summary: places.summary, recommendedIn: places.recommendedIn })
+    .from(places)
+    .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), ...(category ? [eq(places.category, category)] : [])));
+  return rows.sort((a, b) => Number(!a.recommendedIn) - Number(!b.recommendedIn) || a.name.localeCompare(b.name));
 }
 
 export type Organiser = { slug: string; name: string; names: string[]; providerIds: string[]; website: string | null; events: number; tours: number };

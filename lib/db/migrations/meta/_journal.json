@@ -78,6 +78,13 @@
       "when": 1792484375996,
       "tag": "0010_fallback_images",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792487889502,
+      "tag": "0011_venue_tags",
+      "breakpoints": true
     }
   ]
 }

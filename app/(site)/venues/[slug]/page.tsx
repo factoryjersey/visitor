@@ -6,6 +6,7 @@ import { Copy, Facts, Hero, directionsUrl, primaryButton, secondaryButton } from
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
+import { Recommended } from '@/components/site/recommended';
 import { staffViewer } from '@/lib/auth/session';
 import { printAddress, printPrice, printWebsite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -61,6 +62,7 @@ export default async function VenuePage({ params }: Props) {
       <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
       <header className="mb-6 mt-3">
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
+        {venue.recommendedIn && <Recommended className="mt-3" />}
         {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
       </header>
       {staff && <StaffFallback kind="venue" id={venue.id} name={venue.name} image={venue.fallbackImage && { url: venue.fallbackImage.url, alt: venue.fallbackImage.alt }} />}
