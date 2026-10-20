@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/lib/env', () => ({ env: {} }));
 const { fallbackFor } = await import('@/lib/images/fallback');
 
 const img = (url: string) => ({ url, publicId: null, alt: null, originalFilename: null });

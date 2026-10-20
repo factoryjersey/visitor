@@ -380,6 +380,7 @@ export async function setFallbackImage(form: FormData): Promise<{ ok: true; chan
       image = { url: await storeListingImage(`fallback-${v.kind}`, v.kind === 'organiser' ? key : v.id, file), publicId: null, alt: v.alt || null, originalFilename: file.name || null };
     } else if (v.mode === 'url') {
       if (!v.url || !/^https:\/\/\S+$/i.test(v.url)) return { ok: false, error: 'A link starting https://, please.' };
+      // A link is kept as it is here; applyFallbacks copies it into our storage below, or next time if the site will not give it up now.
       image = { url: v.url, publicId: null, alt: v.alt || null, originalFilename: null };
     }
   } catch (e) {
