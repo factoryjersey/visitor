@@ -14,6 +14,14 @@ const storageBase = () => env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, '');
 /** A picture already in our bucket, not one we point at elsewhere. */
 export const isOurs = (url: string) => url.startsWith(`${storageBase()}/storage/v1/object/public/${BUCKET}/`);
 
+/**
+ * Supabase's legacy service role key is a JWT and goes as a bearer token;
+ * its newer secret keys (sb_secret_…) are not, and Storage refuses them
+ * there ("Invalid Compact JWS"): they go as the apikey header alone.
+ */
+export const storageAuth = (key: string): Record<string, string> =>
+  key.startsWith('eyJ') ? { apikey: key, authorization: `Bearer ${key}` } : { apikey: key };
+
 async function put(kind: string, id: string, type: string, bytes: Buffer): Promise<string> {
   const ext = TYPES[type];
   if (!ext) throw new Error('A JPEG, PNG or WebP picture, please.');
@@ -22,7 +30,7 @@ async function put(kind: string, id: string, type: string, bytes: Buffer): Promi
   const path = `${kind}/${id}-${Date.now()}.${ext}`;
   const res = await fetch(`${storageBase()}/storage/v1/object/${BUCKET}/${path}`, {
     method: 'POST',
-    headers: { authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'content-type': type, 'cache-control': 'max-age=31536000', 'x-upsert': 'false' },
+    headers: { ...storageAuth(env.SUPABASE_SERVICE_ROLE_KEY), 'content-type': type, 'cache-control': 'max-age=31536000', 'x-upsert': 'false' },
     body: bytes,
   });
   if (!res.ok) throw new Error(`Storage said ${res.status}: ${(await res.text()).slice(0, 200)}`);

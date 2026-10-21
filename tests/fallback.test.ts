@@ -20,3 +20,11 @@ describe('fallback pictures', () => {
     expect(fallbackFor({ organiser: null, placeId: 'v2' }, byOrganiser, byVenue)).toBeNull();
   });
 });
+
+describe('storage credentials', () => {
+  it('sends a legacy JWT key as a bearer token and a new secret key as the apikey alone', async () => {
+    const { storageAuth } = await import('@/lib/images/upload');
+    expect(storageAuth('eyJhbGciOi.x.y')).toEqual({ apikey: 'eyJhbGciOi.x.y', authorization: 'Bearer eyJhbGciOi.x.y' });
+    expect(storageAuth('sb_secret_abc')).toEqual({ apikey: 'sb_secret_abc' });
+  });
+});
