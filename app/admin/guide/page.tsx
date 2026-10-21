@@ -36,7 +36,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
     draft = true;
     guide = await buildGuide(window, { draft, layout });
   }
-  const { highlights, events, pages, tours, providers, venues } = guide;
+  const { highlights, events, pages, tours, tourPages, providers, venues } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${layout === 'top' ? '' : `&grid=${layout}`}`;
   const year = Number(window.from.slice(0, 4));
@@ -80,10 +80,10 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-stone-500">Events layout</span>
           {layouts.map(([g, label]) => <Link key={g} href={href(window, draft, g)} className={pill(layout === g)}>{label}</Link>)}
-          {layout !== 'top' && <span className="text-xs text-stone-500">The picture box shows the event ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph.</span>}
+          {layout !== 'top' && <span className="text-xs text-stone-500">Walks and tours go on the grid of eight too. Each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph.</span>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-stone-600">{highlights.length} highlights · {listed} events · {pages.length} event pages · {tours.length} tours · {venues.length} venues</span>
+          <span className="text-stone-600">{highlights.length} highlights · {listed} events · {pages.length} event pages{tourPages ? ` · ${tourPages.length} tour pages` : ''} · {tours.filter((t) => t.frame !== 'image').length} tours · {venues.length} venues</span>
           <span className="ml-auto self-center text-xs text-stone-500">For InDesign:</span>
           <a href={`/admin/guide/export/highlights.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Highlights</a>
           <a href={`/admin/guide/export/whats-on.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">What&apos;s On</a>
@@ -112,7 +112,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} providers={providers} venues={venues} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} providers={providers} venues={venues} firstPage={firstPage} />
 
       <div className="guide-pages mt-8">
         {group(venues, (v) => v.section).map(([section, inSection]) => (

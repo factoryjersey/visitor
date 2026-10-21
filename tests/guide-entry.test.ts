@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour, layoutEvents, type GuideEvent } from '@/lib/domain/guide-entry';
+import { guideEvent, guideTour, layoutEvents, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -57,7 +57,7 @@ describe('csv', () => {
 const tour: Experience = {
   id: 't', slug: 'beach-blokarting', title: 'Beach Blokarting', providerId: null,
   summary: 'Think go-karting meets sailing.', description: null, guideCopy: null,
-  duration: '1-2 hrs', tags: [], genre: 'Active',
+  duration: '1-2 hrs', tags: [], genre: 'Active', guidePicture: false,
   dates: ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29', '2026-10-06'].map((date) => ({ date, start: null, end: null })),
   occurrence: 'dates', fromPricePence: null, toPricePence: null, meetingPoint: null, parish: null,
   phone: null, email: null, website: null, lat: null, lon: null, printDates: null, printTimes: null, highlight: false,
@@ -158,6 +158,25 @@ describe('events on a grid', () => {
   it('prefers a community event last, and fills the box with a listing when nothing has a picture', () => {
     expect(cells(layoutEvents([ev('a', { image: true, community: true }), ev('b'), ev('c', { image: true })], 'grid6')[0]!)).toEqual(['a', 'b', 'c', '[c]']);
     expect(layoutEvents([ev('a'), ev('b'), ev('c'), ev('d'), ev('e'), ev('f'), ev('g')], 'grid6').map((p) => p.length)).toEqual([6, 1]);
+  });
+});
+
+describe('whole sentences', () => {
+  it('does not end a sentence at St. or an initial', async () => {
+    const { copyOptions } = await import('@/lib/domain/guide-entry');
+    const o = copyOptions({ guideCopy: null, summary: null, description: 'Join a relaxed stroll through St. Helier with J. Smith. Coffee is included.' });
+    expect(o).toEqual(['Join a relaxed stroll through St. Helier with J. Smith. Coffee is included.', 'Join a relaxed stroll through St. Helier with J. Smith.', '']);
+  });
+});
+
+describe('tours on the grid of eight', () => {
+  it('takes seven tours and a picture a page, the picture beside its tour', async () => {
+    const { gridTours } = await import('@/lib/domain/guide-entry');
+    const t = (title: string, image = false, chosen = false) =>
+      ({ kind: 'on demand', genre: 'Active', dates: '', title, code: 'AB', provider: 'P', duration: '1 hr', times: '', copy: '', sortKey: '', imageUrl: image ? `https://x/${title}.jpg` : '', preview: '', guidePicture: chosen, options: [`${title} copy.`, ''], frame: 'listing' }) as GuideTour;
+    const pages = gridTours([t('a', true), t('b'), t('c'), t('d', true, true), t('e'), t('f'), t('g'), t('h'), t('i')]);
+    expect(pages.map((p) => p.map((x) => (x.frame === 'image' ? `[${x.title}]` : x.title)))).toEqual([['a', 'b', 'd', '[d]', 'c', 'e', 'f', 'g'], ['h', 'i']]);
+    expect(pages[0]![0]!.copy).toBe('a copy.');
   });
 });
 

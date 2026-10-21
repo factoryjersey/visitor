@@ -2,14 +2,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { and, eq, gte, isNotNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { events, type Image } from '@/lib/db/schema';
+import { events, experiences, type Image } from '@/lib/db/schema';
 import { webImage } from '@/lib/domain/images';
 import { env } from '@/lib/env';
 
 /**
  * Posters, flyers and pictures with a title set over them crop badly in
  * the printed guide's frames and clash with its own type. Claude looks
- * at each event picture once and says whether it is one of those; the
+ * at each event and tour picture once and says whether it is one of those; the
  * answer is kept on the picture with the address it was given for, so a
  * new picture is looked at again and an old one never is.
  *
@@ -61,24 +61,27 @@ export async function hasDesignedText(image: Image): Promise<boolean | null> {
  */
 export async function checkEventPictures(): Promise<{ checked: number; withText: number }> {
   const today = new Date().toISOString().slice(0, 10);
-  const rows = await db
-    .select({ id: events.id, image: events.headerImage })
-    .from(events)
-    .where(and(gte(events.endsOn, today), eq(events.review, 'approved'), ne(events.inclusion, 'excluded'), isNotNull(events.headerImage), sql`(${events.headerImage}->'credit') is null`));
+  const listed = (t: typeof events | typeof experiences) => and(eq(t.review, 'approved'), ne(t.inclusion, 'excluded'), isNotNull(t.headerImage), sql`(${t.headerImage}->'credit') is null`);
+  const [eventRows, tourRows] = await Promise.all([
+    db.select({ id: events.id, image: events.headerImage }).from(events).where(and(gte(events.endsOn, today), listed(events))),
+    db.select({ id: experiences.id, image: experiences.headerImage }).from(experiences).where(listed(experiences)),
+  ]);
   let checked = 0;
   let withText = 0;
-  for (const r of rows) {
-    const image = r.image!;
-    if (image.text && image.text.url === image.url) continue;
-    const found = await hasDesignedText(image);
-    if (found === null) continue;
-    // Only the check is written, so a picture changed in the meantime is not overwritten.
-    await db
-      .update(events)
-      .set({ headerImage: sql`jsonb_set(${events.headerImage}, '{text}', ${JSON.stringify({ found, url: image.url, at: new Date().toISOString() })}::jsonb)` })
-      .where(and(eq(events.id, r.id), sql`${events.headerImage}->>'url' = ${image.url}`));
-    checked += 1;
-    if (found) withText += 1;
+  for (const [table, rows] of [[events, eventRows], [experiences, tourRows]] as const) {
+    for (const r of rows) {
+      const image = r.image!;
+      if (image.text && image.text.url === image.url) continue;
+      const found = await hasDesignedText(image);
+      if (found === null) continue;
+      // Only the check is written, so a picture changed in the meantime is not overwritten.
+      await db
+        .update(table)
+        .set({ headerImage: sql`jsonb_set(${table.headerImage}, '{text}', ${JSON.stringify({ found, url: image.url, at: new Date().toISOString() })}::jsonb)` })
+        .where(and(eq(table.id, r.id), sql`${table.headerImage}->>'url' = ${image.url}`));
+      checked += 1;
+      if (found) withText += 1;
+    }
   }
   return { checked, withText };
 }

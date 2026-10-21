@@ -2,7 +2,7 @@
 
 import { BadgeCheck, Clock, MapPin } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { GuideEvent, GuideTour, GuideVenue, Layout } from '@/lib/domain/guide-entry';
+import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 
 /**
@@ -58,7 +58,7 @@ function EventCell({ e }: { e: GuideEvent }) {
 }
 
 /** A grid's picture box: the whole cell, cropped to fill. */
-function PictureBox({ e }: { e: GuideEvent }) {
+function PictureBox({ e }: { e: { title: string; preview: string } }) {
   return (
     <figure className="gp-event gp-image" title={e.title}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -67,10 +67,14 @@ function PictureBox({ e }: { e: GuideEvent }) {
   );
 }
 
-function ListingCell({ e }: { e: GuideEvent }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const said = (e.options.length ? e.options : [e.copy]).filter(Boolean);
-  const options: [string, boolean][] = [...said.map((c): [string, boolean] => [c, true]), ...(e.contact ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
+/**
+ * A fixed frame's copy, measured: the fullest version first, then each
+ * shorter one, then all of them again without the droppable line.
+ */
+function useFit(copies: string[], droppable: boolean) {
+  const ref = useRef<HTMLElement>(null);
+  const said = copies.filter(Boolean);
+  const options: [string, boolean][] = [...said.map((c): [string, boolean] => [c, true]), ...(droppable ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
   const [pick, setPick] = useState(0);
   const [fonts, setFonts] = useState(false);
   const [overset, setOverset] = useState(false);
@@ -87,9 +91,16 @@ function ListingCell({ e }: { e: GuideEvent }) {
     if (over && pick < options.length - 1) setPick(pick + 1);
     else setOverset(over);
   }, [pick, fonts, options.length]);
-  const [copy, withContact] = options[pick] ?? ['', true];
+  const [copy, keep] = options[pick] ?? ['', true];
+  return { ref, copy, keep, overset };
+}
+
+const OVERSET = 'Overset: this entry will not fit its frame';
+
+function ListingCell({ e }: { e: GuideEvent }) {
+  const { ref, copy, keep: withContact, overset } = useFit(e.options.length ? e.options : [e.copy], !!e.contact);
   return (
-    <article ref={ref} className={`gp-event gp-${e.frame}${overset ? ' gp-overset' : ''}`} title={overset ? 'Overset: this entry will not fit its frame' : undefined}>
+    <article ref={ref} className={`gp-event gp-${e.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
       {e.frame === 'picture' && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={e.preview} alt="" className="gp-event-image" />
@@ -101,6 +112,24 @@ function ListingCell({ e }: { e: GuideEvent }) {
       {e.address && <p className="gp-event-address">{e.address}</p>}
       {e.contact && withContact && <p className="gp-event-contact">{e.contact}</p>}
       {e.website && <p className="gp-event-web">{e.website}</p>}
+    </article>
+  );
+}
+
+/** A tour on the grid: when, or on demand and its genre; the title; the copy; the provider's code, the duration and the provider. */
+function TourBox({ t }: { t: GuideTour }) {
+  const { ref, copy, keep: withProvider, overset } = useFit(t.options.length ? t.options : [t.copy], !!t.provider);
+  if (t.frame === 'image') return <PictureBox e={t} />;
+  return (
+    <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+      <p className="gp-event-when">{tourWhen(t)}{t.times && <em>{t.times}</em>}</p>
+      <h4 className="gp-event-title">{t.title}</h4>
+      <p className="gp-event-copy">{copy}</p>
+      <p className="gp-tour-meta">
+        {t.code && <span className="gp-code"><BadgeCheck aria-hidden="true" />{t.code}</span>}
+        {t.duration && <span className="gp-duration"><Clock aria-hidden="true" />{t.duration}</span>}
+      </p>
+      {t.provider && withProvider && <p className="gp-event-address">{t.provider}</p>}
     </article>
   );
 }
@@ -215,11 +244,13 @@ export function GuideBook(props: {
   pages: GuideEvent[][];
   layout: Layout;
   tours: GuideTour[];
+  /** On a grid layout, the tours a page at a time after the key; otherwise they flow. */
+  tourGrid: GuideTour[][] | null;
   providers: GuideProvider[];
   venues: GuideVenue[];
   firstPage: number;
 }) {
-  const { highlights, events, tours, providers, layout } = props;
+  const { highlights, events, tours, providers, layout, tourGrid } = props;
 
   // Walks and tours flow: the key, then dated tours, then on-demand ones by genre.
   const [flow] = useState<Flow[]>(() => {
@@ -229,6 +260,8 @@ export function GuideBook(props: {
       providers.forEach((p) => items.push({ key: `p-${p.code}-${p.name}`, node: <ProviderRow p={p} /> }));
       items.push({ key: 'key-end', node: <div className="gp-break" /> });
     }
+    // On the grid, the tours have pages of their own after the key, and each box says when or what kind.
+    if (tourGrid) return items;
     const dated = tours.filter((t) => t.kind === 'dated');
     if (dated.length) {
       items.push({ key: 'dated-h', heading: true, node: <TourHeading over="Tours & Experiences" title="On" rest="these dates" /> });
@@ -259,9 +292,19 @@ export function GuideBook(props: {
     });
   }
   // Tours start on a left-hand page, as a section does in the guide.
-  if (tourPages?.length) {
+  if (tourPages && (tourPages.length || tourGrid?.length)) {
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: EVENTS, body: <div className="gp-content" /> });
     for (const items of tourPages) pages.push({ section: TOURS, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+    for (const cells of tourGrid ?? []) {
+      pages.push({
+        section: TOURS,
+        body: (
+          <div className="gp-content gp-grid gp-grid8 gp-tour-grid">
+            {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
+          </div>
+        ),
+      });
+    }
   }
 
   // Into spreads: the first page faces left or right by its number.

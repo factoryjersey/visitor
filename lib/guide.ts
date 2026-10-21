@@ -6,6 +6,7 @@ import {
   guideEvent,
   guideTour,
   guideVenue,
+  gridTours,
   layoutEvents,
   type GuideEvent,
   type Layout,
@@ -51,6 +52,8 @@ export type Guide = {
   pages: GuideEvent[][];
   layout: Layout;
   tours: GuideTour[];
+  /** On a grid layout, the tours on the grid of eight, a picture a page; none when they flow in ruled columns. */
+  tourPages: GuideTour[][] | null;
   providers: GuideProvider[];
   venues: GuideVenue[];
 };
@@ -102,13 +105,16 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map(guideVenue)
     .sort((a, b) => a.section.localeCompare(b.section) || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
 
-  return { highlights, events, pages, layout, tours, providers, venues };
+  const tourPages = layout === 'top' ? null : gridTours(tours);
+
+  return { highlights, events, pages, layout, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
 export const EVENT_COLUMNS = ['Frame', 'Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
 /** Highlights merge into their own full-page template. */
 export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL'] as const;
-export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider'] as const;
+/** On a grid, in page order: Frame says which row is the picture box beside its listing. */
+export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
 export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Copy', 'Address', 'Phone', 'Website', 'Image URL'] as const;

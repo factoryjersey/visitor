@@ -92,6 +92,13 @@
       "when": 1792568975231,
       "tag": "0012_event_guide_picture",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792571312884,
+      "tag": "0013_experience_guide_picture",
+      "breakpoints": true
     }
   ]
 }

@@ -215,7 +215,7 @@ export async function setGenre(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
-const tourPrintSchema = z.object({ id: z.string().uuid(), printDates: z.string().max(200), printTimes: z.string().max(200) });
+const tourPrintSchema = z.object({ id: z.string().uuid(), printDates: z.string().max(200), printTimes: z.string().max(200), guidePicture: z.literal('on').optional() });
 
 export async function saveTourPrint(form: FormData) {
   const user = await requireStaff();
@@ -223,7 +223,7 @@ export async function saveTourPrint(form: FormData) {
   const now = new Date();
   await db
     .update(experiences)
-    .set({ printDates: v.printDates.trim() || null, printTimes: v.printTimes.trim() || null, editedBy: user.email, editedAt: now, updatedAt: now })
+    .set({ printDates: v.printDates.trim() || null, printTimes: v.printTimes.trim() || null, guidePicture: v.guidePicture === 'on', editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(experiences.id, v.id));
   revalidatePath('/', 'layout');
 }

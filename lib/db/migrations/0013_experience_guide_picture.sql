@@ -1,0 +1,1 @@
+ALTER TABLE "experiences" ADD COLUMN "guide_picture" boolean DEFAULT false NOT NULL;

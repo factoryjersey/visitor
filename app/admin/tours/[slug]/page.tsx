@@ -85,6 +85,13 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
               <span className="text-xs text-stone-500">Times</span>
               <input name="printTimes" defaultValue={x.printTimes ?? ''} placeholder={printTimes(x.dates) ?? ''} className="mt-0.5 w-full rounded border border-stone-300 p-1.5 text-sm" />
             </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="guidePicture" defaultChecked={x.guidePicture} disabled={!entry?.imageUrl} className="mt-1" />
+              <span>
+                Use its picture in the guide grid
+                <span className="block text-xs text-stone-500">{entry?.imageUrl ? 'Its page’s picture box shows this one ahead of the others.' : 'It has no photograph the guide can print: none, a stock picture, or one with words on it.'}</span>
+              </span>
+            </label>
             <button type="submit" className="rounded border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100">Save print details</button>
           </form>
         </div>

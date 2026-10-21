@@ -367,6 +367,8 @@ export const experiences = pgTable('experiences', {
   printDates: text('print_dates'),
   printTimes: text('print_times'),
   highlight: boolean('highlight').notNull().default(false),
+  /** The picture a page of the guide's tour grid shows beside this listing, chosen by staff ahead of the rest. Ours. */
+  guidePicture: boolean('guide_picture').notNull().default(false),
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),
 
