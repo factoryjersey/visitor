@@ -4,6 +4,7 @@ import { BadgeCheck, Clock, MapPin } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
+import { iconsFor, ListingIcons, PageKey } from './key-icons';
 
 /**
  * The guide's pages as the 2026 editions print them, from the InDesign
@@ -25,7 +26,7 @@ const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
-type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string };
+type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
 
 /** Content height of a flowing page, in mm: 8.5mm from the top to 150mm. */
 const FLOW_MM = 141.5;
@@ -41,6 +42,7 @@ function Frame({ page, n }: { page: Page; n: number }) {
     <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
       {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
+      {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}
       <Folio n={n} side={side} />
       {page.body}
     </div>
@@ -107,7 +109,7 @@ function ListingCell({ e }: { e: GuideEvent }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={e.preview} alt="" className="gp-event-image" />
       )}
-      <p className="gp-event-when">{e.dates}{e.times && <em>{e.times}</em>}</p>
+      <p className="gp-event-when"><ListingIcons icons={iconsFor(e)} />{e.dates}{e.times && <em>{e.times}</em>}</p>
       <h4 className="gp-event-title">{e.title}</h4>
       <p className="gp-event-copy">{copy} {e.price && <span className="gp-price">{e.price}</span>}</p>
       {e.venue && <p className="gp-event-venue"><MapPin aria-hidden="true" />{e.venue}</p>}
@@ -124,7 +126,7 @@ function TourBox({ t }: { t: GuideTour }) {
   if (t.frame === 'image') return <PictureBox e={t} />;
   return (
     <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : t.provider}>
-      <p className="gp-event-when">{tourWhen(t)}{t.times && <em>{t.times}</em>}</p>
+      <p className="gp-event-when"><ListingIcons icons={iconsFor(t)} />{tourWhen(t)}{t.times && <em>{t.times}</em>}</p>
       <h4 className="gp-event-title">{t.title}</h4>
       <p className="gp-event-copy">{copy}</p>
       <p className="gp-tour-meta">
@@ -285,6 +287,7 @@ export function GuideBook(props: {
   for (const cells of props.pages) {
     pages.push({
       section: EVENTS,
+      key: cells.filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e)),
       body: (
         <div className={`gp-content gp-grid gp-${layout}`}>
           {cells.map((e) => <EventCell key={e.frame + e.title + e.sortKey} e={e} />)}
@@ -302,6 +305,7 @@ export function GuideBook(props: {
       pages.push({
         section: TOURS,
         marker: cells[0]?.kind === 'dated' ? 'On these dates' : 'On demand',
+        key: cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)),
         body: (
           <>
             <div className="gp-content gp-grid gp-grid8 gp-tour-grid">

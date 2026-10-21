@@ -52,3 +52,20 @@ describe('categorise', () => {
     expect(types('Jersey Bulls FC Home Games')).toEqual(['Sports']);
   });
 });
+
+describe('health and wellbeing is not for the printed guide', () => {
+  it('finds care, support and parenting as well as classes', async () => {
+    const { categorise } = await import('@/lib/domain/categorise');
+    for (const title of ['Strength-based Parenting', 'Dementia Awareness Talk', 'Understanding Anxiety', 'Lone Working in Healthcare', 'The Hidden Healing Power Behind Stagnant Emotions']) {
+      expect(categorise({ title })).toContain('Health & wellbeing');
+    }
+  });
+
+  it('leaves it out unless it is also something visitors come for', async () => {
+    const { nonCore } = await import('@/lib/domain/categorise');
+    expect(nonCore(['Health & wellbeing'])).toBe(true);
+    expect(nonCore(['Health & wellbeing', 'Talks & learning', 'Seasonal'])).toBe(true);
+    expect(nonCore(['Family friendly', 'Health & wellbeing', 'Outdoor'])).toBe(false);
+    expect(nonCore(['Music'])).toBe(false);
+  });
+});

@@ -46,6 +46,8 @@ export type GuideEvent = {
   frame: 'picture' | 'listing' | 'image';
   /** Staff chose its picture for the grid's picture box, ahead of the rest on its page. Not printed. */
   guidePicture: boolean;
+  /** Its kinds, which the page prints as key icons. */
+  types: string[];
   /** Every whole-sentence version of the copy, fullest first: the proof measures its frame and prints the first that fits. Not printed. */
   options: string[];
 };
@@ -211,7 +213,7 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
   };
   const fits = { picture: printCopy(e, copyBudget(entry, FRAMES.picture)), listing: printCopy(e, copyBudget(entry, FRAMES.listing)) };
   const community = e.eventTypes.includes('Charity');
-  return { ...entry, community, guidePicture: e.guidePicture, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
+  return { ...entry, community, guidePicture: e.guidePicture, types: e.eventTypes, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
 }
 
 /**

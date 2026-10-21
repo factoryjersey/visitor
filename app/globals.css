@@ -72,8 +72,8 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-folio span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; }
 .gp-folio.gp-left span { transform: rotate(180deg); }
 .gp-content { position: absolute; top: 8.5mm; bottom: 15mm; }
-.gp-page.gp-left .gp-content { left: 8.1mm; right: 12mm; }
-.gp-page.gp-right .gp-content { left: 12mm; right: 8.1mm; }
+.gp-page.gp-left .gp-content { left: 7.9mm; right: 12mm; }
+.gp-page.gp-right .gp-content { left: 12mm; right: 7.9mm; }
 
 /* Events: four fixed frames. */
 .gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 52mm 43mm 43mm; row-gap: 2mm; }
@@ -83,6 +83,14 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-image { margin: 0; }
 .gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
 .gp-tour-grid .gp-event-title { color: var(--gp-green); }
+/* Key icons: two at most on a listing, top right; the page's key runs down the 3.9mm edge column under the tabs, 4mm clear of the grid. */
+.gp-icons { float: right; display: inline-flex; gap: 0.8mm; margin: 0.2mm 0 0 1mm; color: var(--gp-ink80); }
+.gp-icons svg { width: 3mm; height: 3mm; }
+.gp-key { position: absolute; width: 3.9mm; bottom: 18mm; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 1.6mm; writing-mode: vertical-rl; overflow: hidden; z-index: 2; font-family: var(--gp-sans); font-weight: 600; font-size: 5pt; letter-spacing: 0.02em; text-transform: uppercase; color: var(--gp-ink80); }
+.gp-key.gp-left { left: 0; } .gp-key.gp-right { right: 0; }
+.gp-key.gp-below-tab { top: 44mm; } .gp-key.gp-below-marker { top: 74.6mm; }
+.gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
+.gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-pale); }
 .gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 600; font-size: 7pt; color: var(--gp-teal); }
 .gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }

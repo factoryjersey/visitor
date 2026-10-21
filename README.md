@@ -351,6 +351,16 @@ symbol with "Locate guide on index page" and the key's page number. The
 tours export gains Frame and Image URL columns. The nightly picture check
 looks at tour pictures as well as event ones.
 
+Health and wellbeing events (classes, courses, care, support and
+parenting, by Visit Jersey's label or the event's own words) are for
+islanders, not visitors: the guide leaves them out of print unless they are
+also outdoors, sport, food and drink, music, arts, heritage, a festival or a
+market. The proof page lists what it left out; setting an event's kinds by
+hand on its page decides it instead. Listings print up to two of the
+website's category icons (a tour, its genre's), and each page's key of the
+icons it uses runs down the 3.9mm edge column under the tabs, 4mm clear of
+the grid; the exports carry them in an Icons column.
+
 Every provider has a key code: the nightly import gives one from the
 initials of its name to any provider without (`--only codes`), and the
 guide does the same in the meantime. Staff can change codes on the

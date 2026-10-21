@@ -16,6 +16,7 @@ import {
 } from '@/lib/domain/guide-entry';
 import { printContact, printWebsite } from '@/lib/domain/house-style';
 import { fillCodes } from '@/lib/domain/provider-code';
+import { nonCore, withCategories } from '@/lib/domain/categorise';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -52,6 +53,8 @@ export type Guide = {
   events: GuideEvent[];
   pages: GuideEvent[][];
   layout: Layout;
+  /** Titles of events left out of print as health and wellbeing. */
+  leftOut: string[];
   tours: GuideTour[];
   /** On a grid layout, the tours on the grid of eight, a picture a page; none when they flow in ruled columns. */
   tourPages: GuideTour[][] | null;
@@ -74,8 +77,12 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const layout = opts.layout ?? 'top';
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
-  const all = selection.events
-    .map(({ event, venue }) => guideEvent(event, venue, window))
+  // Health and wellbeing is for islanders: left out of print. The event's own words count too, unless staff have set its types by hand.
+  const typed = selection.events.map((row) => ({ ...row, types: row.event.lockedFields.includes('eventTypes') ? row.event.eventTypes : withCategories(row.event.eventTypes, row.event) }));
+  const leftOut = typed.filter((r) => nonCore(r.types)).map((r) => r.event.title);
+  const all = typed
+    .filter((r) => !nonCore(r.types))
+    .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types }, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   // By their first date in the edition, long runs among the rest; onto pages as the layout asks.
@@ -112,14 +119,14 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
   const tourPages = layout === 'top' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated')), ...gridTours(tours.filter((t) => t.kind === 'on demand'))];
 
-  return { highlights, events, pages, layout, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues };
+  return { highlights, events, pages, layout, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
-export const EVENT_COLUMNS = ['Frame', 'Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
+export const EVENT_COLUMNS = ['Frame', 'Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block', 'Icons'] as const;
 /** Highlights merge into their own full-page template. */
 export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL'] as const;
 /** On a grid, in page order: Frame says which row is the picture box beside its listing. */
-export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL'] as const;
+export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL', 'Icons'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
 export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Copy', 'Address', 'Phone', 'Website', 'Image URL'] as const;

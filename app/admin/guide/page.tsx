@@ -36,7 +36,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
     draft = true;
     guide = await buildGuide(window, { draft, layout });
   }
-  const { highlights, events, pages, tours, tourPages, providers, venues } = guide;
+  const { highlights, events, pages, tours, tourPages, providers, venues, leftOut } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${layout === 'top' ? '' : `&grid=${layout}`}`;
   const year = Number(window.from.slice(0, 4));
@@ -91,6 +91,13 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
         </div>
+        {leftOut.length > 0 && (
+          <details className="text-xs text-stone-600">
+            <summary className="cursor-pointer">{leftOut.length} health and wellbeing events left out of print: for islanders, not visitors</summary>
+            <p className="mt-1">{leftOut.join(' · ')}</p>
+            <p className="mt-1 text-stone-500">To print one, set its kinds by hand on its page so it is no longer Health &amp; wellbeing alone.</p>
+          </details>
+        )}
         {draft && (
           <div className="flex flex-wrap items-center gap-3 rounded bg-amber-50 px-3 py-2 text-amber-900">
             <p className="mr-auto">

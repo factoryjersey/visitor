@@ -42,7 +42,7 @@ const RULES: Rule[] = [
   },
   {
     type: 'Health & wellbeing',
-    title: /\b(yoga|pilates|meditation|sound bath|wellbeing|well-being|wellness|mindful\w*|breathwork|reiki|retreat|mental health|fitness|tai chi|qigong)\b/i,
+    title: /\b(yoga|pilates|meditation|sound bath|wellbeing|well-being|wellness|mindful\w*|breathwork|reiki|retreat|mental health|fitness|tai chi|qigong|parenting|parents?|dementia|bereavement|grief|anxiety|self[- ](harm|belief|esteem|care)|health ?care|nurs(es|ing)|therap(y|ies|ist)|catheter|diabetes|cancer support|healing|support group|counsell?ing|menopause|first aid)\b/i,
   },
   {
     type: 'Food & drink',
@@ -74,6 +74,14 @@ const RULES: Rule[] = [
 
 /** Every type an event can carry, for a person choosing them: the rules' own, and Visit Jersey's two for sport. */
 export const EVENT_TYPES = [...new Set([...RULES.map((r) => r.type), 'Spectator', 'Participant'])].sort();
+
+/**
+ * Health and wellbeing events are for islanders, not the visitors the
+ * printed guide is for: classes, courses, support and care. Left out of
+ * print unless the event is also something a visitor comes for.
+ */
+const FOR_VISITORS = ['Outdoor', 'Sports', 'Food & drink', 'Music', 'Arts & cultural', 'History & Heritage', 'Festivals', 'Markets & fairs'];
+export const nonCore = (types: readonly string[]) => types.includes('Health & wellbeing') && !types.some((t) => FOR_VISITORS.includes(t));
 
 /** Types a source always means, whatever the event says. */
 const BY_SOURCE: Record<string, string[]> = { 'jersey-charities': ['Charity'] };
