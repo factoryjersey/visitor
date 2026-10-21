@@ -208,14 +208,14 @@ function experienceFields(v: VjExperience, providerId: string | null) {
 }
 
 /**
- * The provider a tour names, found or created by name. Contact details
+ * The provider a tour names, found by its name or one it was merged from, or created. Contact details
  * come from their own listing when the tour links one, else the tour.
  * The code is never set here: codes are ours.
  */
 async function providerFor(v: VjExperience, known: Provider[], allPlaces: Place[]): Promise<Provider | null> {
   if (!v.provider) return null;
   const key = normaliseName(v.provider);
-  const existing = known.find((p) => normaliseName(p.name) === key);
+  const existing = known.find((p) => normaliseName(p.name) === key || p.aliases.some((a) => normaliseName(a) === key));
   if (existing) return existing;
   let place: Place | undefined;
   if (v.providerListingId) {

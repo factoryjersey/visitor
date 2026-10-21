@@ -354,7 +354,9 @@ looks at tour pictures as well as event ones.
 Every provider has a key code: the nightly import gives one from the
 initials of its name to any provider without (`--only codes`), and the
 guide does the same in the meantime. Staff can change codes on the
-providers page; a code once set is kept.
+providers page; a code once set is kept. Providers merged by staff keep the other
+names as aliases, and the Visit Jersey import finds the provider that
+stayed by any of them, so a merged provider is not created again.
 
 ## Not built yet
 

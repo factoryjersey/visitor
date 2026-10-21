@@ -330,6 +330,8 @@ export const providers = pgTable('providers', {
   website: text('website'),
   /** Their own directory listing, when there is one. */
   placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
+  /** Other names the source gives the same business, merged into this one by staff: the import finds this provider by any of them, so a merge stays merged. */
+  aliases: text('aliases').array().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
