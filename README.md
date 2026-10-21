@@ -351,11 +351,12 @@ symbol with "Locate guide on index page" and the key's page number. The
 tours export gains Frame and Image URL columns. The nightly picture check
 looks at tour pictures as well as event ones.
 
-Health and wellbeing events (classes, courses, care, support and
-parenting, by Visit Jersey's label or the event's own words) are for
-islanders, not visitors: the guide leaves them out of print unless they are
-also outdoors, sport, food and drink, music, arts, heritage, a festival or a
-market. The proof page lists what it left out; setting an event's kinds by
+The printed guide is for visitors, so it leaves out what is not aimed at
+them, by Visit Jersey's labels or the event's own words: Professional &
+training (courses for nurses and carers, careers, employment law,
+start-ups) and Business & networking always; Health & wellbeing (classes,
+care, support, parenting) unless also outdoors, sport, food and drink,
+music, arts, heritage, a festival or a market. The proof page lists what it left out; setting an event's kinds by
 hand on its page decides it instead. Listings print up to two of the
 website's category icons (a tour, its genre's), and each page's key of the
 icons it uses runs down the 3.9mm edge column under the tabs, 4mm clear of

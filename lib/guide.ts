@@ -53,7 +53,7 @@ export type Guide = {
   events: GuideEvent[];
   pages: GuideEvent[][];
   layout: Layout;
-  /** Titles of events left out of print as health and wellbeing. */
+  /** Titles of events left out of print as not aimed at visitors. */
   leftOut: string[];
   tours: GuideTour[];
   /** On a grid layout, the tours on the grid of eight, a picture a page; none when they flow in ruled columns. */
@@ -77,7 +77,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const layout = opts.layout ?? 'top';
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
-  // Health and wellbeing is for islanders: left out of print. The event's own words count too, unless staff have set its types by hand.
+  // What is not aimed at visitors is left out of print: training and work, business, health and wellbeing. The event's own words count too, unless staff have set its types by hand.
   const typed = selection.events.map((row) => ({ ...row, types: row.event.lockedFields.includes('eventTypes') ? row.event.eventTypes : withCategories(row.event.eventTypes, row.event) }));
   const leftOut = typed.filter((r) => nonCore(r.types)).map((r) => r.event.title);
   const all = typed

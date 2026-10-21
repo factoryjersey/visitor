@@ -63,10 +63,12 @@ function EventCell({ e }: { e: GuideEvent }) {
 
 /** A grid's picture box: the whole cell, cropped to fill. */
 function PictureBox({ e }: { e: { title: string; preview: string } }) {
+  // A picture that will not load is marked as overset text is, so it is not missed in the proof.
+  const [broken, setBroken] = useState(false);
   return (
-    <figure className="gp-event gp-image" title={e.title}>
+    <figure className={`gp-event gp-image${broken ? ' gp-overset' : ''}`} title={broken ? `This picture did not load: ${e.title}` : e.title}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={e.preview.replace(/w_520,h_182/, 'w_520,h_520')} alt="" />
+      <img src={e.preview.replace(/w_520,h_182/, 'w_520,h_520')} alt="" onError={() => setBroken(true)} />
     </figure>
   );
 }

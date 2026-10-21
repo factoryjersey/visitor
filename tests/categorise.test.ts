@@ -69,3 +69,16 @@ describe('health and wellbeing is not for the printed guide', () => {
     expect(nonCore(['Music'])).toBe(false);
   });
 });
+
+describe('training and work events are not for the printed guide', () => {
+  it('finds courses for carers, careers and business events, and leaves them out', async () => {
+    const { categorise, nonCore } = await import('@/lib/domain/categorise');
+    for (const title of ['Safe Moving & Handling update', 'Launch a Local Career programme 2027', 'Routes to success: Ambitions for Palliative and End of Life Care', 'Pizza + Pitches Night | Jersey\'s Startups Take the Mic']) {
+      const types = categorise({ title });
+      expect(types).toContain('Professional & training');
+      expect(nonCore(types)).toBe(true);
+    }
+    expect(nonCore(['Business & networking', 'Food & drink'])).toBe(true);
+    expect(categorise({ title: 'Jersey Bulls v Cobham' })).not.toContain('Professional & training');
+  });
+});

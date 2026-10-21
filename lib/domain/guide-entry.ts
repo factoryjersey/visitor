@@ -278,11 +278,14 @@ function gridEvents(events: GuideEvent[], grid: { cells: number; height: number 
 }
 
 type Pictured = { imageUrl: string; guidePicture: boolean; community?: boolean };
+/** Eventbrite's pictures, linked from its servers, do not always show elsewhere: a page's picture is one of them only when nothing else has a picture. */
+const hotlinked = (url: string) => /^https:\/\/img\.evbuc\.com\//.test(url);
 
 /**
  * Entries onto pages of a two-across grid, in order: a box a page for a
  * picture and the rest listings. The picture is the one staff chose, else
- * the first with its own picture that is not a community event, else any;
+ * the first with its own picture that is not linked from Eventbrite or a
+ * community event, else any;
  * it follows its listing in the same row, and a listing in the
  * right-hand column swaps with the one before it to make room. A page
  * with no picture to show takes one more listing instead.
@@ -295,7 +298,7 @@ export function gridPages<T extends Pictured>(items: T[], cells: number, cell: {
     const pick = page
       .map((e, at) => ({ e, at }))
       .filter(({ e }) => e.imageUrl)
-      .sort((a, b) => Number(b.e.guidePicture) - Number(a.e.guidePicture) || Number(!!a.e.community) - Number(!!b.e.community) || a.at - b.at)[0];
+      .sort((a, b) => Number(b.e.guidePicture) - Number(a.e.guidePicture) || Number(hotlinked(a.e.imageUrl)) - Number(hotlinked(b.e.imageUrl)) || Number(!!a.e.community) - Number(!!b.e.community) || a.at - b.at)[0];
     if (!pick) {
       // Nothing on this page to picture: a listing fills the box instead.
       const full = items.slice(i, i + cells);

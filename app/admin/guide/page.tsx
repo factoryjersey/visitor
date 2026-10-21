@@ -93,9 +93,9 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         </div>
         {leftOut.length > 0 && (
           <details className="text-xs text-stone-600">
-            <summary className="cursor-pointer">{leftOut.length} health and wellbeing events left out of print: for islanders, not visitors</summary>
+            <summary className="cursor-pointer">{leftOut.length} events left out of print as not aimed at visitors: training and work, business, and health and wellbeing</summary>
             <p className="mt-1">{leftOut.join(' · ')}</p>
-            <p className="mt-1 text-stone-500">To print one, set its kinds by hand on its page so it is no longer Health &amp; wellbeing alone.</p>
+            <p className="mt-1 text-stone-500">To print one, set its kinds by hand on its page: without Professional &amp; training or Business &amp; networking, and with Health &amp; wellbeing only alongside something visitors come for.</p>
           </details>
         )}
         {draft && (

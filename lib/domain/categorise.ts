@@ -18,6 +18,11 @@ const RULES: Rule[] = [
     title: /\b(networking|conference|seminar|webinar|briefing|cpd|summit|agm|masterclass for|leadership|investor|wealth management|compliance|cyber[- ]security|tabletop exercise|awards? (ceremony|dinner)|policy|regulation|accountan|fintech|careers? fair|recruitment|business breakfast|chamber of commerce)\b/i,
   },
   {
+    // Training and work: courses for nurses and carers, careers, employment law, start-ups. Aimed at people who live and work here, not visitors.
+    type: 'Professional & training',
+    title: /\b(training|study (day|session)|course for|nurses|hcas?|health ?care assistants?|gps|advance care|care planning|palliative|end of life|last days of life|symptom control|safe moving|moving (&|and) handling|safeguarding|first aid at work|rqf|level \d|makaton|catheter|stoma|nephrostomy|gastrostomy|bowel care|leg ulcer|epilepsy|midazolam|careers?|recruit\w*|apprentice\w*|disciplinar\w*|legal clinics?|annual reporting|toolkit|start-?ups?|pitch(es)?|business(es)?|invest(ing|ors?|ment)?|leading from within|communicators?|carbon literacy|media solutions|ined|lone working|professional|committee meeting|grant application)\b/i,
+  },
+  {
     type: 'Charity',
     title: /\b(charity|charities|fundrais\w*|in aid of|appeal|sponsored|raffle|hospice|cancer relief|macmillan|rnli|nspcc|blood cancer)\b/i,
     text: /\b(in aid of|all proceeds|raising (money|funds)|fundrais\w*|registered charity|charity (night|event|dinner|quiz))\b/i,
@@ -76,12 +81,14 @@ const RULES: Rule[] = [
 export const EVENT_TYPES = [...new Set([...RULES.map((r) => r.type), 'Spectator', 'Participant'])].sort();
 
 /**
- * Health and wellbeing events are for islanders, not the visitors the
- * printed guide is for: classes, courses, support and care. Left out of
- * print unless the event is also something a visitor comes for.
+ * What the printed guide, which is for visitors, leaves out: training and
+ * work events and business ones, always; health and wellbeing (classes,
+ * courses, support and care) unless the event is also something a visitor
+ * comes for.
  */
 const FOR_VISITORS = ['Outdoor', 'Sports', 'Food & drink', 'Music', 'Arts & cultural', 'History & Heritage', 'Festivals', 'Markets & fairs'];
-export const nonCore = (types: readonly string[]) => types.includes('Health & wellbeing') && !types.some((t) => FOR_VISITORS.includes(t));
+export const nonCore = (types: readonly string[]) =>
+  types.includes('Professional & training') || types.includes('Business & networking') || (types.includes('Health & wellbeing') && !types.some((t) => FOR_VISITORS.includes(t)));
 
 /** Types a source always means, whatever the event says. */
 const BY_SOURCE: Record<string, string[]> = { 'jersey-charities': ['Charity'] };
