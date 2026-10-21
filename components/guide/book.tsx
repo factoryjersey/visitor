@@ -24,7 +24,8 @@ export type Section = { name: string; colour: string };
 const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
 
-type Page = { section: Section; body: ReactNode; bleed?: boolean };
+/** A page marker: a second tab under the section's, naming the part of the section the page is in. */
+type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string };
 
 /** Content height of a flowing page, in mm: 8.5mm from the top to 150mm. */
 const FLOW_MM = 141.5;
@@ -39,6 +40,7 @@ function Frame({ page, n }: { page: Page; n: number }) {
   return (
     <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
+      {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
       <Folio n={n} side={side} />
       {page.body}
     </div>
@@ -116,20 +118,19 @@ function ListingCell({ e }: { e: GuideEvent }) {
   );
 }
 
-/** A tour on the grid: when, or on demand and its genre; the title; the copy; the provider's code, the duration and the provider. */
+/** A tour on the grid: when, or its genre on the on-demand pages; the title; the copy; the provider's code, found in the key, and the duration. */
 function TourBox({ t }: { t: GuideTour }) {
-  const { ref, copy, keep: withProvider, overset } = useFit(t.options.length ? t.options : [t.copy], !!t.provider);
+  const { ref, copy, overset } = useFit(t.options.length ? t.options : [t.copy], false);
   if (t.frame === 'image') return <PictureBox e={t} />;
   return (
-    <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+    <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : t.provider}>
       <p className="gp-event-when">{tourWhen(t)}{t.times && <em>{t.times}</em>}</p>
       <h4 className="gp-event-title">{t.title}</h4>
       <p className="gp-event-copy">{copy}</p>
       <p className="gp-tour-meta">
-        {t.code && <span className="gp-code"><BadgeCheck aria-hidden="true" />{t.code}</span>}
+        {t.code ? <span className="gp-code"><BadgeCheck aria-hidden="true" />{t.code}</span> : <span className="gp-code">{t.provider}</span>}
         {t.duration && <span className="gp-duration"><Clock aria-hidden="true" />{t.duration}</span>}
       </p>
-      {t.provider && withProvider && <p className="gp-event-address">{t.provider}</p>}
     </article>
   );
 }
@@ -295,13 +296,19 @@ export function GuideBook(props: {
   if (tourPages && (tourPages.length || tourGrid?.length)) {
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: EVENTS, body: <div className="gp-content" /> });
     for (const items of tourPages) pages.push({ section: TOURS, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+    // The key opens the section: every tour page sends the reader back to it.
+    const keyPage = props.firstPage + pages.length - tourPages.length;
     for (const cells of tourGrid ?? []) {
       pages.push({
         section: TOURS,
+        marker: cells[0]?.kind === 'dated' ? 'On these dates' : 'On demand',
         body: (
-          <div className="gp-content gp-grid gp-grid8 gp-tour-grid">
-            {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
-          </div>
+          <>
+            <div className="gp-content gp-grid gp-grid8 gp-tour-grid">
+              {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
+            </div>
+            {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate guide on index page {keyPage}</p>}
+          </>
         ),
       });
     }

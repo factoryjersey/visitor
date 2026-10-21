@@ -15,6 +15,7 @@ import {
   type Window,
 } from '@/lib/domain/guide-entry';
 import { printContact, printWebsite } from '@/lib/domain/house-style';
+import { fillCodes } from '@/lib/domain/provider-code';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -81,8 +82,11 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const pages = layoutEvents(all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)), layout);
   const events = pages.flat();
 
+  // Every provider in the key has a code, so a tour need only print its provider's code; a new one gets its initials until the import saves them.
+  const missing = fillCodes([...new Map(tourRows.flatMap(({ provider }) => (provider ? [[provider.id, provider] as const] : []))).values()]);
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
-  for (const { experience, provider } of tourRows) {
+  for (const { experience, provider: found } of tourRows) {
+    const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
     const tour = guideTour(experience, provider, window);
     if (tour) printed.push({ tour, provider });
   }
@@ -105,7 +109,8 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map(guideVenue)
     .sort((a, b) => a.section.localeCompare(b.section) || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
 
-  const tourPages = layout === 'top' ? null : gridTours(tours);
+  // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
+  const tourPages = layout === 'top' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated')), ...gridTours(tours.filter((t) => t.kind === 'on demand'))];
 
   return { highlights, events, pages, layout, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues };
 }

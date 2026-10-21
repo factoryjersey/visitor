@@ -83,6 +83,10 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-image { margin: 0; }
 .gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
 .gp-tour-grid .gp-event-title { color: var(--gp-green); }
+.gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-pale); }
+.gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 600; font-size: 7pt; color: var(--gp-teal); }
+.gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }
+.gp-tour-footer svg { width: 2.8mm; height: 2.8mm; }
 .gp-tour-meta { display: flex; flex-wrap: wrap; margin: 0.8mm 0 0 -1mm; }
 .gp-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .gp-listing { border-top: 0.6pt solid var(--gp-orange); padding-top: 1.6mm; }

@@ -415,15 +415,15 @@ export function guideTour(
   };
 }
 
-/** A tour's box on the grid: what it is and when, its title, the copy, then code, duration and provider. */
+/** A tour's box on the grid: when (or, on the on-demand pages, its genre), its title, the copy, then the provider's code and the duration. The code points to the key. */
 const TOUR_BOX = { height: GRID.grid8.height, picture: false };
-export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : `On demand${t.genre ? ` · ${t.genre}` : ''}`);
+export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
 
 /** Walks and tours on the grid of eight, in the order they print: seven listings and a picture a page. */
 export function gridTours(tours: GuideTour[]): GuideTour[][] {
   return gridPages(tours, GRID.grid8.cells, {
     listing: (t) => {
-      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, TOUR_BOX);
+      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, TOUR_BOX);
       return { ...t, frame: 'listing', copy: t.options.find((c) => c.length <= room) ?? '' };
     },
     image: (t) => ({ ...t, frame: 'image', copy: '' }),

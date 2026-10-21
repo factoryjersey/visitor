@@ -341,12 +341,20 @@ its own (frame `image`) with the image URL and its listing's title.
 
 On either grid, walks and tours go on the grid of eight too, after the
 providers' key: seven tours and a picture a page, chosen the same way (the
-tick is on the tour's admin page). Each box says when, or "On demand" and
-its genre, in place of the section headings; then the title, the fullest
-whole-sentence copy that fits, the provider's code and the duration, and
-the provider's name, dropped before the copy if space is short. The tours
-export gains Frame and Image URL columns. The nightly picture check looks
-at tour pictures as well as event ones.
+tick is on the tour's admin page). Dated tours come first, then on-demand
+ones from a new page, each page with a marker tab under the section's
+("On these dates", "On demand") in place of the section headings. Each box
+gives the dates (or, on demand, the genre), the title, the fullest
+whole-sentence copy that fits, and the provider's code with the duration;
+the provider's name is in the key, and each page's footer repeats the
+symbol with "Locate guide on index page" and the key's page number. The
+tours export gains Frame and Image URL columns. The nightly picture check
+looks at tour pictures as well as event ones.
+
+Every provider has a key code: the nightly import gives one from the
+initials of its name to any provider without (`--only codes`), and the
+guide does the same in the meantime. Staff can change codes on the
+providers page; a code once set is kept.
 
 ## Not built yet
 

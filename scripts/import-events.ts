@@ -48,6 +48,7 @@ import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
+import { fillProviderCodes } from '@/lib/db/provider-codes';
 import { SITES as TRIBE_SITES, eventsUrl, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { joinRuns } from '@/lib/domain/join-runs';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
@@ -432,6 +433,15 @@ if (!values.only || values.only === 'stock') {
   } catch (e) {
     failed += 1;
     console.error(`stock pictures failed: ${(e as Error).message}`);
+  }
+}
+// A key code for every tour provider, so each tour points to the guide's key.
+if (!values.only || values.only === 'codes') {
+  try {
+    console.log(`provider codes: ${await fillProviderCodes()} new`);
+  } catch (e) {
+    failed += 1;
+    console.error(`provider codes failed: ${(e as Error).message}`);
   }
 }
 // And the guide's one-line copy for whatever is new or has new words.
