@@ -215,7 +215,8 @@ function experienceFields(v: VjExperience, providerId: string | null) {
 async function providerFor(v: VjExperience, known: Provider[], allPlaces: Place[]): Promise<Provider | null> {
   if (!v.provider) return null;
   const key = normaliseName(v.provider);
-  const existing = known.find((p) => normaliseName(p.name) === key || p.aliases.some((a) => normaliseName(a) === key));
+  // A merge comes first: staff chose that provider for this name, even while the old record is still there.
+  const existing = known.find((p) => p.aliases.some((a) => normaliseName(a) === key)) ?? known.find((p) => normaliseName(p.name) === key);
   if (existing) return existing;
   let place: Place | undefined;
   if (v.providerListingId) {
