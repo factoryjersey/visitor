@@ -42,8 +42,10 @@ export type GuideEvent = {
   community: boolean;
   /** The copy cut for each frame it might take, a picture cell's or a listing's; the page layout picks. Not printed. */
   fits: { picture: string; listing: string };
-  /** Which frame it takes on its page, set by the page layout. */
-  frame: 'picture' | 'listing';
+  /** Which frame it takes on its page, set by the page layout: a pictured cell, a listing, or (in the grid) the picture box beside its listing. */
+  frame: 'picture' | 'listing' | 'image';
+  /** Staff chose its picture for the grid's picture box, ahead of the rest on its page. Not printed. */
+  guidePicture: boolean;
   /** Every whole-sentence version of the copy, fullest first: the proof measures its frame and prints the first that fits. Not printed. */
   options: string[];
 };
@@ -198,23 +200,43 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
   };
   const fits = { picture: printCopy(e, copyBudget(entry, FRAMES.picture)), listing: printCopy(e, copyBudget(entry, FRAMES.listing)) };
   const community = e.eventTypes.includes('Charity');
-  return { ...entry, community, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
+  return { ...entry, community, guidePicture: e.guidePicture, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
 }
+
+/**
+ * How What's On is laid out. 'top': six to a page, a pictured pair across
+ * the top. 'grid6' and 'grid8': six or eight equal boxes, two across,
+ * every listing without a picture and one box a picture beside the listing it belongs to.
+ */
+export const LAYOUTS = ['top', 'grid6', 'grid8'] as const;
+export type Layout = (typeof LAYOUTS)[number];
+export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
 
 export const PER_PAGE = 6;
 const PICTURES_PER_PAGE = 2;
 /** Its copy would be cut mid-sentence, or dropped, in a picture cell. */
 const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
 
+/** The grid's boxes: 142.4mm of page, rows 2mm apart. */
+export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 } } as const;
+
 /**
- * Events onto pages, six at a time in date order. On each page the two
- * with the strongest claim to a picture take the top row: one with its
- * own picture, not a community event unless nothing else has one, and
- * one whose copy fits the smaller frame in whole sentences before one
- * that would be cut.
- * The rest follow as listings, still in date order.
+ * Events onto pages in date order, as the layout asks. Top: six at a
+ * time; on each page the two with the strongest claim to a picture take
+ * the top row: one with its own picture, not a community event unless
+ * nothing else has one, and one whose copy fits the smaller frame in
+ * whole sentences before one that would be cut. The rest follow as
+ * listings, still in date order.
+ *
+ * Grid: five or seven listings a page and a picture box in the same row
+ * as its listing, to its right, so that the reader sees whose picture it
+ * is; a listing in the right-hand column swaps with the one before it. The
+ * picture is the one staff chose, else the first with its own picture
+ * that is not a community event, else any. A page with no picture to show
+ * takes one more listing instead.
  */
-export function layoutEvents(events: GuideEvent[]): GuideEvent[][] {
+export function layoutEvents(events: GuideEvent[], layout: Layout = 'top'): GuideEvent[][] {
+  if (layout !== 'top') return gridEvents(events, GRID[layout]);
   const pages: GuideEvent[][] = [];
   for (let i = 0; i < events.length; i += PER_PAGE) {
     const page = events.slice(i, i + PER_PAGE);
@@ -230,6 +252,35 @@ export function layoutEvents(events: GuideEvent[]): GuideEvent[][] {
       ...ranked.map((e) => ({ ...e, frame: 'picture' as const, copy: e.fits.picture })),
       ...page.filter((e) => !pictured.has(e)).map((e) => ({ ...e, frame: 'listing' as const, copy: e.fits.listing })),
     ]);
+  }
+  return pages;
+}
+
+function gridEvents(events: GuideEvent[], grid: { cells: number; height: number }): GuideEvent[][] {
+  const frame = { height: grid.height, picture: false };
+  const listing = (e: GuideEvent): GuideEvent => ({ ...e, frame: 'listing', copy: e.options.find((c) => c.length <= copyBudget(e, frame)) ?? '' });
+  const pages: GuideEvent[][] = [];
+  let i = 0;
+  while (i < events.length) {
+    const page = events.slice(i, i + grid.cells - 1);
+    const pick = page
+      .map((e, at) => ({ e, at }))
+      .filter(({ e }) => e.imageUrl)
+      .sort((a, b) => Number(b.e.guidePicture) - Number(a.e.guidePicture) || Number(a.e.community) - Number(b.e.community) || a.at - b.at)[0];
+    if (!pick) {
+      // Nothing on this page to picture: a listing fills the box instead.
+      const full = events.slice(i, i + grid.cells);
+      pages.push(full.map(listing));
+      i += full.length;
+      continue;
+    }
+    const cells = page.map(listing);
+    // Two across: the picture follows its listing in the same row. A listing in the right-hand column moves one place up to the left to make room.
+    const at = pick.at - (pick.at % 2);
+    const [chosen] = cells.splice(pick.at, 1);
+    cells.splice(at, 0, chosen!, { ...chosen!, frame: 'image', copy: '' });
+    pages.push(cells);
+    i += page.length;
   }
   return pages;
 }

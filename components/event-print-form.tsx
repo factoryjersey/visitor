@@ -9,7 +9,7 @@ export function EventPrintForm({ id, entry, computed, current }: {
   id: string;
   entry: GuideEvent | null;
   computed: { dates: string | null; times: string | null; price: string | null };
-  current: { dates: string | null; times: string | null; price: string | null; line: string | null };
+  current: { dates: string | null; times: string | null; price: string | null; line: string | null; guidePicture: boolean };
 }) {
   const field = (name: string, label: string, placeholder: string | null, value: string | null) => (
     <label className="block">
@@ -41,6 +41,13 @@ export function EventPrintForm({ id, entry, computed, current }: {
         {field('printTimes', 'Times', computed.times, current.times)}
         {field('printPrice', 'Price', computed.price, current.price)}
         {field('printLine', 'Guide snippet: two sentences, the first 80 characters or fewer and able to stand alone, both 170 or fewer', null, current.line)}
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="guidePicture" defaultChecked={current.guidePicture} disabled={!entry?.imageUrl} className="mt-1" />
+          <span>
+            Use its picture in the guide grid
+            <span className="block text-xs text-stone-500">{entry?.imageUrl ? 'Its page’s picture box shows this one ahead of the others.' : 'It has no photograph the guide can print: none, a stock or club picture, or one with words on it.'}</span>
+          </span>
+        </label>
         <button type="submit" className="rounded border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100">Save print details</button>
       </form>
     </div>

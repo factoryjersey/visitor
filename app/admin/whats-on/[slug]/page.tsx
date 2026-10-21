@@ -82,7 +82,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <EditorialForm kind="event" id={e.id} guideCopy={e.guideCopy} inclusionNote={e.inclusionNote} sourceCopy={e.summary} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
-          <EventPrintForm id={e.id} entry={entry} computed={computed} current={{ dates: e.printDates, times: e.printTimes, price: e.printPrice, line: e.printLine }} />
+          <EventPrintForm id={e.id} entry={entry} computed={computed} current={{ dates: e.printDates, times: e.printTimes, price: e.printPrice, line: e.printLine, guidePicture: e.guidePicture }} />
         </div>
         <BusinessControl kind="event" id={e.id} businessId={e.businessId} review={e.review} />
         <SourcePanel sourceLink={e.sourceLink} sourceModifiedAt={e.sourceModifiedAt} fieldSources={e.fieldSources} />

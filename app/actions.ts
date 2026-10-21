@@ -98,6 +98,7 @@ const eventPrintSchema = z.object({
   printTimes: z.string().max(200),
   printPrice: z.string().max(200),
   printLine: z.string().max(200),
+  guidePicture: z.literal('on').optional(),
 });
 
 /**
@@ -122,6 +123,7 @@ export async function saveEventPrint(form: FormData) {
       printPrice: v.printPrice.trim() || null,
       printLine,
       ...(printLine ? {} : { printLineKey: null }),
+      guidePicture: v.guidePicture === 'on',
       lockedFields,
       editedBy: user.email,
       editedAt: now,

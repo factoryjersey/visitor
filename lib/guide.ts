@@ -8,6 +8,7 @@ import {
   guideVenue,
   layoutEvents,
   type GuideEvent,
+  type Layout,
   type GuideTour,
   type GuideVenue,
   type Window,
@@ -45,8 +46,10 @@ export type GuideProvider = { code: string; name: string; contact: string; websi
 export type Guide = {
   /** Highlights, each a full page, ahead of the listings and not repeated in them. */
   highlights: GuideEvent[];
-  /** In page order: every six a page, its pictured pair first. */
+  /** In page order, page by page as the layout set them; a grid's picture box is an entry of its own (frame 'image') beside its listing. */
   events: GuideEvent[];
+  pages: GuideEvent[][];
+  layout: Layout;
   tours: GuideTour[];
   providers: GuideProvider[];
   venues: GuideVenue[];
@@ -63,15 +66,17 @@ const genreOrder = (g: string) => {
  * on-demand ones by genre; the provider key only for providers with a
  * tour in this edition.
  */
-export async function buildGuide(window: Window, opts: { draft?: boolean } = {}): Promise<Guide> {
+export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout } = {}): Promise<Guide> {
+  const layout = opts.layout ?? 'top';
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
   const all = selection.events
     .map(({ event, venue }) => guideEvent(event, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  // By their first date in the edition, long runs among the rest; six to a page, two of them pictured.
-  const events = layoutEvents(all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title))).flat();
+  // By their first date in the edition, long runs among the rest; onto pages as the layout asks.
+  const pages = layoutEvents(all.filter((e) => !e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.title.localeCompare(b.title)), layout);
+  const events = pages.flat();
 
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
   for (const { experience, provider } of tourRows) {
@@ -97,10 +102,10 @@ export async function buildGuide(window: Window, opts: { draft?: boolean } = {})
     .map(guideVenue)
     .sort((a, b) => a.section.localeCompare(b.section) || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
 
-  return { highlights, events, tours, providers, venues };
+  return { highlights, events, pages, layout, tours, providers, venues };
 }
 
-/** In page order, six rows a page: Frame says which take the picture cells. */
+/** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
 export const EVENT_COLUMNS = ['Frame', 'Dates', 'Times', 'Title', 'Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL', 'Block'] as const;
 /** Highlights merge into their own full-page template. */
 export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'Price', 'Venue', 'Address', 'Contact', 'Website', 'Image URL'] as const;

@@ -2,7 +2,7 @@
 
 import { BadgeCheck, Clock, MapPin } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { PER_PAGE, type GuideEvent, type GuideTour, type GuideVenue } from '@/lib/domain/guide-entry';
+import type { GuideEvent, GuideTour, GuideVenue, Layout } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 
 /**
@@ -13,8 +13,9 @@ import type { GuideProvider } from '@/lib/guide';
  * on each outer edge. Proxima Nova where the browser has it (Adobe
  * Fonts), Barlow Semi Condensed where it does not.
  *
- * Events six to a page now: the pictured pair across the top, four
- * listings under them. Event cells are fixed, as the merge frames are; tours and the key flow,
+ * Events six to a page, the pictured pair across the top and four
+ * listings under them; or on a grid of six or eight boxes, one of them a
+ * picture beside its listing. Event cells are fixed, as the merge frames are; tours and the key flow,
  * so they are measured here and poured page by page. What will not fit a
  * frame is outlined red on screen, as InDesign marks overset text.
  */
@@ -52,6 +53,21 @@ function Frame({ page, n }: { page: Page; n: number }) {
  * only if even the dates, title and venue will not fit.
  */
 function EventCell({ e }: { e: GuideEvent }) {
+  if (e.frame === 'image') return <PictureBox e={e} />;
+  return <ListingCell e={e} />;
+}
+
+/** A grid's picture box: the whole cell, cropped to fill. */
+function PictureBox({ e }: { e: GuideEvent }) {
+  return (
+    <figure className="gp-event gp-image" title={e.title}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={e.preview.replace(/w_520,h_182/, 'w_520,h_520')} alt="" />
+    </figure>
+  );
+}
+
+function ListingCell({ e }: { e: GuideEvent }) {
   const ref = useRef<HTMLDivElement>(null);
   const said = (e.options.length ? e.options : [e.copy]).filter(Boolean);
   const options: [string, boolean][] = [...said.map((c): [string, boolean] => [c, true]), ...(e.contact ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
@@ -196,12 +212,14 @@ function usePoured(items: Flow[]): [Flow[][] | null, ReactNode] {
 export function GuideBook(props: {
   highlights: GuideEvent[];
   events: GuideEvent[];
+  pages: GuideEvent[][];
+  layout: Layout;
   tours: GuideTour[];
   providers: GuideProvider[];
   venues: GuideVenue[];
   firstPage: number;
 }) {
-  const { highlights, events, tours, providers } = props;
+  const { highlights, events, tours, providers, layout } = props;
 
   // Walks and tours flow: the key, then dated tours, then on-demand ones by genre.
   const [flow] = useState<Flow[]>(() => {
@@ -230,12 +248,12 @@ export function GuideBook(props: {
   const pages: Page[] = [];
   if (events.length || highlights.length) pages.push({ section: EVENTS, bleed: true, body: <Opener e={lead} /> });
   for (const h of highlights) pages.push({ section: EVENTS, body: <HighlightBody e={h} /> });
-  for (let i = 0; i < events.length; i += PER_PAGE) {
+  for (const cells of props.pages) {
     pages.push({
       section: EVENTS,
       body: (
-        <div className="gp-content gp-grid">
-          {events.slice(i, i + PER_PAGE).map((e) => <EventCell key={e.title + e.sortKey} e={e} />)}
+        <div className={`gp-content gp-grid gp-${layout}`}>
+          {cells.map((e) => <EventCell key={e.frame + e.title + e.sortKey} e={e} />)}
         </div>
       ),
     });

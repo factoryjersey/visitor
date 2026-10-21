@@ -258,6 +258,8 @@ export const events = pgTable('events', {
   printLineKey: text('print_line_key'),
   /** A highlight: a full page in the guide with the extended listing and a large image, featured first online. Ours. */
   highlight: boolean('highlight').notNull().default(false),
+  /** The picture a page of the guide's grid layout shows beside this listing, chosen by staff ahead of the rest. Ours. */
+  guidePicture: boolean('guide_picture').notNull().default(false),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   sourceLink: text('source_link'),

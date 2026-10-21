@@ -77,6 +77,11 @@ body { @apply bg-white text-stone-900 antialiased; }
 
 /* Events: four fixed frames. */
 .gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 52mm 43mm 43mm; row-gap: 2mm; }
+/* The grid layouts: equal boxes, two across, one of them a picture filling its box. */
+.gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
+.gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
+.gp-image { margin: 0; }
+.gp-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .gp-listing { border-top: 0.6pt solid var(--gp-orange); padding-top: 1.6mm; }
 .gp-event { overflow: hidden; font-size: 8.5pt; line-height: 1.08; }
 .gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-orange); margin-bottom: 2.6mm; }

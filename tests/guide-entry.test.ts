@@ -12,7 +12,7 @@ const base: Event = {
   eventTypes: [], free: false, occurrence: 'ongoing', placeId: null, lat: null, lon: null,
   dates: Array.from({ length: 59 }, (_, i) => ({ date: new Date(Date.UTC(2026, 8, 1 + i)).toISOString().slice(0, 10), start: '10:00', end: '16:00' })),
   startsOn: '2026-09-01', endsOn: '2026-10-29', fromPricePence: 1145, toPricePence: 2450,
-  printDates: null, printTimes: null, printPrice: null, printLine: null, printLineKey: null, highlight: false,
+  printDates: null, printTimes: null, printPrice: null, printLine: null, printLineKey: null, highlight: false, guidePicture: false,
   headerImage: null, sourceLink: null, organiser: null, businessId: null, review: 'approved', reviewNote: null, inclusion: 'included', inclusionNote: null,
   inclusionSetBy: null, inclusionSetAt: null, editedBy: null, editedAt: null,
   fieldSources: {}, lockedFields: [], sourceModifiedAt: null, createdAt: new Date(), updatedAt: new Date(),
@@ -135,6 +135,29 @@ describe('events six to a page', () => {
     expect(pages[0]![0]!.copy).toBe('c short');
     expect(pages[0]![2]!.copy).toBe('a long');
     expect(layoutEvents([ev('x'), ev('y', { image: true, community: true })])[0]!.map((e) => e.frame)).toEqual(['picture', 'listing']);
+  });
+});
+
+describe('events on a grid', () => {
+  const ev = (title: string, opts: { image?: boolean; community?: boolean; chosen?: boolean } = {}) =>
+    ({ title, dates: '1 NOV', times: '', price: '', venue: 'Hall', address: '', contact: '', website: '', imageUrl: opts.image ? `https://x/${title}.jpg` : '', community: !!opts.community, guidePicture: !!opts.chosen, options: [`${title} copy.`, ''], fits: { picture: '', listing: '' }, frame: 'listing', copy: '' }) as unknown as GuideEvent;
+  const cells = (p: GuideEvent[]) => p.map((e) => (e.frame === 'image' ? `[${e.title}]` : e.title));
+
+  it('takes five listings and a picture beside the one staff chose, in its row', () => {
+    const pages = layoutEvents([ev('a', { image: true }), ev('b'), ev('c', { image: true, chosen: true }), ev('d'), ev('e'), ev('f')], 'grid6');
+    expect(cells(pages[0]!)).toEqual(['a', 'b', 'c', '[c]', 'd', 'e']);
+    expect(cells(pages[1]!)).toEqual(['f']);
+    expect(pages[0]![0]!.copy).toBe('a copy.');
+  });
+
+  it('moves a right-hand listing to the left of its row to sit beside its picture', () => {
+    const pages = layoutEvents([ev('a'), ev('b', { image: true }), ev('c'), ev('d'), ev('e'), ev('f'), ev('g'), ev('h')], 'grid8');
+    expect(cells(pages[0]!)).toEqual(['b', '[b]', 'a', 'c', 'd', 'e', 'f', 'g']);
+  });
+
+  it('prefers a community event last, and fills the box with a listing when nothing has a picture', () => {
+    expect(cells(layoutEvents([ev('a', { image: true, community: true }), ev('b'), ev('c', { image: true })], 'grid6')[0]!)).toEqual(['a', 'b', 'c', '[c]']);
+    expect(layoutEvents([ev('a'), ev('b'), ev('c'), ev('d'), ev('e'), ev('f'), ev('g')], 'grid6').map((p) => p.length)).toEqual([6, 1]);
   });
 });
 

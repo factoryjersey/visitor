@@ -330,6 +330,15 @@ first sentence), dropping the phone line before the copy; copy that trails
 off is never printed. Print it to PDF from the browser. The What's On
 export gives each row its frame (picture or listing), in page order.
 
+"Events layout" on the proof page switches to a grid of six or eight equal
+boxes (`?grid=grid6` or `grid8`, the export takes the same): listings
+without pictures, and on each page one box filled by a picture, in the same
+row as its listing. The picture is the one staff ticked "Use its picture in
+the guide grid" on the event's admin page, else the first with a printable
+photograph of its own, a community event last. A page with nothing to
+picture takes another listing. In the export, the picture box is a row of
+its own (frame `image`) with the image URL and its listing's title.
+
 ## Not built yet
 
 - Editions: a dated, signed-off snapshot of the selection.
