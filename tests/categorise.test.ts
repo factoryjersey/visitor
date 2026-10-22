@@ -103,3 +103,19 @@ describe('health listings are off the front page and What\'s on by default', () 
     expect(siteTypes(ev('Jersey Bulls v Cobham', ['Sports']))).toEqual(['Sports']);
   });
 });
+
+describe('kinds chosen together', () => {
+  it('reads several kinds from one parameter or many', async () => {
+    const { many } = await import('@/lib/params');
+    expect(many(undefined)).toEqual([]);
+    expect(many('Music')).toEqual(['Music']);
+    expect(many('Music,Food & drink')).toEqual(['Music', 'Food & drink']);
+    expect(many(['Music', 'Outdoor,Music', ' '])).toEqual(['Music', 'Outdoor']);
+  });
+
+  it('builds the address for a set, the rest of the search kept', async () => {
+    const { kindsHref } = await import('@/components/site/category-menu');
+    expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', ['Music', 'Food & drink'])).toBe('/whats-on?q=jazz&type=Music%2CFood+%26+drink');
+    expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', [])).toBe('/whats-on?q=jazz');
+  });
+});

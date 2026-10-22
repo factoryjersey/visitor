@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
+import { CategoryList } from '@/components/site/category-list';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
 import { jerseyToday, resolveWhen } from '@/lib/domain/when';
@@ -10,7 +11,7 @@ import { GENRES, type Genre } from '@/lib/domain/genre';
 import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
-import { one, type SearchParams } from '@/lib/params';
+import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
 import { itemList } from '@/lib/agents/schema-org';
@@ -31,15 +32,17 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   const shownFrom = range && range.from > today ? range.from : today;
   // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
   const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
-  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
-  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to'].includes(k)).length + (range ? 1 : 0);
-  const genre = (GENRES as readonly string[]).includes(values.genre ?? '') ? (values.genre as Genre) : undefined;
+  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, genre: many(sp.genre).filter((g) => (GENRES as readonly string[]).includes(g)).join(',') || undefined, where: one(sp.where), by: one(sp.by), any: one(sp.any) };
+  // Each kind chosen counts on the Filters button, and the dates as one.
+  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to', 'genre'].includes(k)).length + (range ? 1 : 0) + many(values.genre).length;
+  // Genres chosen together mean any of them.
+  const genres = many(values.genre) as Genre[];
   const found = await publicTours({ showOnDemand: values.any === '1', range, q: values.q });
 
   // Where they start and who runs them, each counted from what the other choices leave.
   const inParish = (r: (typeof found)[number]) => !values.where || printParish(r.tour.parish) === values.where;
   const runBy = (r: (typeof found)[number]) => !values.by || r.provider?.id === values.by;
-  const ofGenre = (r: (typeof found)[number]) => !genre || r.tour.genre === genre;
+  const ofGenre = (r: (typeof found)[number]) => !genres.length || (r.tour.genre !== null && genres.includes(r.tour.genre));
   const tally = (rs: typeof found, key: (r: (typeof found)[number]) => [string, string] | null) => {
     const m = new Map<string, { label: string; n: number }>();
     for (const r of rs) {
@@ -57,7 +60,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   // The genre tiles count what the other choices leave; then the genre chosen.
   const counts = new Map<string, number>();
   for (const r of placed) if (r.tour.genre) counts.set(r.tour.genre, (counts.get(r.tour.genre) ?? 0) + 1);
-  const rows = genre ? placed.filter((r) => r.tour.genre === genre) : placed;
+  const rows = genres.length ? placed.filter(ofGenre) : placed;
   const dated = rows.filter((r) => UNIQUE.includes(r.tour.occurrence) || r.tour.highlight);
   const onDemand = rows.filter((r) => !UNIQUE.includes(r.tour.occurrence) && !r.tour.highlight);
 
@@ -95,6 +98,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
           keep={['genre']}
         />
         <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
+        <CategoryList action="/tours" values={values} counts={counts} of="tours" />
       </FilterPane>
       {dated.length > 0 && (
         <section className="mb-12">

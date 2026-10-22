@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
+import { CategoryList } from '@/components/site/category-list';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
 import { jerseyToday, resolveWhen } from '@/lib/domain/when';
@@ -10,7 +11,7 @@ import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
-import { one, type SearchParams } from '@/lib/params';
+import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
 import { itemList } from '@/lib/agents/schema-org';
@@ -37,8 +38,10 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   const shownFrom = range && range.from > today ? range.from : today;
   // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
   const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
-  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
-  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to'].includes(k)).length + (range ? 1 : 0);
+  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, venue: one(sp.venue), type: many(sp.type).join(',') || undefined, ongoing: one(sp.ongoing) };
+  const kinds = many(values.type);
+  // Each kind chosen counts on the Filters button, and the dates as one.
+  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to', 'type'].includes(k)).length + (range ? 1 : 0) + many(values.type).length;
   // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
   // from what the search finds, the kinds from what is on at the venue chosen.
   // Health listings are for people who live here: left out of the listing and the search until the visitor picks Health & wellbeing.
@@ -47,9 +50,12 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   for (const r of found) if (r.venue?.slug && !r.hidden) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
   const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;
   const counts = new Map<string, number>();
-  for (const r of all) for (const t of new Set(r.event.eventTypes)) counts.set(t, (counts.get(t) ?? 0) + 1);
+  // A hidden health listing counts, and shows, only under Health & wellbeing.
+  const HEALTH = 'Health & wellbeing';
+  for (const r of all) for (const t of new Set(r.event.eventTypes)) if (!r.hidden || t === HEALTH) counts.set(t, (counts.get(t) ?? 0) + 1);
   const shown = all.filter((r) => !r.hidden);
-  const rows = values.type ? all.filter((r) => r.event.eventTypes.includes(values.type!)) : shown;
+  // Kinds chosen together mean any of them.
+  const rows = kinds.length ? all.filter((r) => r.event.eventTypes.some((t) => kinds.includes(t) && (!r.hidden || t === HEALTH))) : shown;
   const venueOptions = [...venues]
     .sort(([, a], [, b]) => a.name.localeCompare(b.name))
     .map(([slug, v]) => ({ value: slug, label: `${v.name} (${v.n})` }));
@@ -90,6 +96,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
           keep={['type']}
         />
         <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
+        <CategoryList action="/whats-on" values={values} counts={counts} />
       </FilterPane>
 
       {highlights.length > 0 && (

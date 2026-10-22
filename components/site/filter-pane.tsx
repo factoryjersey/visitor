@@ -105,9 +105,9 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
             <X aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>
-        {/* In the panel the fields go full width, the kind tiles wrap into a grid rather than sliding sideways, and the footer button stands in for the form's own. */}
+        {/* In the panel the fields go full width, the kinds show as a list in place of the tiles, and the footer button stands in for the form's own. */}
         <div
-          className="max-md:flex-1 max-md:overflow-y-auto max-md:p-4 max-md:[&_[data-slider-edge]]:hidden max-md:[&_[data-slider-row]]:flex-wrap max-md:[&_[data-slider-row]]:overflow-visible max-md:[&_form]:p-0 max-md:[&_form]:shadow-none max-md:[&_form]:ring-0 max-md:[&_form>label]:w-full max-md:[&_form>label]:min-w-0 max-md:[&_form_button[type=submit]]:hidden max-md:[&_nav]:mb-0"
+          className="max-md:flex-1 max-md:overflow-y-auto max-md:p-4 max-md:[&_[data-kind-tiles]]:hidden max-md:[&_form]:p-0 max-md:[&_form]:shadow-none max-md:[&_form]:ring-0 max-md:[&_form>label]:w-full max-md:[&_form>label]:min-w-0 max-md:[&_form_button[type=submit]]:hidden"
         >
           {props.children}
         </div>
