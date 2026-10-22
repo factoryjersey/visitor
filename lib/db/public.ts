@@ -21,22 +21,19 @@ export const todayIso = () => new Date().toISOString().slice(0, 10);
 const hasUpcoming = (col: typeof events.dates | typeof experiences.dates) =>
   sql`exists (select 1 from jsonb_array_elements(${col}) d where d->>'date' >= to_char(now(), 'YYYY-MM-DD'))`;
 
-function inMonth(col: typeof events.dates | typeof experiences.dates, month: string): SQL | null {
-  const m = /^(\d{4})-(\d{2})$/.exec(month);
-  if (!m) return null;
-  const last = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0)).getUTCDate();
-  return sql`exists (select 1 from jsonb_array_elements(${col}) d where d->>'date' between ${`${month}-01`} and ${`${month}-${String(last).padStart(2, '0')}`})`;
-}
+/** Any of its days between two dates, both inclusive. */
+const inRange = (col: typeof events.dates | typeof experiences.dates, r: { from: string; to: string }) =>
+  sql`exists (select 1 from jsonb_array_elements(${col}) d where d->>'date' between ${r.from} and ${r.to})`;
 
-export type PublicEventFilter = { showOngoing?: boolean; month?: string; type?: string; q?: string };
+/** `range`: only what has a day in it, sorted and grouped by its first day there. */
+export type PublicEventFilter = { showOngoing?: boolean; range?: { from: string; to: string } | null; type?: string; q?: string };
 
 export async function publicEvents(f: PublicEventFilter = {}) {
   const where: SQL[] = [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
   if (!f.showOngoing) where.push(or(inArray(events.occurrence, [...UNIQUE]), eq(events.highlight, true))!);
   if (f.type) where.push(sql`${f.type} = any(${events.eventTypes})`);
   if (f.q) where.push(sql`(${events.title} ilike ${`%${f.q}%`} or ${events.venueName} ilike ${`%${f.q}%`})`);
-  const month = f.month ? inMonth(events.dates, f.month) : null;
-  if (month) where.push(month);
+  if (f.range) where.push(inRange(events.dates, f.range));
 
   const rows = await db
     .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
@@ -44,8 +41,9 @@ export async function publicEvents(f: PublicEventFilter = {}) {
     .leftJoin(places, eq(places.id, events.placeId))
     .where(and(...where));
   const today = todayIso();
+  const from = f.range && f.range.from > today ? f.range.from : today;
   return rows
-    .map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' }))
+    .map((r) => ({ ...r, next: nextDate(r.event.dates, from) ?? '9999' }))
     .sort((a, b) => a.next.localeCompare(b.next) || a.event.title.localeCompare(b.event.title));
 }
 
@@ -101,15 +99,14 @@ export async function publicRelatedEvents(e: Pick<Event, 'eventTypes'>, exclude:
 /** Types for staff, not visitors: a filter for them would only lead to what review turned down. */
 const STAFF_ONLY_TYPES = new Set(['Business & networking']);
 
-export type PublicTourFilter = { showOnDemand?: boolean; genre?: Genre; month?: string; q?: string };
+export type PublicTourFilter = { showOnDemand?: boolean; genre?: Genre; range?: { from: string; to: string } | null; q?: string };
 
 export async function publicTours(f: PublicTourFilter = {}) {
   const where: SQL[] = [ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)];
   if (!f.showOnDemand) where.push(or(inArray(experiences.occurrence, [...UNIQUE]), eq(experiences.highlight, true))!);
   if (f.genre) where.push(eq(experiences.genre, f.genre));
   if (f.q) where.push(sql`(${experiences.title} ilike ${`%${f.q}%`} or ${providers.name} ilike ${`%${f.q}%`})`);
-  const month = f.month ? inMonth(experiences.dates, f.month) : null;
-  if (month) where.push(month);
+  if (f.range) where.push(inRange(experiences.dates, f.range));
 
   const rows = await db
     .select({ tour: experiences, provider: { id: providers.id, name: providers.name, website: providers.website } })
@@ -118,8 +115,9 @@ export async function publicTours(f: PublicTourFilter = {}) {
     .where(and(...where))
     .orderBy(asc(experiences.title));
   const today = todayIso();
+  const from = f.range && f.range.from > today ? f.range.from : today;
   return rows
-    .map((r) => ({ ...r, next: nextDate(r.tour.dates, today) ?? '9999' }))
+    .map((r) => ({ ...r, next: nextDate(r.tour.dates, from) ?? '9999' }))
     .sort((a, b) => {
       // Dated tours by their next date; on-demand ones after, by name.
       const ad = UNIQUE.includes(a.tour.occurrence) ? a.next : `~${a.tour.title}`;

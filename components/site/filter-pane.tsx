@@ -11,8 +11,9 @@ import { useEffect, useRef, useState } from 'react';
  * element, placed off-canvas below md.
  *
  * Picking a kind changes the page underneath without closing the panel, so
- * the visitor can see the new count and pick again. The footer button shows
- * the results, applying the search and selects first if they changed.
+ * the visitor can see the new count and pick again; so do the quick picks
+ * for when. The footer button shows the results, applying a typed search
+ * or chosen dates first.
  */
 export function FilterPane(props: { children: React.ReactNode; active: number; results: number; noun: string }) {
   const [open, setOpen] = useState(false);
@@ -49,19 +50,17 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
     setOpen(false);
     opener.current?.focus();
   };
-  // What the search and selects said when the panel opened: changed, the footer button submits them; otherwise it just closes.
-  const asOpened = useRef('');
-  const form = () => panel.current?.querySelector('form') ?? null;
-  const said = (f: HTMLFormElement) => new URLSearchParams(new FormData(f) as unknown as Record<string, string>).toString();
-  const openPane = () => {
-    const f = form();
-    asOpened.current = f ? said(f) : '';
-    setOpen(true);
-  };
+  // The footer button applies what the form says but the page does not yet show (a search typed, dates chosen), then closes.
+  const settled = (p: URLSearchParams) =>
+    [...p.entries()]
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join('&');
   const show = () => {
-    const f = form();
-    if (f && said(f) !== asOpened.current) f.requestSubmit();
-    else close();
+    const f = panel.current?.querySelector('form');
+    if (f && settled(new URLSearchParams(new FormData(f) as unknown as Record<string, string>)) !== settled(new URLSearchParams(window.location.search))) f.requestSubmit();
+    close();
   };
   const shut = phone && !open;
   const what = `${props.results} ${props.results === 1 ? props.noun.replace(/s$/, '') : props.noun}`;
@@ -72,7 +71,7 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
         <button
           ref={opener}
           type="button"
-          onClick={openPane}
+          onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls="filter-pane"
           className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-harbour/15 hover:ring-brand/40"
@@ -108,7 +107,7 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
         </div>
         {/* In the panel the fields go full width, the kind tiles wrap into a grid rather than sliding sideways, and the footer button stands in for the form's own. */}
         <div
-          className="max-md:flex-1 max-md:overflow-y-auto max-md:p-4 max-md:[&_[data-slider-edge]]:hidden max-md:[&_[data-slider-row]]:flex-wrap max-md:[&_[data-slider-row]]:overflow-visible max-md:[&_form]:p-0 max-md:[&_form]:shadow-none max-md:[&_form]:ring-0 max-md:[&_form_label]:w-full max-md:[&_form_label]:min-w-0 max-md:[&_form_button[type=submit]]:hidden max-md:[&_nav]:mb-0"
+          className="max-md:flex-1 max-md:overflow-y-auto max-md:p-4 max-md:[&_[data-slider-edge]]:hidden max-md:[&_[data-slider-row]]:flex-wrap max-md:[&_[data-slider-row]]:overflow-visible max-md:[&_form]:p-0 max-md:[&_form]:shadow-none max-md:[&_form]:ring-0 max-md:[&_form>label]:w-full max-md:[&_form>label]:min-w-0 max-md:[&_form_button[type=submit]]:hidden max-md:[&_nav]:mb-0"
         >
           {props.children}
         </div>

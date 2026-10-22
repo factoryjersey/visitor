@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
-import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
+import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { FilterBar, monthHeading } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicEvents, todayIso } from '@/lib/db/public';
+import { publicEvents } from '@/lib/db/public';
 import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -29,11 +30,17 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
  */
 export default async function WhatsOn({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), month: one(sp.month), venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
+  const today = jerseyToday();
+  const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
+  const range = resolveWhen(asked, today);
+  // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
+  const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
+  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
+  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to'].includes(k)).length + (range ? 1 : 0);
   // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
   // from what the search finds, the kinds from what is on at the venue chosen.
   // Health listings are for people who live here: left out of the listing and the search until the visitor picks Health & wellbeing.
-  const found = (await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q })).map((r) => ({ ...r, hidden: hiddenByDefault(r.event), event: { ...r.event, eventTypes: siteTypes(r.event) } }));
+  const found = (await publicEvents({ showOngoing: values.ongoing === '1', range, q: values.q })).map((r) => ({ ...r, hidden: hiddenByDefault(r.event), event: { ...r.event, eventTypes: siteTypes(r.event) } }));
   const venues = new Map<string, { name: string; n: number }>();
   for (const r of found) if (r.venue?.slug && !r.hidden) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
   const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;
@@ -44,7 +51,6 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   const venueOptions = [...venues]
     .sort(([, a], [, b]) => a.name.localeCompare(b.name))
     .map(([slug, v]) => ({ value: slug, label: `${v.name} (${v.n})` }));
-  const today = todayIso();
   const highlights = rows.filter((r) => r.event.highlight);
   const rest = rows.filter((r) => !r.event.highlight);
 
@@ -70,12 +76,12 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">What&apos;s on</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
-      <FilterPane active={Object.values(values).filter(Boolean).length} results={rows.length} noun="events">
+      <FilterPane active={active} results={rows.length} noun="events">
         <FilterBar
           action="/whats-on"
+          today={today}
           values={values}
           selects={[
-            { name: 'month', label: 'When', options: monthOptions() },
             { name: 'venue', label: 'Venue', options: venueOptions },
           ]}
           toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}

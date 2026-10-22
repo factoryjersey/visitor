@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
-import { FilterBar, monthOptions } from '@/components/site/filter-bar';
+import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { FilterBar } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicTours, todayIso } from '@/lib/db/public';
+import { publicTours } from '@/lib/db/public';
 import { GENRES, type Genre } from '@/lib/domain/genre';
 import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -23,9 +24,15 @@ export const metadata: Metadata = { title: 'Tours & experiences', description: '
  */
 export default async function Tours({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), month: one(sp.month), genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
+  const today = jerseyToday();
+  const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
+  const range = resolveWhen(asked, today);
+  // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
+  const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
+  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
+  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to'].includes(k)).length + (range ? 1 : 0);
   const genre = (GENRES as readonly string[]).includes(values.genre ?? '') ? (values.genre as Genre) : undefined;
-  const found = await publicTours({ showOnDemand: values.any === '1', month: values.month, q: values.q });
+  const found = await publicTours({ showOnDemand: values.any === '1', range, q: values.q });
 
   // Where they start and who runs them, each counted from what the other choices leave.
   const inParish = (r: (typeof found)[number]) => !values.where || printParish(r.tour.parish) === values.where;
@@ -49,7 +56,6 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   const counts = new Map<string, number>();
   for (const r of placed) if (r.tour.genre) counts.set(r.tour.genre, (counts.get(r.tour.genre) ?? 0) + 1);
   const rows = genre ? placed.filter((r) => r.tour.genre === genre) : placed;
-  const today = todayIso();
   const dated = rows.filter((r) => UNIQUE.includes(r.tour.occurrence) || r.tour.highlight);
   const onDemand = rows.filter((r) => !UNIQUE.includes(r.tour.occurrence) && !r.tour.highlight);
 
@@ -74,12 +80,12 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
-      <FilterPane active={Object.values(values).filter(Boolean).length} results={rows.length} noun="tours">
+      <FilterPane active={active} results={rows.length} noun="tours">
         <FilterBar
           action="/tours"
+          today={today}
           values={values}
           selects={[
-            { name: 'month', label: 'When', options: monthOptions() },
             { name: 'where', label: 'Where', options: parishOptions },
             { name: 'by', label: 'Run by', options: providerOptions },
           ]}
