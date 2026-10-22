@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
+import { FilterPane } from '@/components/site/filter-pane';
 import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, todayIso } from '@/lib/db/public';
@@ -69,17 +70,19 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">What&apos;s on</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
-      <FilterBar
-        action="/whats-on"
-        values={values}
-        selects={[
-          { name: 'month', label: 'When', options: monthOptions() },
-          { name: 'venue', label: 'Venue', options: venueOptions },
-        ]}
-        toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
-        keep={['type']}
-      />
-      <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
+      <FilterPane active={Object.values(values).filter(Boolean).length} results={rows.length} noun="events">
+        <FilterBar
+          action="/whats-on"
+          values={values}
+          selects={[
+            { name: 'month', label: 'When', options: monthOptions() },
+            { name: 'venue', label: 'Venue', options: venueOptions },
+          ]}
+          toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
+          keep={['type']}
+        />
+        <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
+      </FilterPane>
 
       {highlights.length > 0 && (
         <section className="mb-12">

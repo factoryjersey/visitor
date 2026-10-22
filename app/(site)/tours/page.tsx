@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import { CategoryMenu } from '@/components/site/category-menu';
+import { FilterPane } from '@/components/site/filter-pane';
 import { FilterBar, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicTours, todayIso } from '@/lib/db/public';
@@ -73,18 +74,20 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
-      <FilterBar
-        action="/tours"
-        values={values}
-        selects={[
-          { name: 'month', label: 'When', options: monthOptions() },
-          { name: 'where', label: 'Where', options: parishOptions },
-          { name: 'by', label: 'Run by', options: providerOptions },
-        ]}
-        toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
-        keep={['genre']}
-      />
-      <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
+      <FilterPane active={Object.values(values).filter(Boolean).length} results={rows.length} noun="tours">
+        <FilterBar
+          action="/tours"
+          values={values}
+          selects={[
+            { name: 'month', label: 'When', options: monthOptions() },
+            { name: 'where', label: 'Where', options: parishOptions },
+            { name: 'by', label: 'Run by', options: providerOptions },
+          ]}
+          toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
+          keep={['genre']}
+        />
+        <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
+      </FilterPane>
       {dated.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>
