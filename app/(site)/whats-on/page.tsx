@@ -33,6 +33,8 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   const today = jerseyToday();
   const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
   const range = resolveWhen(asked, today);
+  // Cards give each listing's first day in the range chosen, not its next day overall.
+  const shownFrom = range && range.from > today ? range.from : today;
   // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
   const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
   const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
@@ -59,7 +61,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       key={e.id}
       href={`/whats-on/${e.slug}`}
       title={e.title}
-      when={cardWhen(e.dates, e.occurrence, today)}
+      when={cardWhen(e.dates, e.occurrence, shownFrom)}
       location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
       price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
       image={e.headerImage}

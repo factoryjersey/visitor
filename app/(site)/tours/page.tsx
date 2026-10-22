@@ -27,6 +27,8 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   const today = jerseyToday();
   const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
   const range = resolveWhen(asked, today);
+  // Cards give each listing's first day in the range chosen, not its next day overall.
+  const shownFrom = range && range.from > today ? range.from : today;
   // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
   const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
   const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
@@ -64,7 +66,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       key={t.id}
       href={`/tours/${t.slug}`}
       title={t.title}
-      when={UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, today) : 'Book any day'}
+      when={UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, shownFrom) : 'Book any day'}
       location={cardLocation(t.meetingPoint, t.parish)}
       where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
       price={printPrice(t.fromPricePence, t.toPricePence)}
