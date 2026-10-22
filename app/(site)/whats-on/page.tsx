@@ -4,6 +4,7 @@ import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterBar, monthHeading, monthOptions } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, todayIso } from '@/lib/db/public';
+import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
@@ -30,13 +31,15 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   const values = { q: one(sp.q), month: one(sp.month), venue: one(sp.venue), type: one(sp.type), ongoing: one(sp.ongoing) };
   // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
   // from what the search finds, the kinds from what is on at the venue chosen.
-  const found = await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q });
+  // Health listings are for people who live here: left out of the listing and the search until the visitor picks Health & wellbeing.
+  const found = (await publicEvents({ showOngoing: values.ongoing === '1', month: values.month, q: values.q })).map((r) => ({ ...r, hidden: hiddenByDefault(r.event), event: { ...r.event, eventTypes: siteTypes(r.event) } }));
   const venues = new Map<string, { name: string; n: number }>();
-  for (const r of found) if (r.venue?.slug) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
+  for (const r of found) if (r.venue?.slug && !r.hidden) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
   const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;
   const counts = new Map<string, number>();
   for (const r of all) for (const t of new Set(r.event.eventTypes)) counts.set(t, (counts.get(t) ?? 0) + 1);
-  const rows = values.type ? all.filter((r) => r.event.eventTypes.includes(values.type!)) : all;
+  const shown = all.filter((r) => !r.hidden);
+  const rows = values.type ? all.filter((r) => r.event.eventTypes.includes(values.type!)) : shown;
   const venueOptions = [...venues]
     .sort(([, a], [, b]) => a.name.localeCompare(b.name))
     .map(([slug, v]) => ({ value: slug, label: `${v.name} (${v.n})` }));
@@ -76,7 +79,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
         toggle={{ name: 'ongoing', label: 'Include ongoing events', hint: 'Exhibitions, attractions open every day and weekly sessions' }}
         keep={['type']}
       />
-      <CategoryMenu action="/whats-on" values={values} counts={counts} total={all.length} />
+      <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
 
       {highlights.length > 0 && (
         <section className="mb-12">

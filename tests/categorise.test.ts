@@ -82,3 +82,24 @@ describe('training and work events are not for the printed guide', () => {
     expect(categorise({ title: 'Jersey Bulls v Cobham' })).not.toContain('Professional & training');
   });
 });
+
+describe('health listings are off the front page and What\'s on by default', () => {
+  const ev = (title: string, eventTypes: string[] = [], extra: { highlight?: boolean; lockedFields?: string[] } = {}) => ({ title, eventTypes, lockedFields: extra.lockedFields ?? [], highlight: extra.highlight ?? false });
+
+  it('hides classes and nurses\' courses, by their types or their own words', async () => {
+    const { hiddenByDefault, siteTypes } = await import('@/lib/domain/categorise');
+    expect(hiddenByDefault(ev('Sound Bath Meditation', ['Health & wellbeing']))).toBe(true);
+    expect(hiddenByDefault(ev('Catheter Best Practice  for Nurses'))).toBe(true);
+    // Filed under Health & wellbeing on the site, so that tile still finds it.
+    expect(siteTypes(ev('Catheter Best Practice  for Nurses', ['Talks & learning']))).toEqual(['Talks & learning', 'Health & wellbeing']);
+  });
+
+  it('keeps what visitors come for, staff highlights, and types staff set by hand', async () => {
+    const { hiddenByDefault, siteTypes } = await import('@/lib/domain/categorise');
+    expect(hiddenByDefault(ev('Beast of The East Half Marathon', ['Health & wellbeing', 'Sports', 'Outdoor']))).toBe(false);
+    expect(hiddenByDefault(ev('New Moon Gong Bath Meditation', ['Health & wellbeing'], { highlight: true }))).toBe(false);
+    expect(hiddenByDefault(ev('Yoga on the beach', ['Outdoor'], { lockedFields: ['eventTypes'] }))).toBe(false);
+    expect(hiddenByDefault(ev('Disney\'s the Little Mermaid', ['Arts & cultural']))).toBe(false);
+    expect(siteTypes(ev('Jersey Bulls v Cobham', ['Sports']))).toEqual(['Sports']);
+  });
+});
