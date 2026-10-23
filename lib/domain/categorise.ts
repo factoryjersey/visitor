@@ -87,8 +87,25 @@ export const EVENT_TYPES = [...new Set([...RULES.map((r) => r.type), 'Spectator'
  * comes for.
  */
 const FOR_VISITORS = ['Outdoor', 'Sports', 'Food & drink', 'Music', 'Arts & cultural', 'History & Heritage', 'Festivals', 'Markets & fairs'];
-export const nonCore = (types: readonly string[]) =>
-  types.includes('Professional & training') || types.includes('Business & networking') || (types.includes('Health & wellbeing') && !types.some((t) => FOR_VISITORS.includes(t)));
+
+/** Health and wellbeing that is not also something a visitor comes for: a yoga class or a nurses' course, not a half marathon. */
+export const healthOnly = (types: readonly string[]) => types.includes('Health & wellbeing') && !types.some((t) => FOR_VISITORS.includes(t));
+
+export const nonCore = (types: readonly string[]) => types.includes('Professional & training') || types.includes('Business & networking') || healthOnly(types);
+
+/** An event's types as print and the site judge them: as staff set them by hand, or with what its own words add. */
+export const judgedTypes = (e: { eventTypes: readonly string[]; lockedFields: readonly string[] } & Parameters<typeof categorise>[0]) =>
+  e.lockedFields.includes('eventTypes') ? [...e.eventTypes] : withCategories(e.eventTypes, e);
+
+/**
+ * Left off the front page and out of What's on until the visitor picks
+ * Health & wellbeing: health listings are for people who live here. A
+ * staff highlight is a choice to show it, so it stays.
+ */
+export const hiddenByDefault = (e: Parameters<typeof judgedTypes>[0] & { highlight: boolean }) => !e.highlight && healthOnly(judgedTypes(e));
+
+/** The types the site files an event under: its own, and Health & wellbeing for one it hides, so that tile is the way to find it. */
+export const siteTypes = (e: Parameters<typeof hiddenByDefault>[0]) => (hiddenByDefault(e) && !e.eventTypes.includes('Health & wellbeing') ? [...e.eventTypes, 'Health & wellbeing'] : [...e.eventTypes]);
 
 /** Types a source always means, whatever the event says. */
 const BY_SOURCE: Record<string, string[]> = { 'jersey-charities': ['Charity'] };

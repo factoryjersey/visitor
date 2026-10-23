@@ -82,3 +82,40 @@ describe('training and work events are not for the printed guide', () => {
     expect(categorise({ title: 'Jersey Bulls v Cobham' })).not.toContain('Professional & training');
   });
 });
+
+describe('health listings are off the front page and What\'s on by default', () => {
+  const ev = (title: string, eventTypes: string[] = [], extra: { highlight?: boolean; lockedFields?: string[] } = {}) => ({ title, eventTypes, lockedFields: extra.lockedFields ?? [], highlight: extra.highlight ?? false });
+
+  it('hides classes and nurses\' courses, by their types or their own words', async () => {
+    const { hiddenByDefault, siteTypes } = await import('@/lib/domain/categorise');
+    expect(hiddenByDefault(ev('Sound Bath Meditation', ['Health & wellbeing']))).toBe(true);
+    expect(hiddenByDefault(ev('Catheter Best Practice  for Nurses'))).toBe(true);
+    // Filed under Health & wellbeing on the site, so that tile still finds it.
+    expect(siteTypes(ev('Catheter Best Practice  for Nurses', ['Talks & learning']))).toEqual(['Talks & learning', 'Health & wellbeing']);
+  });
+
+  it('keeps what visitors come for, staff highlights, and types staff set by hand', async () => {
+    const { hiddenByDefault, siteTypes } = await import('@/lib/domain/categorise');
+    expect(hiddenByDefault(ev('Beast of The East Half Marathon', ['Health & wellbeing', 'Sports', 'Outdoor']))).toBe(false);
+    expect(hiddenByDefault(ev('New Moon Gong Bath Meditation', ['Health & wellbeing'], { highlight: true }))).toBe(false);
+    expect(hiddenByDefault(ev('Yoga on the beach', ['Outdoor'], { lockedFields: ['eventTypes'] }))).toBe(false);
+    expect(hiddenByDefault(ev('Disney\'s the Little Mermaid', ['Arts & cultural']))).toBe(false);
+    expect(siteTypes(ev('Jersey Bulls v Cobham', ['Sports']))).toEqual(['Sports']);
+  });
+});
+
+describe('kinds chosen together', () => {
+  it('reads several kinds from one parameter or many', async () => {
+    const { many } = await import('@/lib/params');
+    expect(many(undefined)).toEqual([]);
+    expect(many('Music')).toEqual(['Music']);
+    expect(many('Music,Food & drink')).toEqual(['Music', 'Food & drink']);
+    expect(many(['Music', 'Outdoor,Music', ' '])).toEqual(['Music', 'Outdoor']);
+  });
+
+  it('builds the address for a set, the rest of the search kept', async () => {
+    const { kindsHref } = await import('@/components/site/category-menu');
+    expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', ['Music', 'Food & drink'])).toBe('/whats-on?q=jazz&type=Music%2CFood+%26+drink');
+    expect(kindsHref('/whats-on', { q: 'jazz', type: 'Music' }, 'type', [])).toBe('/whats-on?q=jazz');
+  });
+});

@@ -1,14 +1,17 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
+import { CategoryList } from '@/components/site/category-list';
 import { CategoryMenu } from '@/components/site/category-menu';
-import { FilterBar, monthOptions } from '@/components/site/filter-bar';
+import { FilterPane } from '@/components/site/filter-pane';
+import { jerseyToday, resolveWhen } from '@/lib/domain/when';
+import { FilterBar } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicTours, todayIso } from '@/lib/db/public';
+import { publicTours } from '@/lib/db/public';
 import { GENRES, type Genre } from '@/lib/domain/genre';
 import { printParish, printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
-import { one, type SearchParams } from '@/lib/params';
+import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
 import { itemList } from '@/lib/agents/schema-org';
@@ -22,14 +25,24 @@ export const metadata: Metadata = { title: 'Tours & experiences', description: '
  */
 export default async function Tours({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const values = { q: one(sp.q), month: one(sp.month), genre: one(sp.genre), where: one(sp.where), by: one(sp.by), any: one(sp.any) };
-  const genre = (GENRES as readonly string[]).includes(values.genre ?? '') ? (values.genre as Genre) : undefined;
-  const found = await publicTours({ showOnDemand: values.any === '1', month: values.month, q: values.q });
+  const today = jerseyToday();
+  const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
+  const range = resolveWhen(asked, today);
+  // Cards give each listing's first day in the range chosen, not its next day overall.
+  const shownFrom = range && range.from > today ? range.from : today;
+  // An old month link reads as its two dates, so the calendars show it and the tiles' links carry it on.
+  const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
+  const values = { q: one(sp.q), when: range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined), ...dates, genre: many(sp.genre).filter((g) => (GENRES as readonly string[]).includes(g)).join(',') || undefined, where: one(sp.where), by: one(sp.by), any: one(sp.any) };
+  // Each kind chosen counts on the Filters button, and the dates as one.
+  const active = Object.entries(values).filter(([k, v]) => v && !['when', 'from', 'to', 'genre'].includes(k)).length + (range ? 1 : 0) + many(values.genre).length;
+  // Genres chosen together mean any of them.
+  const genres = many(values.genre) as Genre[];
+  const found = await publicTours({ showOnDemand: values.any === '1', range, q: values.q });
 
   // Where they start and who runs them, each counted from what the other choices leave.
   const inParish = (r: (typeof found)[number]) => !values.where || printParish(r.tour.parish) === values.where;
   const runBy = (r: (typeof found)[number]) => !values.by || r.provider?.id === values.by;
-  const ofGenre = (r: (typeof found)[number]) => !genre || r.tour.genre === genre;
+  const ofGenre = (r: (typeof found)[number]) => !genres.length || (r.tour.genre !== null && genres.includes(r.tour.genre));
   const tally = (rs: typeof found, key: (r: (typeof found)[number]) => [string, string] | null) => {
     const m = new Map<string, { label: string; n: number }>();
     for (const r of rs) {
@@ -47,8 +60,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   // The genre tiles count what the other choices leave; then the genre chosen.
   const counts = new Map<string, number>();
   for (const r of placed) if (r.tour.genre) counts.set(r.tour.genre, (counts.get(r.tour.genre) ?? 0) + 1);
-  const rows = genre ? placed.filter((r) => r.tour.genre === genre) : placed;
-  const today = todayIso();
+  const rows = genres.length ? placed.filter(ofGenre) : placed;
   const dated = rows.filter((r) => UNIQUE.includes(r.tour.occurrence) || r.tour.highlight);
   const onDemand = rows.filter((r) => !UNIQUE.includes(r.tour.occurrence) && !r.tour.highlight);
 
@@ -57,7 +69,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       key={t.id}
       href={`/tours/${t.slug}`}
       title={t.title}
-      when={UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, today) : 'Book any day'}
+      when={UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, shownFrom) : 'Book any day'}
       location={cardLocation(t.meetingPoint, t.parish)}
       where={[provider?.name, t.duration].filter(Boolean).join(' · ')}
       price={printPrice(t.fromPricePence, t.toPricePence)}
@@ -73,18 +85,21 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
       <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
-      <FilterBar
-        action="/tours"
-        values={values}
-        selects={[
-          { name: 'month', label: 'When', options: monthOptions() },
-          { name: 'where', label: 'Where', options: parishOptions },
-          { name: 'by', label: 'Run by', options: providerOptions },
-        ]}
-        toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
-        keep={['genre']}
-      />
-      <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
+      <FilterPane active={active} results={rows.length} noun="tours">
+        <FilterBar
+          action="/tours"
+          today={today}
+          values={values}
+          selects={[
+            { name: 'where', label: 'Where', options: parishOptions },
+            { name: 'by', label: 'Run by', options: providerOptions },
+          ]}
+          toggle={{ name: 'any', label: 'Include tours you can book any day', hint: 'Boat trips, bike hire, activity centres and other experiences on demand' }}
+          keep={['genre']}
+        />
+        <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
+        <CategoryList action="/tours" values={values} counts={counts} of="tours" />
+      </FilterPane>
       {dated.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>

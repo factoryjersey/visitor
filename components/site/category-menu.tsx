@@ -4,10 +4,22 @@ import { GENRE_MARKERS, MARKERS } from './category-markers';
 import { Slider } from './slider';
 
 /**
+ * The address for a set of kinds, the rest of the search kept: several
+ * kinds go comma-separated in one parameter and mean any of them.
+ */
+export function kindsHref(action: string, values: Record<string, string | undefined>, param: string, kinds: readonly string[]) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(values)) if (v && k !== param) params.set(k, v);
+  if (kinds.length) params.set(param, kinds.join(','));
+  const qs = params.toString();
+  return qs ? `${action}?${qs}` : action;
+}
+
+/**
  * The kinds of event (or of tour) as a row of icon tiles, each with how
- * many it would show given the rest of the search. One tap filters;
- * tapping the chosen one again lets it go. Links, so every choice has an
- * address.
+ * many it would show given the rest of the search. One tap filters to that
+ * kind alone; tapping it again lets it go. Kinds chosen together in the
+ * phone's list all show as chosen. Links, so every choice has an address.
  */
 export function CategoryMenu(props: {
   action: string;
@@ -21,16 +33,10 @@ export function CategoryMenu(props: {
 }) {
   const tours = props.of === 'tours';
   const param = tours ? 'genre' : 'type';
-  const href = (type: string | null) => {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(props.values)) if (v && k !== param) params.set(k, v);
-    if (type) params.set(param, type);
-    const qs = params.toString();
-    return qs ? `${props.action}?${qs}` : props.action;
-  };
-  const chosen = props.values[param] ?? null;
+  const href = (type: string | null) => kindsHref(props.action, props.values, param, type ? [type] : []);
+  const chosenSet = new Set((props.values[param] ?? '').split(',').filter(Boolean));
   const all: [string, typeof LayoutGrid][] = tours ? (Object.entries(GENRE_MARKERS) as [string, typeof LayoutGrid][]) : MARKERS;
-  const tiles = all.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || t === chosen);
+  const tiles = all.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || chosenSet.has(t));
 
   const tile = (key: string, label: string, Icon: typeof LayoutGrid, count: number, active: boolean, to: string) => (
     <li key={key} className="shrink-0 snap-start">
@@ -54,10 +60,13 @@ export function CategoryMenu(props: {
   );
 
   return (
-    <nav aria-label={tours ? 'Kinds of tour' : 'Kinds of event'} className="mb-8">
+    <nav data-kind-tiles aria-label={tours ? 'Kinds of tour' : 'Kinds of event'} className="mb-8">
       <Slider label={tours ? 'kinds of tour' : 'kinds of event'}>
-        {tile('all', 'Everything', LayoutGrid, props.total, !chosen && !props.entry, href(null))}
-        {tiles.map(([type, Icon]) => tile(type, type, Icon, props.counts.get(type) ?? 0, chosen === type, href(chosen === type ? null : type)))}
+        {tile('all', 'Everything', LayoutGrid, props.total, chosenSet.size === 0 && !props.entry, href(null))}
+        {tiles.map(([type, Icon]) => {
+          const only = chosenSet.size === 1 && chosenSet.has(type);
+          return tile(type, type, Icon, props.counts.get(type) ?? 0, chosenSet.has(type), href(only ? null : type));
+        })}
       </Slider>
     </nav>
   );

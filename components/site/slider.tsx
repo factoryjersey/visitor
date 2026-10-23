@@ -32,6 +32,7 @@ export function Slider({ children, label }: { children: React.ReactNode; label: 
   const arrow = (dir: -1 | 1, show: boolean) => (
     <button
       type="button"
+      data-slider-edge
       onClick={() => move(dir)}
       aria-label={dir < 0 ? `Scroll ${label} left` : `Scroll ${label} right`}
       tabIndex={-1}
@@ -44,11 +45,11 @@ export function Slider({ children, label }: { children: React.ReactNode; label: 
   return (
     <div className="relative">
       {arrow(-1, edge.left)}
-      <div className={`pointer-events-none absolute inset-y-0 left-0 z-[5] w-10 bg-gradient-to-r from-white to-transparent transition-opacity ${edge.left ? 'opacity-100' : 'opacity-0'}`} />
-      <ul ref={row} className="flex snap-x gap-1 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div data-slider-edge className={`pointer-events-none absolute inset-y-0 left-0 z-[5] w-10 bg-gradient-to-r from-white to-transparent transition-opacity ${edge.left ? 'opacity-100' : 'opacity-0'}`} />
+      <ul ref={row} data-slider-row className="flex snap-x gap-1 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {children}
       </ul>
-      <div className={`pointer-events-none absolute inset-y-0 right-0 z-[5] w-10 bg-gradient-to-l from-white to-transparent transition-opacity ${edge.right ? 'opacity-100' : 'opacity-0'}`} />
+      <div data-slider-edge className={`pointer-events-none absolute inset-y-0 right-0 z-[5] w-10 bg-gradient-to-l from-white to-transparent transition-opacity ${edge.right ? 'opacity-100' : 'opacity-0'}`} />
       {arrow(1, edge.right)}
     </div>
   );

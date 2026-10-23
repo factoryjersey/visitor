@@ -9,6 +9,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
+import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen, webWhen } from '@/lib/domain/web-dates';
@@ -24,7 +25,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const { code } = await searchParams;
   if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
 
-  const [events, tours] = await Promise.all([publicEvents(), publicTours()]);
+  const [found, tours] = await Promise.all([publicEvents(), publicTours()]);
+  // Health listings are for people who live here: off the front page, still behind the Health & wellbeing tile.
+  const all = found.map((r) => ({ ...r, event: { ...r.event, eventTypes: siteTypes(r.event) } }));
+  const events = all.filter((r) => !hiddenByDefault(r.event));
   const today = todayIso();
   const lead = pickLead(events, today);
   const otherHighlights = events.filter((r) => r.event.highlight && r !== lead).slice(0, 2);
@@ -32,7 +36,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const datedTours = tours.slice(0, 3);
   // The same tiles as What's on and Tours, each a way in to that page filtered.
   const eventKinds = new Map<string, number>();
-  for (const r of events) for (const t of new Set(r.event.eventTypes)) eventKinds.set(t, (eventKinds.get(t) ?? 0) + 1);
+  for (const r of all) for (const t of new Set(r.event.eventTypes)) eventKinds.set(t, (eventKinds.get(t) ?? 0) + 1);
   const tourKinds = new Map<string, number>();
   for (const r of tours) if (r.tour.genre) tourKinds.set(r.tour.genre, (tourKinds.get(r.tour.genre) ?? 0) + 1);
 

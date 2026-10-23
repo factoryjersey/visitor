@@ -51,3 +51,43 @@ describe('headerWhen', () => {
     expect(headerWhen(at('2026-10-24'), 'one-off', '2026-10-19')).toEqual({ main: 'Sat 24 Oct', more: null });
   });
 });
+
+describe('when: quick picks and chosen dates', () => {
+  it('turns each quick pick into its days', async () => {
+    const { pickRange } = await import('@/lib/domain/when');
+    const thu = '2026-10-22';
+    expect(pickRange('today', thu)).toEqual({ from: thu, to: thu });
+    expect(pickRange('tomorrow', thu)).toEqual({ from: '2026-10-23', to: '2026-10-23' });
+    expect(pickRange('weekend', thu)).toEqual({ from: '2026-10-24', to: '2026-10-25' });
+    expect(pickRange('weekend', '2026-10-24')).toEqual({ from: '2026-10-24', to: '2026-10-25' });
+    expect(pickRange('weekend', '2026-10-25')).toEqual({ from: '2026-10-25', to: '2026-10-25' });
+    expect(pickRange('week', thu)).toEqual({ from: thu, to: '2026-10-28' });
+    expect(pickRange('month', '2026-12-15')).toEqual({ from: '2026-12-15', to: '2027-01-13' });
+  });
+
+  it('reads chosen dates, either end open, in order, nothing past', async () => {
+    const { resolveWhen } = await import('@/lib/domain/when');
+    const today = '2026-10-22';
+    expect(resolveWhen({}, today)).toBeNull();
+    expect(resolveWhen({ when: 'dates' }, today)).toBeNull();
+    expect(resolveWhen({ when: 'weekend' }, today)).toEqual({ from: '2026-10-24', to: '2026-10-25', pick: 'weekend' });
+    expect(resolveWhen({ from: '2026-12-01', to: '2026-12-24' }, today)).toEqual({ from: '2026-12-01', to: '2026-12-24', pick: 'dates' });
+    expect(resolveWhen({ from: '2026-12-24', to: '2026-12-01' }, today)).toEqual({ from: '2026-12-01', to: '2026-12-24', pick: 'dates' });
+    expect(resolveWhen({ from: '2026-12-01' }, today)).toEqual({ from: '2026-12-01', to: '9999-12-31', pick: 'dates' });
+    expect(resolveWhen({ to: '2026-11-01' }, today)).toEqual({ from: today, to: '2026-11-01', pick: 'dates' });
+    expect(resolveWhen({ from: '2026-01-01', to: '2026-02-01' }, today)).toBeNull();
+    expect(resolveWhen({ from: 'nonsense' }, today)).toBeNull();
+  });
+
+  it('reads an old month link as that month', async () => {
+    const { resolveWhen } = await import('@/lib/domain/when');
+    expect(resolveWhen({ month: '2026-12' }, '2026-10-22')).toEqual({ from: '2026-12-01', to: '2026-12-31', pick: 'dates' });
+    expect(resolveWhen({ month: '2026-10' }, '2026-10-22')).toEqual({ from: '2026-10-22', to: '2026-10-31', pick: 'dates' });
+  });
+
+  it("knows Jersey's today near midnight", async () => {
+    const { jerseyToday } = await import('@/lib/domain/when');
+    expect(jerseyToday(new Date('2026-10-22T23:30:00Z'))).toBe('2026-10-23'); // BST
+    expect(jerseyToday(new Date('2026-12-22T23:30:00Z'))).toBe('2026-12-22'); // GMT
+  });
+});
