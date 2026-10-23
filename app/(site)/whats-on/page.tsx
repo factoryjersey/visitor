@@ -64,8 +64,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
-      <h1 className="mb-2 font-display text-3xl font-bold text-ink">What&apos;s on</h1>
-      <p className="mb-8 max-w-2xl text-harbour/70">Festivals, concerts, markets and shows around the island.</p>
+      <h1 className="sr-only">What&apos;s on</h1>
       <FilterBar
         action="/whats-on"
         values={values}
