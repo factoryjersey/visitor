@@ -35,6 +35,8 @@ export type VjPlace = {
   lowRatePence: number | null;
   highRatePence: number | null;
   aaRating: string | null;
+  /** Accommodation only: Hotel, Guest house, Self-catering… Left out for other listings, so a hotel's restaurant listing does not clear it. */
+  stayType?: string | null;
   headerImage: Image | null;
   gallery: Image[];
   sourceLink: string | null;
@@ -262,6 +264,7 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
     lowRatePence: pence(acf.low_season_rate),
     highRatePence: pence(acf.high_season_rate),
     aaRating: labelOf(acf.aa_rating) ?? labels(acf.aa_rating)[0] ?? null,
+    ...(type === 'accommodation' ? { stayType: labels(Array.isArray(acf.type) ? acf.type : [acf.type])[0] ?? null } : {}),
     headerImage: header,
     gallery: images(acf.gallery_images_data),
     sourceLink: str(raw.link),

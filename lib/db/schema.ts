@@ -165,6 +165,8 @@ export const places = pgTable('places', {
   lowRatePence: integer('low_rate_pence'),
   highRatePence: integer('high_rate_pence'),
   aaRating: text('aa_rating'),
+  /** What kind of place to stay, as Visit Jersey types it: Hotel, Guest house, Self-catering, Camping & glamping, Hostel. Null for anything else. */
+  stayType: text('stay_type'),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
