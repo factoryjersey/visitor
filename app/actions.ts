@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
-import { INCLUSIONS, LISTING_SIZES, events, experiences, organiserProfiles, places, providers, type Image } from '@/lib/db/schema';
+import { INCLUSIONS, LISTING_SIZES, events, experiences, organiserProfiles, places, providers, sourceRecords, type Image } from '@/lib/db/schema';
 import { applyFallbacks } from '@/lib/images/fallback';
 import { organiserKey } from '@/lib/domain/organiser';
 import { storeListingImage } from '@/lib/images/upload';
@@ -205,7 +205,7 @@ export async function saveVenueTags(form: FormData) {
 }
 
 /** Lock a source-derived field after a person sets it, so the next import keeps their answer. */
-async function lockAndSet(table: typeof events | typeof experiences, id: string, field: string, value: Record<string, unknown>, email: string) {
+async function lockAndSet(table: typeof events | typeof experiences | typeof places, id: string, field: string, value: Record<string, unknown>, email: string) {
   const [row] = await db.select({ locked: table.lockedFields }).from(table).where(eq(table.id, id));
   if (!row) return;
   const now = new Date();
@@ -344,8 +344,52 @@ export async function quickEditTour(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
+const quickVenueSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1).max(300),
+  summary: z.string().trim().max(600),
+  description: z.string().trim().max(6000),
+});
+
+/** The same for a venue: its name, card sentence and copy, locked against the next import. */
+export async function quickEditVenue(form: FormData) {
+  const user = await requireStaff();
+  const v = quickVenueSchema.parse(Object.fromEntries(form));
+  const [row] = await db.select().from(places).where(eq(places.id, v.id));
+  if (!row) return;
+  const next = { name: v.title, summary: v.summary || null, description: v.description || null };
+  const changed = (Object.keys(next) as (keyof typeof next)[]).filter((k) => row[k] !== next[k]);
+  if (!changed.length) return;
+  const now = new Date();
+  await db
+    .update(places)
+    .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
+    .where(eq(places.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
+/**
+ * A venue that is not one, deleted from its own page. One a source still
+ * lists is left out instead, since the next import would only bring it
+ * back; it stays out, and can be put back from its admin page. Its events
+ * keep their venue's name, only the link to it goes.
+ */
+export async function deleteVenue(form: FormData) {
+  const user = await requireStaff();
+  const id = z.string().uuid().parse(form.get('id'));
+  const [sourced] = await db.select({ id: sourceRecords.id }).from(sourceRecords).where(eq(sourceRecords.placeId, id)).limit(1);
+  const now = new Date();
+  if (sourced) {
+    await db.update(places).set({ inclusion: 'excluded', inclusionSetBy: user.email, inclusionSetAt: now, inclusionNote: 'Deleted from the site', updatedAt: now }).where(eq(places.id, id));
+  } else {
+    await db.delete(places).where(eq(places.id, id));
+  }
+  revalidatePath('/', 'layout');
+  redirect('/venues');
+}
+
 const imageSchema = z.object({
-  kind: z.enum(['event', 'experience']),
+  kind: z.enum(['event', 'experience', 'venue']),
   id: z.string().uuid(),
   mode: z.enum(['upload', 'url', 'remove']),
   url: z.string().trim().max(1000).optional(),
@@ -360,7 +404,7 @@ const imageSchema = z.object({
 export async function setListingImage(form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
   const user = await requireStaff();
   const v = imageSchema.parse({ kind: form.get('kind'), id: form.get('id'), mode: form.get('mode'), url: form.get('url') ?? undefined, alt: form.get('alt') ?? undefined });
-  const table = v.kind === 'event' ? events : experiences;
+  const table = v.kind === 'event' ? events : v.kind === 'venue' ? places : experiences;
   let headerImage: Image | null = null;
   try {
     if (v.mode === 'upload') {

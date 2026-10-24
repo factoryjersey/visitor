@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { quickEditEvent, quickEditTour, setListingImage, takeOffSite } from '@/app/actions';
+import { deleteVenue, quickEditEvent, quickEditTour, quickEditVenue, setListingImage, takeOffSite } from '@/app/actions';
 import { GENRE_MARKERS, MARKERS } from './category-markers';
 
 /**
@@ -18,7 +18,8 @@ import { GENRE_MARKERS, MARKERS } from './category-markers';
 type Common = { id: string; title: string; summary: string | null; description: string | null; image: { url: string; alt: string | null; stock: boolean } | null; adminHref: string };
 type Props =
   | (Common & { kind: 'event'; eventTypes: string[]; allTypes: readonly string[]; printLine: string | null })
-  | (Common & { kind: 'experience'; genre: string | null; genres: readonly string[] });
+  | (Common & { kind: 'experience'; genre: string | null; genres: readonly string[] })
+  | (Common & { kind: 'venue' });
 
 function Save({ label = 'Save' }: { label?: string }) {
   const { pending } = useFormStatus();
@@ -139,7 +140,7 @@ export function StaffEdit(props: Props) {
   }, [open]);
 
   const save = async (form: FormData) => {
-    await (props.kind === 'event' ? quickEditEvent(form) : quickEditTour(form));
+    await (props.kind === 'event' ? quickEditEvent(form) : props.kind === 'venue' ? quickEditVenue(form) : quickEditTour(form));
     setSaved(true);
     setOpen(false);
     setTimeout(() => setSaved(false), 2500);
@@ -178,7 +179,7 @@ export function StaffEdit(props: Props) {
                     {props.allTypes.map((t) => <CategoryTile key={t} type="checkbox" name="eventTypes" value={t} checked={props.eventTypes.includes(t)} />)}
                   </div>
                 </fieldset>
-              ) : (
+              ) : props.kind === 'experience' ? (
                 <fieldset>
                   <legend className={label}>Category</legend>
                   {/* None, unless a tile is chosen: the chosen one comes later in the form and wins. */}
@@ -187,10 +188,10 @@ export function StaffEdit(props: Props) {
                     {props.genres.map((g) => <CategoryTile key={g} type="radio" name="genre" value={g} checked={props.genre === g} />)}
                   </div>
                 </fieldset>
-              )}
+              ) : null}
 
               <div>
-                <label className={label} htmlFor="qe-title">Title</label>
+                <label className={label} htmlFor="qe-title">{props.kind === 'venue' ? 'Name' : 'Title'}</label>
                 <input id="qe-title" name="title" defaultValue={props.title} required className={field} />
               </div>
               <div>
@@ -215,17 +216,30 @@ export function StaffEdit(props: Props) {
               </div>
             </form>
 
-            <form action={takeOffSite} className="mt-6 border-t border-harbour/10 pt-4">
-              <input type="hidden" name="kind" value={props.kind} />
-              <input type="hidden" name="id" value={props.id} />
-              <button
-                type="submit"
-                onClick={(e) => !confirm('Take this off the site and out of the guide? You can put it back from its admin page.') && e.preventDefault()}
-                className="text-sm font-medium text-brand hover:underline"
-              >
-                Take it off the site
-              </button>
-            </form>
+            {props.kind === 'venue' ? (
+              <form action={deleteVenue} className="mt-6 border-t border-harbour/10 pt-4">
+                <input type="hidden" name="id" value={props.id} />
+                <button
+                  type="submit"
+                  onClick={(e) => !confirm(`Delete ${props.title}? It goes from the site and the guide. One Visit Jersey lists is hidden instead, so the next import does not bring it back.`) && e.preventDefault()}
+                  className="text-sm font-medium text-brand hover:underline"
+                >
+                  Delete this venue
+                </button>
+              </form>
+            ) : (
+              <form action={takeOffSite} className="mt-6 border-t border-harbour/10 pt-4">
+                <input type="hidden" name="kind" value={props.kind} />
+                <input type="hidden" name="id" value={props.id} />
+                <button
+                  type="submit"
+                  onClick={(e) => !confirm('Take this off the site and out of the guide? You can put it back from its admin page.') && e.preventDefault()}
+                  className="text-sm font-medium text-brand hover:underline"
+                >
+                  Take it off the site
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

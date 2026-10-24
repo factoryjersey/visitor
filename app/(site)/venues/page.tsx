@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { publicAllVenues, publicVenuesWithSomethingOn } from '@/lib/db/public';
 import { CATEGORIES, type Category, type Image } from '@/lib/db/schema';
 import { printParish } from '@/lib/domain/house-style';
@@ -13,7 +14,7 @@ import { spread } from '@/lib/domain/editorial';
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Venues', description: 'Places to stay, eat and drink, see, do and shop in Jersey, and where events are on.', alternates: alternates('/venues') };
 
-type Props = { searchParams: Promise<{ show?: string; category?: string; stay?: string }> };
+type Props = { searchParams: Promise<{ show?: string; on?: string; category?: string; stay?: string }> };
 
 type Card = { id: string; slug: string; name: string; parish: string | null; category: Category; headerImage: Image | null; summary: string | null; recommendedIn: string | null };
 
@@ -43,25 +44,51 @@ const tab = (active: boolean) =>
 
 const count = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
+/** A page of this listing: `on` keeps to venues with something coming up. */
+const href = (o: { category?: Category; stay?: string; on?: boolean }) => {
+  const q = new URLSearchParams();
+  if (o.on) q.set('on', 'events');
+  if (o.category) q.set('category', o.category);
+  if (o.stay) q.set('stay', o.stay);
+  const s = q.toString();
+  return s ? `/venues?${s}` : '/venues';
+};
+
+function Sections({ category, stay, on }: { category?: Category; stay?: string; on: boolean }) {
+  return (
+    <nav aria-label="Sections" className="mb-10 flex flex-wrap items-center gap-2">
+      <Link href={href({ on })} className={tab(!category)}>All</Link>
+      <Link href={href({ category: 'stay', stay: 'hotels', on })} className={tab(stay === 'hotels')}>Hotels</Link>
+      {CATEGORIES.map((c) => (
+        <Link key={c} href={href({ category: c, on })} className={tab(category === c && !stay)}>{CATEGORY_LABEL[c]}</Link>
+      ))}
+      <span aria-hidden className="mx-1 h-6 w-px bg-harbour/15" />
+      <Link href={href({ category, stay, on: !on })} aria-pressed={on} className={tab(on)}>
+        With events on
+      </Link>
+    </nav>
+  );
+}
+
 /**
- * Where things are on, the busiest first; or, under "See all", every
- * venue and business we list, each of the guide's sections laid out as a
- * magazine spread led by those the printed guide gives most space.
+ * Every venue and business we list, each of the guide's sections laid out
+ * as a magazine spread led by those the printed guide gives most space;
+ * or, filtered to those with events, where things are on, busiest first.
  */
 export default async function VenuesPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const all = sp.show === 'all';
   const category = CATEGORIES.find((c) => c === sp.category);
+  // The spread was once under ?show=all; it is the page itself now.
+  if (sp.show === 'all') redirect(href({ category, stay: sp.stay }));
+  const on = sp.on === 'events';
 
-  if (!all) {
-    const venues = await publicVenuesWithSomethingOn();
+  if (on) {
+    const venues = (await publicVenuesWithSomethingOn()).filter((v) => !category || v.category === category);
     return (
       <div className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="mb-2 font-display text-3xl font-bold text-ink">Venues</h1>
-        <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
-          <p className="max-w-2xl text-harbour/70">Where things are on: {venues.length} venues with events or tours coming up.</p>
-          <Link href="/venues?show=all" className="text-sm font-semibold text-sea hover:text-brand">See all venues and businesses →</Link>
-        </div>
+        <h1 className="mb-2 font-display text-3xl font-bold text-ink sm:text-4xl">{category ? CATEGORY_LABEL[category] : 'Venues'} with events on</h1>
+        <p className="mb-6 max-w-2xl text-harbour/70">{venues.length} venues with events or tours coming up, the busiest first.</p>
+        <Sections category={category} on />
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {venues.map((v) => (
             <VenueCard key={v.id} v={v} line={[v.events && `${count(v.events, 'event')}`, v.tours && `${count(v.tours, 'tour')}`].filter(Boolean).join(' · ') + ' coming up'} />
@@ -90,28 +117,19 @@ export default async function VenuesPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">{heading}</h1>
-          <p className="mt-2 max-w-2xl text-harbour/70">
-            {shown.length} {stayKind ? stayKind.plural.toLowerCase() : `places${category ? ` to ${CATEGORY_LABEL[category].toLowerCase()}` : ' across the island'}`}, led by those in our printed guide.
-          </p>
-        </div>
-        <Link href="/venues" className="text-sm font-semibold text-sea hover:text-brand">← Only those with something on</Link>
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">{heading}</h1>
+        <p className="mt-2 max-w-2xl text-harbour/70">
+          {shown.length} {stayKind ? stayKind.plural.toLowerCase() : `places${category ? ` to ${CATEGORY_LABEL[category].toLowerCase()}` : ' across the island'}`}, led by those in our printed guide.
+        </p>
       </div>
-      <nav aria-label="Sections" className="mb-10 flex flex-wrap gap-2">
-        <Link href="/venues?show=all" className={tab(!category)}>All</Link>
-        <Link href="/venues?show=all&category=stay&stay=hotels" className={tab(stayKind?.slug === 'hotels')}>Hotels</Link>
-        {CATEGORIES.map((c) => (
-          <Link key={c} href={`/venues?show=all&category=${c}`} className={tab(category === c && !stayKind)}>{CATEGORY_LABEL[c]}</Link>
-        ))}
-      </nav>
+      <Sections category={category} stay={stayKind?.slug} on={false} />
       {stayKind
         ? part(stayKind.slug, stayKind.plural, shown, { full: true, banner: false })
         : category === 'stay'
           ? // Places to stay by kind, each its own spread; anything Visit Jersey does not type comes last.
             [
-              ...STAY_TYPES.map((k) => ({ key: k.slug, title: k.plural, items: venues.filter((v) => v.stayType === k.type), more: `/venues?show=all&category=stay&stay=${k.slug}` })),
+              ...STAY_TYPES.map((k) => ({ key: k.slug, title: k.plural, items: venues.filter((v) => v.stayType === k.type), more: href({ category: 'stay', stay: k.slug }) })),
               { key: 'other', title: 'Other places to stay', items: venues.filter((v) => !STAY_TYPES.some((k) => k.type === v.stayType)), more: undefined },
             ]
               .filter((x) => x.items.length)
@@ -120,7 +138,7 @@ export default async function VenuesPage({ searchParams }: Props) {
               part(c, CATEGORY_LABEL[c], venues.filter((v) => v.category === c), {
                 full: !!category,
                 banner: !category,
-                more: category ? undefined : `/venues?show=all&category=${c}`,
+                more: category ? undefined : href({ category: c }),
               }),
             )}
     </div>

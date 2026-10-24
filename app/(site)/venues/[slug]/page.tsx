@@ -6,6 +6,7 @@ import { Copy, Facts, Hero, directionsUrl, primaryButton, secondaryButton } from
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
+import { StaffEdit } from '@/components/site/staff-edit';
 import { Recommended } from '@/components/site/recommended';
 import { GoogleReviews } from '@/components/site/google-reviews';
 import { googleConfigured } from '@/lib/integrations/google/places';
@@ -67,6 +68,7 @@ export default async function VenuePage({ params }: Props) {
         {venue.recommendedIn && <Recommended className="mt-3" />}
         {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
       </header>
+      {staff && <StaffEdit kind="venue" id={venue.id} title={venue.name} summary={venue.summary} description={venue.description} image={venue.headerImage ? { url: webImage(venue.headerImage, 800, 400), alt: venue.headerImage.alt, stock: !!venue.headerImage.credit } : null} adminHref={`/admin/venues/${venue.slug}`} />}
       {staff && <StaffFallback kind="venue" id={venue.id} name={venue.name} image={venue.fallbackImage && { url: venue.fallbackImage.url, alt: venue.fallbackImage.alt }} />}
       <Hero image={venue.headerImage} title={venue.name} />
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
