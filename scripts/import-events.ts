@@ -49,6 +49,7 @@ import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
 import { fillProviderCodes } from '@/lib/db/provider-codes';
+import { matchGooglePlaces } from '@/lib/integrations/google/match';
 import { SITES as TRIBE_SITES, eventsUrl, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { joinRuns } from '@/lib/domain/join-runs';
 import { BASE as CHARITIES, nextPages, parseDiary, parseEntryPage, toEvent as fromCharities, type DiaryEntry } from '@/lib/integrations/jersey-charities/parse';
@@ -433,6 +434,16 @@ if (!values.only || values.only === 'stock') {
   } catch (e) {
     failed += 1;
     console.error(`stock pictures failed: ${(e as Error).message}`);
+  }
+}
+// Each venue's place on Google, for the reviews panel on its page: a batch a night until all are found.
+if (!values.only || values.only === 'google') {
+  try {
+    const g = await matchGooglePlaces();
+    console.log(`google places: ${g.matched} of ${g.looked} looked for matched`);
+  } catch (e) {
+    failed += 1;
+    console.error(`google places failed: ${(e as Error).message}`);
   }
 }
 // A key code for every tour provider, so each tour points to the guide's key.

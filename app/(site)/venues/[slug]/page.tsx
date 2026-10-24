@@ -7,6 +7,8 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
 import { Recommended } from '@/components/site/recommended';
+import { GoogleReviews } from '@/components/site/google-reviews';
+import { googleConfigured } from '@/lib/integrations/google/places';
 import { staffViewer } from '@/lib/auth/session';
 import { printAddress, printPrice, printWebsite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -88,6 +90,8 @@ export default async function VenuePage({ params }: Props) {
           }
         />
       </div>
+
+      {venue.googlePlaceId && googleConfigured() && <GoogleReviews slug={venue.slug} />}
 
       <section className="mt-12">
         <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">Coming up here</h2>

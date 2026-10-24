@@ -33,6 +33,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   /** Stock pictures for listings with none (pexels.com, free). Without it, Openverse's public-domain photos. */
   PEXELS_API_KEY: z.string().optional(),
+  /** Google Maps Platform, Places API (New): matches venues to Google and shows their rating and reviews. Without it the reviews panel is not shown. */
+  GOOGLE_MAPS_API_KEY: z.string().optional(),
   // The sender: an address on a domain verified in Resend.
   EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
   // Who hears about new claims, comma-separated. Unset: every staff account.

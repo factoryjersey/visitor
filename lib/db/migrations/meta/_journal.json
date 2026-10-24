@@ -113,6 +113,13 @@
       "when": 1792882180023,
       "tag": "0015_place_stay_type",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792882634524,
+      "tag": "0016_place_google",
+      "breakpoints": true
     }
   ]
 }

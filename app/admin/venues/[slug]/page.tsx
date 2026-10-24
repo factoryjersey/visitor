@@ -7,6 +7,7 @@ import { InclusionBadge, InclusionControl } from '@/components/inclusion';
 import { SourcePanel } from '@/components/source-panel';
 import { VenueGuideForm } from '@/components/venue-guide-form';
 import { VenueTagsForm } from '@/components/venue-tags-form';
+import { GooglePlaceForm } from '@/components/google-place-form';
 import { guideVenue } from '@/lib/domain/guide-entry';
 import { getVenue } from '@/lib/db/queries';
 import { address, eventDatesText, openMonthsText, rateRange } from '@/lib/domain/format';
@@ -87,6 +88,9 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
           <VenueTagsForm id={p.id} recommendedIn={p.recommendedIn} client={p.client} clientNote={p.clientNote} />
+        </div>
+        <div className="rounded border border-stone-200 bg-white p-3">
+          <GooglePlaceForm id={p.id} placeId={p.googlePlaceId} locked={p.googleLocked} checkedAt={p.googleCheckedAt} />
         </div>
         <BusinessControl kind="venue" id={p.id} businessId={p.businessId} review={p.review} />
         <SourcePanel sourceLink={p.sourceLink} sourceModifiedAt={p.sourceModifiedAt} fieldSources={p.fieldSources} />

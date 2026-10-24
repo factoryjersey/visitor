@@ -362,6 +362,15 @@ website's category icons (a tour, its genre's), and each page's key of the
 icons it uses runs down the 3.9mm edge column under the tabs, 4mm clear of
 the grid; the exports carry them in an Icons column.
 
+Venue pages show the venue's Google rating and up to three reviews
+(`GOOGLE_MAPS_API_KEY`, Places API (New); without the key, no panel). Each
+venue is matched to its Google place by name and distance, a batch of 150 a
+night (`--only google`), unmatched ones retried monthly; staff can set,
+clear or re-match it on the venue's admin page, which locks it. Google's
+terms allow keeping only the place ID, so the rating and reviews are
+fetched live from Google, and only when the panel scrolls into view;
+robots.txt keeps crawlers off the endpoint.
+
 Every provider has a key code: the nightly import gives one from the
 initials of its name to any provider without (`--only codes`), and the
 guide does the same in the meantime. Staff can change codes on the

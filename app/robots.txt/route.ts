@@ -7,7 +7,8 @@ import { SITE } from '@/lib/agents/data';
  * Signals (contentsignals.org) say what the words may be used for: search,
  * answers that cite us, and training, since being known is the point.
  */
-const PRIVATE = ['/admin', '/account', '/login', '/logout', '/auth/', '/invite/', '/claim/'];
+// The Google reviews endpoint costs a call to Google each time: for people, not crawlers.
+const PRIVATE = ['/admin', '/account', '/login', '/logout', '/auth/', '/invite/', '/claim/', '/api/google-reviews/'];
 
 const AI_AGENTS = [
   'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',

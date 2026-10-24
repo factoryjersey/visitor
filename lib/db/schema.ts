@@ -167,6 +167,16 @@ export const places = pgTable('places', {
   aaRating: text('aa_rating'),
   /** What kind of place to stay, as Visit Jersey types it: Hotel, Guest house, Self-catering, Camping & glamping, Hostel. Null for anything else. */
   stayType: text('stay_type'),
+  /**
+   * Its place on Google Maps, for the reviews panel. Google's terms allow
+   * keeping the ID; the rating and reviews themselves are fetched live and
+   * never stored. Matched nightly by name and distance; a person can set
+   * or clear it, which locks it (googleLocked).
+   */
+  googlePlaceId: text('google_place_id'),
+  /** When the nightly match last looked, found or not, so an unmatched venue is retried monthly rather than every night. */
+  googleCheckedAt: timestamp('google_checked_at', { withTimezone: true }),
+  googleLocked: boolean('google_locked').notNull().default(false),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),

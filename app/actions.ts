@@ -168,6 +168,30 @@ const venueTagsSchema = z.object({
   clientNote: z.string().trim().max(1000),
 });
 
+const googlePlaceSchema = z.object({
+  id: z.string().uuid(),
+  mode: z.enum(['set', 'none', 'rematch']),
+  placeId: z.string().trim().max(200).regex(/^[A-Za-z0-9_-]*$/).optional(),
+});
+
+/**
+ * A venue's place on Google, set by a person: a place ID they checked, or
+ * none at all (no reviews panel); both are locked so the nightly match
+ * leaves them. Rematch hands it back to the nightly match.
+ */
+export async function setGooglePlace(form: FormData) {
+  const user = await requireStaff();
+  const v = googlePlaceSchema.parse(Object.fromEntries(form));
+  if (v.mode === 'set' && !v.placeId) return;
+  const now = new Date();
+  const set =
+    v.mode === 'set' ? { googlePlaceId: v.placeId!, googleLocked: true, googleCheckedAt: now }
+    : v.mode === 'none' ? { googlePlaceId: null, googleLocked: true, googleCheckedAt: now }
+    : { googlePlaceId: null, googleLocked: false, googleCheckedAt: null };
+  await db.update(places).set({ ...set, editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(places.id, v.id));
+  revalidatePath('/', 'layout');
+}
+
 /** Visitor recommended (public) and client (ours only). */
 export async function saveVenueTags(form: FormData) {
   const user = await requireStaff();
