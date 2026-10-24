@@ -24,6 +24,24 @@ export function Hero({ image, title }: { image: Image | null; title: string }) {
   );
 }
 
+/** The source's other pictures under the copy, each opening full size; the header is not shown twice. */
+export function Gallery({ images, header, title }: { images: Image[] | null | undefined; header: Image | null; title: string }) {
+  const shown = (images ?? []).filter((i) => i.url !== header?.url).slice(0, 9);
+  if (!shown.length) return null;
+  return (
+    <ul className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label={`Pictures of ${title}`}>
+      {shown.map((i) => (
+        <li key={i.url}>
+          <a href={webImage(i, 1920)} target="_blank" rel="noopener" className="block overflow-hidden rounded-md bg-harbour/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={webImage(i, 480, 360)} alt={i.alt ?? ''} loading="lazy" className="aspect-[4/3] w-full object-cover transition duration-300 hover:scale-[1.03]" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The listing's text as paragraphs. */
 export function Copy({ lead, body }: { lead: string | null; body: string | null }) {
   return (

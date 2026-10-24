@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, DateList, Facts, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { Copy, DateList, Facts, Gallery, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
 import { publicTour, publicVenueNamed, todayIso } from '@/lib/db/public';
@@ -61,6 +61,7 @@ export default async function TourPage({ params }: Props) {
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <Copy lead={t.guideCopy ?? t.summary} body={t.description} />
+          <Gallery images={t.gallery} header={t.headerImage} title={t.title} />
           {dated && <DateList dates={t.dates} today={today} />}
         </div>
         <Facts

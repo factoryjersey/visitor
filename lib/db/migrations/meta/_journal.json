@@ -120,6 +120,13 @@
       "when": 1792882634524,
       "tag": "0016_place_google",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792883943416,
+      "tag": "0017_event_gallery",
+      "breakpoints": true
     }
   ]
 }

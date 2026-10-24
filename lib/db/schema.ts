@@ -274,6 +274,8 @@ export const events = pgTable('events', {
   guidePicture: boolean('guide_picture').notNull().default(false),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
+  /** More pictures from the source, after the header. */
+  gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
   sourceLink: text('source_link'),
   /** Who puts it on, as the source names them: the organisers page groups by it. */
   organiser: text('organiser'),
@@ -384,6 +386,8 @@ export const experiences = pgTable('experiences', {
   /** The picture a page of the guide's tour grid shows beside this listing, chosen by staff ahead of the rest. Ours. */
   guidePicture: boolean('guide_picture').notNull().default(false),
   headerImage: jsonb('header_image').$type<Image | null>(),
+  /** More pictures from the source, after the header. */
+  gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),
   sourceLink: text('source_link'),
 
   /** The business that looks after it, when one does. */

@@ -3,7 +3,7 @@ import { printTitle } from '@/lib/domain/house-style';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, DateList, Facts, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { Copy, DateList, Facts, Gallery, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
@@ -77,6 +77,7 @@ export default async function EventPage({ params }: Props) {
           <Hero image={e.headerImage} title={e.title} />
           <div className="mt-8 space-y-6">
             <Copy lead={e.guideCopy ?? e.summary} body={e.description} />
+          <Gallery images={e.gallery} header={e.headerImage} title={e.title} />
             <DateList dates={e.dates} today={today} />
           </div>
         </div>

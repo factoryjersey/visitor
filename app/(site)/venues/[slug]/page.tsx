@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, Facts, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
+import { Copy, Facts, Gallery, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
@@ -73,6 +73,7 @@ export default async function VenuePage({ params }: Props) {
       <Hero image={venue.headerImage} title={venue.name} />
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
         <Copy lead={venue.guideCopy ?? venue.summary} body={venue.description} />
+          <Gallery images={venue.gallery} header={venue.headerImage} title={venue.name} />
         <Facts
           rows={[
             ['Address', address],
