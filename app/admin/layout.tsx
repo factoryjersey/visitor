@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/whats-on', label: "What's on" },
   { href: '/admin/tours', label: 'Tours' },
   { href: '/admin/venues', label: 'Venues' },
+  { href: '/admin/pictures', label: 'Pictures' },
   { href: '/admin/guide', label: 'Guide' },
   { href: '/admin/map', label: 'Map' },
   { href: '/admin/people', label: 'People' },

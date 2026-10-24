@@ -515,3 +515,39 @@ export async function includeDraft(form: FormData) {
   }
   revalidatePath('/admin/guide');
 }
+
+/**
+ * A venue's picture from the printed guide, uploaded from the InDesign
+ * links: it leads the venue's page and its story in the spread, ahead
+ * of Visit Jersey's, and is locked so the next import leaves it.
+ */
+export async function setPrintPicture(form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireStaff();
+  const id = z.string().uuid().safeParse(form.get('id'));
+  const file = form.get('file');
+  if (!id.success) return { ok: false, error: 'Choose a venue first.' };
+  if (!(file instanceof File) || !file.size) return { ok: false, error: 'No picture came through.' };
+  const name = String(form.get('filename') ?? file.name);
+  const [row] = await db.select({ name: places.name, locked: places.lockedFields, sources: places.fieldSources }).from(places).where(eq(places.id, id.data));
+  if (!row) return { ok: false, error: 'That venue has gone.' };
+  let url: string;
+  try {
+    url = await storeListingImage('venue', id.data, file);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  const now = new Date();
+  await db
+    .update(places)
+    .set({
+      headerImage: { url, publicId: null, alt: row.name, originalFilename: name },
+      lockedFields: [...new Set([...row.locked, 'headerImage'])],
+      fieldSources: { ...row.sources, headerImage: { source: 'print', ref: name, at: now.toISOString() } },
+      editedBy: user.email,
+      editedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(places.id, id.data));
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}
