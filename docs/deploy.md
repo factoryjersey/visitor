@@ -57,6 +57,7 @@ railway variables --service web \
   --set NEXT_PUBLIC_SUPABASE_ANON_KEY=... \
   --set NEXT_PUBLIC_APP_URL=... \
   --set SUPABASE_SERVICE_ROLE_KEY=... \
-  --set SUPERADMIN_EMAILS=ben@factory.je
+  --set SUPERADMIN_EMAILS=ben@factory.je \
+  --set ANTHROPIC_API_KEY=...
 railway domain --service web
 ```

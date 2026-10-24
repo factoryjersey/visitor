@@ -5,8 +5,10 @@ import { alternates } from '@/lib/agents/data';
 import { redirect } from 'next/navigation';
 import { CategoryMenu } from '@/components/site/category-menu';
 import { GuideAd } from '@/components/site/guide-ad';
+import { HeroRotator, type HeroSlide } from '@/components/site/hero-rotator';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
+import { HERO_SLIDES, heroPicks, imageKey, isFestival } from '@/lib/domain/hero';
 import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
@@ -19,7 +21,7 @@ import { organisation } from '@/lib/agents/schema-org';
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { alternates: alternates('/') };
 
-/** The front page: the lead highlight, what's coming up, and tours on particular dates. */
+/** The front page: the lead and other highlights and festivals in rotation, what's on, and tours on particular dates. */
 export default async function Home({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
   // A sign-in Supabase sent to the Site URL rather than back to us: finish it.
   const { code } = await searchParams;
@@ -30,9 +32,25 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const all = found.map((r) => ({ ...r, event: { ...r.event, eventTypes: siteTypes(r.event) } }));
   const events = all.filter((r) => !hiddenByDefault(r.event));
   const today = todayIso();
+  // The lead goes first; highlights and festivals follow, never with its photo again.
   const lead = pickLead(events, today);
-  const otherHighlights = events.filter((r) => r.event.highlight && r !== lead).slice(0, 2);
-  const comingUp = events.filter((r) => r !== lead && !r.event.highlight && UNIQUE.includes(r.event.occurrence)).slice(0, 6);
+  const leadImage = lead?.event.headerImage && imageKey(lead.event.headerImage);
+  const rest = events.filter((r) => r !== lead && !(r.event.headerImage && imageKey(r.event.headerImage) === leadImage));
+  const hero = lead ? [lead, ...heroPicks(rest, (r) => r.event, HERO_SLIDES - 1)] : heroPicks(events, (r) => r.event);
+  const otherHighlights = events.filter((r) => r.event.highlight && !hero.includes(r)).slice(0, 2);
+  const comingUp = events.filter((r) => !hero.includes(r) && !r.event.highlight && UNIQUE.includes(r.event.occurrence)).slice(0, 6);
+  const slides: HeroSlide[] = hero.map(({ event: e, venue }) => {
+    const where = e.venueName ?? venue?.name;
+    return {
+      key: e.id,
+      href: `/whats-on/${e.slug}`,
+      title: printTitle(e.title),
+      label: e.highlight ? 'Highlight' : isFestival(e) ? 'Festival' : null,
+      meta: [webWhen(e.dates, e.occurrence, today), where].filter(Boolean).join(' · ') || null,
+      src: webImage(e.headerImage!, 1920, 900),
+      alt: e.headerImage!.alt ?? '',
+    };
+  });
   const datedTours = tours.slice(0, 3);
   // The same tiles as What's on and Tours, each a way in to that page filtered.
   const eventKinds = new Map<string, number>();
@@ -43,26 +61,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   return (
     <>
       <JsonLd data={organisation()} />
-      {lead && (
-        <section className="relative isolate overflow-hidden bg-harbour text-white">
-          {lead.event.headerImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={webImage(lead.event.headerImage, 1920, 900)} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-55" />
-          )}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-harbour via-harbour/40 to-transparent" />
-          <div className="mx-auto flex min-h-[460px] max-w-6xl flex-col justify-end px-4 pb-12 pt-24">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/80">{lead.event.highlight ? 'Highlight' : 'Coming up'}</p>
-            <h1 className="mt-2 max-w-3xl font-display text-3xl font-light leading-tight tracking-tight md:text-5xl">{printTitle(lead.event.title)}</h1>
-            <p className="mt-3 text-lg text-white/90">
-              {webWhen(lead.event.dates, lead.event.occurrence, today)}
-              {(lead.event.venueName ?? lead.venue?.name) && ` · ${lead.event.venueName ?? lead.venue?.name}`}
-            </p>
-            <div className="mt-6">
-              <Link href={`/whats-on/${lead.event.slug}`} className="inline-block rounded bg-brand px-5 py-3 text-sm font-semibold hover:bg-white hover:text-harbour">Find out more</Link>
-            </div>
-          </div>
-        </section>
-      )}
+      <h1 className="sr-only">What&apos;s on in Jersey</h1>
+      <HeroRotator slides={slides} />
 
       <div className="mx-auto max-w-6xl px-4 py-12">
         {otherHighlights.length > 0 && (
@@ -73,9 +73,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           </section>
         )}
 
+        {comingUp.length > 0 && (
         <section className="mb-14">
           <div className="mb-5 flex items-baseline justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-ink">Unique events coming soon</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink">What&apos;s on</h2>
             <Link href="/whats-on" className="text-sm font-medium text-sea hover:text-brand">Everything on →</Link>
           </div>
           <CategoryMenu action="/whats-on" values={{}} counts={eventKinds} total={events.length} entry />
@@ -95,6 +96,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             ))}
           </div>
         </section>
+        )}
 
         <GuideAd />
 
