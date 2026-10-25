@@ -3,7 +3,7 @@ import { printTitle } from '@/lib/domain/house-style';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Copy, DateList, Facts, Gallery, Hero, ListingHeader, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
+import { ClaimLink, Copy, DateList, DetailLayout, Facts, Gallery, Hero, ListingHeader, SideSection, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
@@ -64,8 +64,9 @@ export default async function EventPage({ params }: Props) {
         <StaffEdit kind="event" id={e.id} title={e.title} summary={e.summary} description={e.description} image={e.headerImage ? { url: webImage(e.headerImage, 800, 400), alt: e.headerImage.alt, stock: !!e.headerImage.credit } : null} printLine={e.printLine} eventTypes={e.eventTypes} allTypes={EVENT_TYPES} adminHref={`/admin/whats-on/${e.slug}`} />
       )}
       <JsonLd data={jsonLd} />
-      <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
-        <div className="min-w-0 px-4 py-8 md:pr-10">
+      <DetailLayout
+        main={
+        <>
           <Link href="/whats-on" className="text-sm text-harbour/60 hover:text-brand">← What&apos;s on</Link>
           <ListingHeader
             when={headerWhen(e.dates, e.occurrence, today)}
@@ -80,11 +81,10 @@ export default async function EventPage({ params }: Props) {
           <Gallery images={e.gallery} header={e.headerImage} title={e.title} />
             <DateList dates={e.dates} today={today} />
           </div>
-        </div>
-
-        {/* The whole height of the page, so what to do next is always beside what it is. */}
-        <aside className="border-t border-harbour/10 bg-white px-4 py-8 md:border-l md:border-t-0 md:px-6">
-          <div className="space-y-8 md:sticky md:top-6">
+        </>
+        }
+        side={
+          <>
             <SideSection title="Tickets">
               <Facts
                 rows={[
@@ -140,9 +140,9 @@ export default async function EventPage({ params }: Props) {
                 </ul>
               </SideSection>
             )}
-          </div>
-        </aside>
-      </div>
+          </>
+        }
+      />
 
       {related.length > 0 && (
         <section className="border-t border-harbour/10">
@@ -167,23 +167,5 @@ export default async function EventPage({ params }: Props) {
         </section>
       )}
     </article>
-  );
-}
-
-/** A quiet way in for whoever runs it. */
-function ClaimLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="mt-4 block text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand hover:decoration-brand">
-      {children}
-    </Link>
-  );
-}
-
-function SideSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-brand">{title}</h2>
-      {children}
-    </section>
   );
 }

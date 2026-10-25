@@ -136,3 +136,37 @@ export function ListingHeader(props: { when: { main: string; more: string | null
     </header>
   );
 }
+
+/**
+ * A listing's page on a desktop: what it is on the left, and down the
+ * whole right-hand side, staying in view, what to do next. On a phone
+ * the side follows the main column.
+ */
+export function DetailLayout({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {
+  return (
+    <div className="mx-auto grid max-w-6xl md:grid-cols-[1fr_340px]">
+      <div className="min-w-0 px-4 py-8 md:pr-10">{main}</div>
+      <aside className="border-t border-harbour/10 bg-white px-4 py-8 md:border-l md:border-t-0 md:px-6">
+        <div className="space-y-8 md:sticky md:top-6">{side}</div>
+      </aside>
+    </div>
+  );
+}
+
+export function SideSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-brand">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+/** A quiet way in for whoever runs it. */
+export function ClaimLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="mt-4 block text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand hover:decoration-brand">
+      {children}
+    </Link>
+  );
+}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { Copy, Facts, Gallery, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
+import { ClaimLink, Copy, DetailLayout, Facts, Gallery, Hero, SideSection, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEventsAt, publicVenue, todayIso, venueFormerlyAt } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
@@ -59,62 +59,66 @@ export default async function VenuePage({ params }: Props) {
     />
   );
 
+  const phone = venue.phone && <a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{venue.phone}</a>;
+
   return (
-    <article className="mx-auto max-w-6xl px-4 py-8">
+    <article>
       <JsonLd
         data={[
           venueLd({ ...venueOut(venue), image: venue.headerImage ? webImage(venue.headerImage, 1200, 800) : null }, rows.map((r) => eventOut(r.event, r.venue, today))),
           breadcrumbs([['Venues', '/venues'], [venue.name, `/venues/${venue.slug}`]]),
         ]}
       />
-      <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
-      <header className="mb-6 mt-3">
-        <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
-        {venue.recommendedIn && <Recommended className="mt-3" />}
-        {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
-      </header>
       {staff && <StaffEdit kind="venue" id={venue.id} title={venue.name} summary={venue.summary} description={venue.description} image={venue.headerImage ? { url: webImage(venue.headerImage, 800, 400), alt: venue.headerImage.alt, stock: !!venue.headerImage.credit } : null} adminHref={`/admin/venues/${venue.slug}`} />}
-      {staff && <StaffFallback kind="venue" id={venue.id} name={venue.name} image={venue.fallbackImage && { url: venue.fallbackImage.url, alt: venue.fallbackImage.alt }} />}
-      <Hero image={venue.headerImage} title={venue.name} />
-      <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
-        <Copy lead={venue.guideCopy ?? venue.summary} body={venue.description} />
-          <Gallery images={venue.gallery} header={venue.headerImage} title={venue.name} />
-        <Facts
-          rows={[
-            ['Address', address],
-            ['Phone', venue.phone && <a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{venue.phone}</a>],
-            ['Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venue.website)?.toLowerCase()} ↗</a>],
-          ]}
-          actions={
-            <>
+      <DetailLayout
+        main={
+          <>
+            <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
+            <header className="mb-6 mt-3">
+              <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
+              {venue.recommendedIn && <Recommended className="mt-3" />}
+              {address && <p className="mt-2 text-lg text-harbour/70">{address}</p>}
+            </header>
+            {staff && <StaffFallback kind="venue" id={venue.id} name={venue.name} image={venue.fallbackImage && { url: venue.fallbackImage.url, alt: venue.fallbackImage.alt }} />}
+            <Hero image={venue.headerImage} title={venue.name} />
+            <div className="mt-8 space-y-6">
+              <Copy lead={venue.guideCopy ?? venue.summary} body={venue.description} />
+              <Gallery images={venue.gallery} header={venue.headerImage} title={venue.name} />
+            </div>
+
+            {venue.googlePlaceId && googleConfigured() && <GoogleReviews slug={venue.slug} />}
+
+            <section className="mt-12">
+              <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">Coming up here</h2>
+              {unique.length ? <div className="grid gap-6 sm:grid-cols-2">{unique.map(card)}</div> : <p className="text-harbour/70">Nothing dated at the moment.</p>}
+            </section>
+            {ongoing.length > 0 && (
+              <section className="mt-12">
+                <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On regularly</h2>
+                <div className="grid gap-6 sm:grid-cols-2">{ongoing.map(card)}</div>
+              </section>
+            )}
+          </>
+        }
+        side={
+          <SideSection title="Visit">
+            <Facts
+              rows={[
+                ['Address', address],
+                ['Phone', phone],
+                ['Email', venue.email && <a href={`mailto:${venue.email}`} className="hover:text-brand">{venue.email}</a>],
+                ['Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venue.website)?.toLowerCase()} ↗</a>],
+                ['Coming up', rows.length ? `${rows.length} event${rows.length === 1 ? '' : 's'}` : null],
+              ]}
+            />
+            <div className="mt-4 flex flex-col gap-2">
               {venue.website && <a href={venue.website} target="_blank" rel="noopener" className={primaryButton}>Visit their website ↗</a>}
               {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
-              {!venue.businessId && (
-                <Link href={`/claim/venues/${venue.slug}`} className="mt-2 text-center text-xs text-harbour/50 underline decoration-harbour/20 underline-offset-2 hover:text-brand">
-                  Is this your venue? Claim it
-                </Link>
-              )}
-            </>
-          }
-        />
-      </div>
-
-      {venue.googlePlaceId && googleConfigured() && <GoogleReviews slug={venue.slug} />}
-
-      <section className="mt-12">
-        <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">Coming up here</h2>
-        {unique.length ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{unique.map(card)}</div>
-        ) : (
-          <p className="text-harbour/70">Nothing dated at the moment.</p>
-        )}
-      </section>
-      {ongoing.length > 0 && (
-        <section className="mt-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On regularly</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{ongoing.map(card)}</div>
-        </section>
-      )}
+            </div>
+            {!venue.businessId && <ClaimLink href={`/claim/venues/${venue.slug}`}>Is this your venue? Claim it</ClaimLink>}
+          </SideSection>
+        }
+      />
     </article>
   );
 }
