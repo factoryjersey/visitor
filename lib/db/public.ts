@@ -179,7 +179,7 @@ export async function publicVenuesWithEvents(opts: { withOngoing?: boolean } = {
       parish: places.parish,
       category: places.category,
       headerImage: places.headerImage,
-      summary: places.summary,
+      summary: sql<string | null>`coalesce(${places.guideCopy}, ${places.summary})`,
       recommendedIn: places.recommendedIn,
       count: sql<number>`count(${events.id})::int`,
     })

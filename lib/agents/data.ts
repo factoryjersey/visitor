@@ -81,12 +81,13 @@ export function tourOut(t: Experience, provider: { name: string; website?: strin
 
 export type TourOut = ReturnType<typeof tourOut>;
 
-export function venueOut(v: Pick<Place, 'slug' | 'name' | 'parish' | 'addressLine1' | 'postcode' | 'website' | 'phone' | 'summary' | 'lat' | 'lon'>, upcoming?: number) {
+export function venueOut(v: Pick<Place, 'slug' | 'name' | 'parish' | 'addressLine1' | 'postcode' | 'website' | 'phone' | 'summary' | 'lat' | 'lon'> & { guideCopy?: string | null }, upcoming?: number) {
   return {
     slug: v.slug,
     url: `${SITE}/venues/${v.slug}`,
     name: v.name,
-    summary: v.summary ?? null,
+    // Our guide's words first, the source's otherwise.
+    summary: v.guideCopy ?? v.summary ?? null,
     parish: printParish(v.parish),
     address: printAddress(v),
     website: v.website,

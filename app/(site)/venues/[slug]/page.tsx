@@ -25,7 +25,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const v = await publicVenue((await params).slug);
-  return v ? { title: v.name, description: v.summary ?? undefined, alternates: alternates(`/venues/${v.slug}`) } : {};
+  return v ? { title: v.name, description: v.guideCopy ?? v.summary ?? undefined, alternates: alternates(`/venues/${v.slug}`) } : {};
 }
 
 /** A venue: what it is, how to get there, and everything on there. */
