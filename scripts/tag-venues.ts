@@ -1,7 +1,7 @@
 /**
  * Tags venues from a list of names, one per line:
  *
- *   pnpm tag:venues --recommended "Autumn 2026" --file featured.txt   visitor recommended, shown on the site
+ *   pnpm tag:venues --recommended "Autumn 2026" --file featured.txt   visitor guide featured, shown on the site
  *   pnpm tag:venues --client --file clients.txt                       clients, admin only
  *
  * Shows what it would do; --apply writes it. Names it cannot match to

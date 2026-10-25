@@ -77,7 +77,7 @@ function Sidebar({ items, title }: { items: SpreadVenue[]; title: string }) {
               <span className="min-w-0">
                 <span className="block font-display font-semibold leading-snug text-ink group-hover:text-brand">{v.name}</span>
                 <span className="block text-xs text-harbour/60">{[label(v), printParish(v.parish)].filter(Boolean).join(' · ')}</span>
-                {v.recommendedIn && <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-wide text-brand">Visitor recommended</span>}
+                {v.recommendedIn && <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-wide text-brand">Visitor guide featured</span>}
               </span>
             </Link>
           </li>

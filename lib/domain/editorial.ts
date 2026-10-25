@@ -7,7 +7,7 @@ import type { ListingSize } from '@/lib/db/schema';
  * directory.
  *
  * What earns a story is what the printed guide gave it: a full page,
- * then two-thirds, then a place among the visitor recommended, then copy
+ * then two-thirds, then a place among those the visitor guide featured, then copy
  * of our own. A story needs a picture; a promoted venue without one
  * heads the sidebar instead. The private client tag plays no part.
  */

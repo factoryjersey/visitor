@@ -218,7 +218,7 @@ The site visitors see is at the root, with no sign-in:
   booking and directions; events carry schema.org Event data
 - `/venues` — venues and businesses with events or tours coming up; "See
   all" lists every one we have (all of Visit Jersey's), by the guide's
-  sections, the Visitor recommended first
+  sections, the Visitor guide featured first
 - `/organisers`, `/organisers/[slug]` — who puts events on, and what they have coming up
 
 Listing headings are in title case on the site and in print
@@ -256,7 +256,7 @@ public listings. Set it on the event or tour page in the admin.
 - `/admin/whats-on` — every event, filter by month and status, include or leave out
 - `/admin/whats-on/[slug]` — details, venue, our copy, source freshness
 - `/admin/venues` — places hosting events (or every listing), include or leave out; filter by tag
-- Venue tags, on each venue's admin page: **Visitor recommended** (shown on
+- Venue tags, on each venue's admin page: **Visitor guide featured** (shown on
   the site: the edition of the printed guide it was last in) and **Client**
   (admin only, with a note). `pnpm tag:venues --file names.txt
   (--recommended "Autumn 2026" | --client) [--apply]` tags from a list of

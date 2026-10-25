@@ -192,7 +192,7 @@ export async function setGooglePlace(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
-/** Visitor recommended (public) and client (ours only). */
+/** Visitor guide featured (public) and client (ours only). */
 export async function saveVenueTags(form: FormData) {
   const user = await requireStaff();
   const v = venueTagsSchema.parse(Object.fromEntries(form));

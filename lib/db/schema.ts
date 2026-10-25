@@ -185,7 +185,7 @@ export const places = pgTable('places', {
   /** The picture an event here shows when it has none of its own and its organiser sets none. Ours. */
   fallbackImage: jsonb('fallback_image').$type<Image | null>(),
   /**
-   * Visitor recommended: featured in the printed guide, shown on the site.
+   * Visitor guide featured: featured in the printed guide, shown on the site.
    * Holds the latest edition it was in ("Autumn 2026"); null when it was
    * in none. Ours.
    */
