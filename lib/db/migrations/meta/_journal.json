@@ -127,6 +127,13 @@
       "when": 1792883943416,
       "tag": "0017_event_gallery",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792922897193,
+      "tag": "0018_place_former_slugs",
+      "breakpoints": true
     }
   ]
 }

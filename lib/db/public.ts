@@ -144,6 +144,15 @@ export async function publicVenue(slug: string) {
   return venue ?? null;
 }
 
+/** The venue an address belonged to before it was merged into another, so an old link still arrives. */
+export async function venueFormerlyAt(slug: string) {
+  const [row] = await db
+    .select({ slug: places.slug })
+    .from(places)
+    .where(and(sql`${slug} = any(${places.formerSlugs})`, ne(places.inclusion, 'excluded'), eq(places.review, 'approved')));
+  return row?.slug ?? null;
+}
+
 /** Everything coming up at a venue, soonest first: ongoing things too, as a venue's page is its whole programme. */
 export async function publicEventsAt(placeId: string) {
   const rows = await db

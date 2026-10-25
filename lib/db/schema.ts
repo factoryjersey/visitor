@@ -177,6 +177,8 @@ export const places = pgTable('places', {
   /** When the nightly match last looked, found or not, so an unmatched venue is retried monthly rather than every night. */
   googleCheckedAt: timestamp('google_checked_at', { withTimezone: true }),
   googleLocked: boolean('google_locked').notNull().default(false),
+  /** Addresses it had before two listings of it were merged into this one: they lead here. */
+  formerSlugs: text('former_slugs').array().notNull().default([]),
 
   headerImage: jsonb('header_image').$type<Image | null>(),
   gallery: jsonb('gallery').$type<Image[]>().notNull().default([]),

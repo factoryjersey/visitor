@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { alternates } from '@/lib/agents/data';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Copy, Facts, Gallery, Hero, directionsUrl, primaryButton, secondaryButton } from '@/components/site/detail';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicEventsAt, publicVenue, todayIso } from '@/lib/db/public';
+import { publicEventsAt, publicVenue, todayIso, venueFormerlyAt } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { Recommended } from '@/components/site/recommended';
@@ -30,8 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** A venue: what it is, how to get there, and everything on there. */
 export default async function VenuePage({ params }: Props) {
-  const venue = await publicVenue((await params).slug);
-  if (!venue) notFound();
+  const { slug } = await params;
+  const venue = await publicVenue(slug);
+  if (!venue) {
+    const now = await venueFormerlyAt(slug);
+    if (now) permanentRedirect(`/venues/${now}`);
+    notFound();
+  }
   const [rows, staff] = await Promise.all([publicEventsAt(venue.id), staffViewer()]);
   const today = todayIso();
   const address = printAddress(venue);
