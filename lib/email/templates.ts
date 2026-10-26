@@ -6,28 +6,53 @@ import type { Email } from './send';
  * Anything a person typed is escaped before it goes into the HTML.
  */
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-const site = () => env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+export const site = () => env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+export const oneLine = (s: string) => s.replace(/[\r\n]+/g, ' ');
 
-/** Paragraphs in, an email out: the text as given, the HTML with a button for the one link that matters. */
-function compose(subject: string, paragraphs: string[], button?: { label: string; href: string }, footnote?: string): Omit<Email, 'to'> {
-  const text = [...paragraphs, button ? `${button.label}: ${button.href}` : null, footnote, '—\nVisitor, Jersey’s What’s On Guide\n' + site()]
-    .filter(Boolean)
-    .join('\n\n');
-  const p = (t: string) => `<p style="margin:0 0 16px;line-height:1.55">${esc(t).replace(/\n/g, '<br>')}</p>`;
-  const html = `<!doctype html><html><body style="margin:0;background:#f5f5f4;padding:24px 12px;font-family:Helvetica,Arial,sans-serif;color:#333333;font-size:15px">
+/** The frame every email shares: the masthead, a white card holding `inner`, and under it the site's address (and `below`, already HTML). */
+export function shell(inner: string, below = ''): string {
+  return `<!doctype html><html><body style="margin:0;background:#f5f5f4;padding:24px 12px;font-family:Helvetica,Arial,sans-serif;color:#333333;font-size:15px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:8px;padding:32px">
 <tr><td>
 <p style="margin:0 0 4px;font-size:26px;font-weight:bold;color:#0f2a44;letter-spacing:-0.5px">Visitor</p>
 <p style="margin:0 0 28px;font-family:Georgia,serif;font-style:italic;font-size:13px;color:#777">Jersey’s What’s On Guide</p>
-${paragraphs.map(p).join('\n')}
-${button ? `<p style="margin:24px 0"><a href="${esc(button.href)}" style="display:inline-block;background:#cd1316;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:4px">${esc(button.label)}</a></p>` : ''}
-${footnote ? `<p style="margin:16px 0 0;font-size:13px;color:#777;line-height:1.5">${esc(footnote).replace(/\n/g, '<br>')}</p>` : ''}
+${inner}
 </td></tr></table>
 <p style="margin:16px 0 0;font-size:12px;color:#999"><a href="${esc(site())}" style="color:#999">${esc(site().replace(/^https?:\/\//, ''))}</a></p>
+${below}
 </td></tr></table></body></html>`;
-  return { subject: subject.replace(/[\r\n]+/g, " "), text, html };
+}
+
+export const button = (b: { label: string; href: string }) =>
+  `<p style="margin:24px 0"><a href="${esc(b.href)}" style="display:inline-block;background:#cd1316;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:4px">${esc(b.label)}</a></p>`;
+
+/** Paragraphs in, an email out: the text as given, the HTML with a button for the one link that matters. */
+function compose(subject: string, paragraphs: string[], link?: { label: string; href: string }, footnote?: string): Omit<Email, 'to'> {
+  const text = [...paragraphs, link ? `${link.label}: ${link.href}` : null, footnote, '—\nVisitor, Jersey’s What’s On Guide\n' + site()]
+    .filter(Boolean)
+    .join('\n\n');
+  const p = (t: string) => `<p style="margin:0 0 16px;line-height:1.55">${esc(t).replace(/\n/g, '<br>')}</p>`;
+  const html = shell(
+    `${paragraphs.map(p).join('\n')}
+${link ? button(link) : ''}
+${footnote ? `<p style="margin:16px 0 0;font-size:13px;color:#777;line-height:1.5">${esc(footnote).replace(/\n/g, '<br>')}</p>` : ''}`,
+  );
+  return { subject: oneLine(subject), text, html };
+}
+
+/** The one email a new sign-up gets before any other: follow the link, or hear nothing more. */
+export function subscribeConfirmEmail(input: { link: string }) {
+  return compose(
+    'Confirm your weekly What’s On email',
+    [
+      'Thank you for signing up to Visitor’s weekly email: what’s on in Jersey in the coming week, every Thursday morning.',
+      'Confirm it is you with the button below, and the next one is yours.',
+    ],
+    { label: 'Yes, send me the weekly email', href: input.link },
+    'If you did not ask for this, ignore it: you will not hear from us again.',
+  );
 }
 
 export function inviteEmail(input: { name: string | null; businessName: string | null; staff: boolean; link: string; reason?: string }) {

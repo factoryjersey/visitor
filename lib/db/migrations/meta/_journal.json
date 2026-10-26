@@ -134,6 +134,13 @@
       "when": 1792922897193,
       "tag": "0018_place_former_slugs",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793006967306,
+      "tag": "0019_subscribers",
+      "breakpoints": true
     }
   ]
 }

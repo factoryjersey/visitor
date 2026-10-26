@@ -16,6 +16,8 @@ import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen, webWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
+import { SubscribePopover } from '@/components/site/subscribe-popover';
+import { emailEnabled } from '@/lib/email/send';
 import { organisation } from '@/lib/agents/schema-org';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +63,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   return (
     <>
       <JsonLd data={organisation()} />
+      {/* The weekly email, offered once; not while nothing could send its confirmation. */}
+      {emailEnabled() && <SubscribePopover />}
       <h1 className="sr-only">What&apos;s on in Jersey</h1>
       <HeroRotator slides={slides} />
 
