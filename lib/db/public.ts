@@ -120,10 +120,12 @@ export async function publicTours(f: PublicTourFilter = {}) {
   return rows
     .map((r) => ({ ...r, next: nextDate(r.tour.dates, from) ?? '9999' }))
     .sort((a, b) => {
-      // Dated tours by their next date; on-demand ones after, by name.
-      const ad = UNIQUE.includes(a.tour.occurrence) ? a.next : `~${a.tour.title}`;
-      const bd = UNIQUE.includes(b.tour.occurrence) ? b.next : `~${b.tour.title}`;
-      return ad.localeCompare(bd);
+      // Dated tours by their next date; on-demand ones after, by name. Not one string with a ~
+      // in front of the names: a locale sorts ~ before the digits, so on-demand came first.
+      const aDated = UNIQUE.includes(a.tour.occurrence);
+      const bDated = UNIQUE.includes(b.tour.occurrence);
+      if (aDated !== bDated) return aDated ? -1 : 1;
+      return aDated ? a.next.localeCompare(b.next) || a.tour.title.localeCompare(b.tour.title) : a.tour.title.localeCompare(b.tour.title);
     });
 }
 
