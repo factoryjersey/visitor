@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { fit, kindCounts, likeEscape, parishFrom, searchWords, sortHits, type Hit } from '@/lib/domain/search';
+import { asKinds, fit, kindCounts, likeEscape, searchWords, sortHits, type Hit } from '@/lib/domain/search';
 
-const hit = (o: Partial<Hit> & Pick<Hit, 'kind' | 'id'>): Hit => ({ href: `/${o.id}`, title: o.id, parish: null, when: null, line: null, image: null, highlight: false, fit: 0, order: o.id, ...o });
+const hit = (o: Partial<Hit> & Pick<Hit, 'kind' | 'id'>): Hit => ({ href: `/${o.id}`, title: o.id, when: null, location: null, where: null, price: null, summary: null, image: null, types: null, genre: null, tag: null, highlight: false, fit: 0, order: o.id, ...o });
 
 describe('searchWords', () => {
   it('lower-cases, splits, trims punctuation and keeps each word once', () => {
@@ -34,11 +34,9 @@ describe('fit', () => {
   });
 });
 
-describe('parishFrom', () => {
-  it('reads a parish however it is spelt, from the first label that has one', () => {
-    expect(parishFrom(null, 'Saint Brelade')).toBe('St Brelade');
-    expect(parishFrom('St. Helier', 'Trinity')).toBe('St Helier');
-    expect(parishFrom('Jersey')).toBeNull();
+describe('asKinds', () => {
+  it('keeps the kinds it knows, in the site order', () => {
+    expect(asKinds(['venues', 'nonsense', 'events'])).toEqual(['events', 'venues']);
   });
 });
 

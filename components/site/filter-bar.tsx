@@ -1,5 +1,6 @@
 import Form from 'next/form';
 import Link from 'next/link';
+import { Search } from 'lucide-react';
 import { ShowToggle } from './show-toggle';
 import { WhenPicker } from './when-picker';
 
@@ -13,10 +14,12 @@ type Option = { value: string; label: string };
 export function FilterBar(props: {
   action: string;
   values: Record<string, string | undefined>;
-  selects: { name: string; label: string; options: Option[] }[];
+  selects?: { name: string; label: string; options: Option[] }[];
   /** Jersey's today, for the quick picks and the calendars' first day. */
   today: string;
-  toggle: { name: string; label: string; hint: string };
+  toggle?: { name: string; label: string; hint: string };
+  /** The site search's box: curved, with a magnifying glass, ready to type in. */
+  round?: { placeholder: string; autoFocus?: boolean };
   /** Values chosen elsewhere (the category tiles) that a search keeps. */
   keep?: string[];
 }) {
@@ -25,11 +28,28 @@ export function FilterBar(props: {
     // Keyed on the view, so going back or clearing shows that view's own choices.
     <Form key={JSON.stringify(props.values)} action={props.action} scroll={false} className="mb-4 flex flex-wrap items-end gap-4 rounded-lg bg-white p-4 shadow-sm ring-1 ring-harbour/5">
       {props.keep?.map((k) => props.values[k] && <input key={k} type="hidden" name={k} value={props.values[k]} />)}
-      <label className="flex min-w-48 flex-1 flex-col text-sm">
-        <span className="mb-1 text-xs font-medium uppercase tracking-wide text-harbour/60">Search</span>
-        <input name="q" defaultValue={props.values.q ?? ''} placeholder="Name or venue" className="rounded border border-harbour/20 px-3 py-2" />
-      </label>
-      {props.selects.map((s) => (
+      {props.round ? (
+        <label className="relative flex min-w-48 flex-1 flex-col text-sm">
+          <span className="sr-only">Search</span>
+          <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-harbour/50" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={props.values.q ?? ''}
+            placeholder={props.round.placeholder}
+            enterKeyHint="search"
+            autoComplete="off"
+            autoFocus={props.round.autoFocus}
+            className="w-full rounded-full border border-harbour/20 bg-white py-3 pl-12 pr-4 text-base text-ink outline-none placeholder:text-harbour/45 focus:border-brand focus:ring-2 focus:ring-brand/20"
+          />
+        </label>
+      ) : (
+        <label className="flex min-w-48 flex-1 flex-col text-sm">
+          <span className="mb-1 text-xs font-medium uppercase tracking-wide text-harbour/60">Search</span>
+          <input name="q" defaultValue={props.values.q ?? ''} placeholder="Name or venue" className="rounded border border-harbour/20 px-3 py-2" />
+        </label>
+      )}
+      {(props.selects ?? []).map((s) => (
         <label key={s.name} className="flex flex-col text-sm">
           <span className="mb-1 text-xs font-medium uppercase tracking-wide text-harbour/60">{s.label}</span>
           <select name={s.name} defaultValue={props.values[s.name] ?? ''} className="rounded border border-harbour/20 bg-white px-3 py-2">
@@ -38,14 +58,16 @@ export function FilterBar(props: {
           </select>
         </label>
       ))}
-      <button type="submit" className="rounded bg-harbour px-4 py-2 text-sm font-medium text-white hover:bg-sea">Show</button>
+      <button type="submit" className={`bg-harbour px-4 text-sm font-medium text-white hover:bg-sea ${props.round ? 'rounded-full py-3' : 'rounded py-2'}`}>{props.round ? 'Search' : 'Show'}</button>
       {active && <Link href={props.action} scroll={false} className="py-2 text-sm text-harbour/60 underline">Clear</Link>}
       <div className="w-full">
         <WhenPicker when={props.values.when} from={props.values.from} to={props.values.to} today={props.today} />
       </div>
-      <div className="w-full border-t border-harbour/10 pt-3">
-        <ShowToggle name={props.toggle.name} label={props.toggle.label} hint={props.toggle.hint} checked={props.values[props.toggle.name] === '1'} />
-      </div>
+      {props.toggle && (
+        <div className="w-full border-t border-harbour/10 pt-3">
+          <ShowToggle name={props.toggle.name} label={props.toggle.label} hint={props.toggle.hint} checked={props.values[props.toggle.name] === '1'} />
+        </div>
+      )}
     </Form>
   );
 }

@@ -1,5 +1,5 @@
 import type { Image } from '@/lib/db/schema';
-import { parishOf } from './parish';
+import type { Genre } from './genre';
 
 /**
  * One search over everything the site lists: events, tours, experiences
@@ -14,20 +14,29 @@ export const KINDS = ['events', 'tours', 'experiences', 'venues'] as const;
 export type Kind = (typeof KINDS)[number];
 export const KIND_LABEL: Record<Kind, string> = { events: 'Events', tours: 'Tours', experiences: 'Experiences', venues: 'Venues' };
 
-export const asKind = (v: string | undefined): Kind | undefined => (KINDS as readonly string[]).includes(v ?? '') ? (v as Kind) : undefined;
+
+/** Kinds chosen together, comma-separated or repeated: any of them. */
+export const asKinds = (vs: readonly string[]): Kind[] => KINDS.filter((k) => vs.includes(k));
 
 export type Hit = {
   kind: Kind;
   id: string;
   href: string;
   title: string;
-  /** The parish, as parish.ts spells it ("St Brelade"), or null if we do not know it. */
-  parish: string | null;
   /** When it is on, for events and tours: "Sat 1 Nov", "Book any day". */
   when: string | null;
-  /** Where, or what: the venue, who runs a tour, what a venue is. */
-  line: string | null;
+  /** Where: the venue or meeting point and parish, as a card gives it. */
+  location: string | null;
+  /** A second line: who runs a tour, what a venue is. */
+  where: string | null;
+  price: string | null;
+  summary: string | null;
   image: Image | null;
+  /** An event's kinds, for the card's icons. */
+  types: string[] | null;
+  genre: Genre | null;
+  /** Ongoing or Regular, on an event's picture. */
+  tag: string | null;
   highlight: boolean;
   /** How well the title answers the search: lower is better. */
   fit: number;
@@ -63,9 +72,6 @@ export function fit(title: string, words: string[]): number {
   const inTitle = words.filter((w) => t.includes(plain(w))).length;
   return inTitle === words.length ? 1 : inTitle > 0 ? 2 : 3;
 }
-
-/** The parish from however a listing spells it. */
-export const parishFrom = (...labels: (string | null | undefined)[]): string | null => labels.map(parishOf).find(Boolean) ?? null;
 
 /** Best answers first; then highlights; then by date or name. */
 export function sortHits<T extends Hit>(hits: T[]): T[] {

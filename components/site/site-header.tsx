@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { jerseyToday } from '@/lib/domain/when';
-import { SearchPanel } from './search-panel';
 import { Wordmark } from './wordmark';
 
 const NAV = [
@@ -19,13 +17,10 @@ const NAV = [
  * The wordmark with its line beneath, and the menu: along the right on a
  * desktop, behind a burger on tablets and phones that turns into a cross
  * and lets the menu fall open below the bar. Search sits beside it on
- * every size and slides over the page; without scripts it is a link to
- * the /search page.
+ * every size: the /search page, which opens on its filters.
  */
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const closeSearch = useCallback(() => setSearching(false), []);
   const path = usePathname();
 
   // Going somewhere closes it; so does Escape.
@@ -62,15 +57,7 @@ export function SiteHeader() {
         <div className="-mr-2 flex items-center gap-1 lg:mr-0">
           <Link
             href="/search"
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-              e.preventDefault();
-              setOpen(false);
-              setSearching(true);
-            }}
             aria-label="Search"
-            aria-haspopup="dialog"
-            aria-expanded={searching}
             aria-current={current('/search') ? 'page' : undefined}
             className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-harbour/5 hover:text-brand ${current('/search') ? 'text-brand' : 'text-ink'}`}
           >
@@ -112,7 +99,6 @@ export function SiteHeader() {
           ))}
         </nav>
       </div>
-      <SearchPanel open={searching} onClose={closeSearch} today={jerseyToday()} />
     </header>
   );
 }

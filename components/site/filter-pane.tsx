@@ -15,7 +15,23 @@ import { useEffect, useRef, useState } from 'react';
  * for when. The footer button shows the results, applying a typed search
  * or chosen dates first.
  */
-export function FilterPane(props: { children: React.ReactNode; active: number; results: number; noun: string; /** Beside the count on a phone: the view switch. */ aside?: React.ReactNode }) {
+export function FilterPane(props: {
+  children: React.ReactNode;
+  active: number;
+  results: number;
+  noun: string;
+  /** Beside the count on a phone: the view switch. */
+  aside?: React.ReactNode;
+  /** The panel's name and its button's: Filters, or Search. */
+  title?: string;
+  /** The whole screen on a phone, not a drawer. */
+  full?: boolean;
+  /** Open as the page loads, on a phone: the search, before anything is asked. */
+  startOpen?: boolean;
+  /** The footer button's words in place of "Show 12 events": the search's "Search" before anything is asked. */
+  button?: string;
+}) {
+  const title = props.title ?? 'Filters';
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -28,8 +44,10 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
       if (!mq.matches) setOpen(false);
     };
     update();
+    if (props.startOpen && mq.matches) setOpen(true);
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // While open: Escape closes, the page behind does not scroll, and focus starts in the panel.
@@ -39,7 +57,10 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
     document.addEventListener('keydown', onKey);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    panel.current?.focus();
+    // The search box when there is one, ready to type in; otherwise the panel.
+    const box = panel.current?.querySelector<HTMLInputElement>('input[type=search]');
+    if (box) box.focus({ preventScroll: true });
+    else panel.current?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
@@ -77,7 +98,7 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
           className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm ring-1 ring-harbour/15 hover:ring-brand/40"
         >
           <SlidersHorizontal aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
-          Filters
+          {title}
           {props.active > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[0.7rem] text-white">{props.active}</span>}
         </button>
         <div className="flex items-center gap-3">
@@ -97,14 +118,14 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
         ref={panel}
         role={phone ? 'dialog' : undefined}
         aria-modal={phone && open ? true : undefined}
-        aria-label={phone ? 'Filters' : undefined}
+        aria-label={phone ? title : undefined}
         tabIndex={phone ? -1 : undefined}
         inert={shut}
-        className={`outline-none max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50 max-md:flex max-md:w-[min(24rem,88vw)] max-md:flex-col max-md:bg-white max-md:transition-transform max-md:duration-300 max-md:ease-out ${open ? 'max-md:shadow-2xl' : 'max-md:translate-x-full'}`}
+        className={`outline-none max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50 max-md:flex ${props.full ? 'max-md:w-full' : 'max-md:w-[min(24rem,88vw)]'} max-md:flex-col max-md:bg-white max-md:transition-transform max-md:duration-300 max-md:ease-out ${open ? 'max-md:shadow-2xl' : 'max-md:translate-x-full'}`}
       >
         <div className="flex items-center justify-between border-b border-harbour/10 bg-white px-4 py-3 md:hidden">
-          <h2 className="font-display text-lg font-semibold text-ink">Filters</h2>
-          <button type="button" onClick={close} aria-label="Close filters" className="rounded-full p-2 text-harbour hover:bg-harbour/5 hover:text-brand">
+          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+          <button type="button" onClick={close} aria-label={`Close ${title.toLowerCase()}`} className="rounded-full p-2 text-harbour hover:bg-harbour/5 hover:text-brand">
             <X aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>
@@ -116,7 +137,7 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
         </div>
         <div className="border-t border-harbour/10 bg-white p-4 md:hidden">
           <button type="button" onClick={show} className="w-full rounded bg-harbour px-4 py-3 text-sm font-semibold text-white hover:bg-sea">
-            Show {what}
+            {props.button ?? `Show ${what}`}
           </button>
         </div>
       </div>
