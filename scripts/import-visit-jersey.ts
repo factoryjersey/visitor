@@ -17,7 +17,10 @@ import { and, eq, notInArray } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
 import { normaliseName } from '@/lib/domain/same-place';
+import { categorise } from '@/lib/domain/categorise';
+import { findSameEvent } from '@/lib/domain/event-match';
 import { mergeFromSource } from '@/lib/domain/merge';
+import { inGuideVoice, type KeptRewrite } from '@/lib/integrations/claude/voice';
 import { isSamePlace } from '@/lib/domain/same-place';
 import { matchVenue } from '@/lib/domain/venue-match';
 import { uniqueSlug } from '@/lib/domain/slug';
@@ -57,7 +60,7 @@ function eventFields(v: VjEvent, venue: Place | null) {
   return { ...fields, placeId: venue?.id ?? null };
 }
 
-async function upsertRecord(type: ListingType, raw: RawItem, modifiedAt: Date | null, portalSyncedAt: Date | null) {
+async function upsertRecord(type: ListingType, raw: RawItem & { _rewrite?: KeptRewrite }, modifiedAt: Date | null, portalSyncedAt: Date | null) {
   const [row] = await db
     .insert(sourceRecords)
     .values({ source: SOURCE, externalType: type, externalId: String(raw.id), payload: raw, modifiedAt, portalSyncedAt })
@@ -69,7 +72,26 @@ async function upsertRecord(type: ListingType, raw: RawItem, modifiedAt: Date | 
   return row!;
 }
 
-const counts = { created: 0, updated: 0, unchanged: 0, linked: 0, unpinned: 0 };
+/**
+ * Events' and tours' copy in the guide's third person, as every other
+ * source's is: Visit Jersey's listings are written by the businesses,
+ * "join us" and all. The rewrite rides in the record beside their words
+ * (payload._rewrite), so a run asks Claude only about what changed.
+ */
+async function keptRewrites(type: ListingType): Promise<Map<string, KeptRewrite>> {
+  const rows = await db
+    .select({ id: sourceRecords.externalId, payload: sourceRecords.payload })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, SOURCE), eq(sourceRecords.externalType, type)));
+  const kept = new Map<string, KeptRewrite>();
+  for (const r of rows) {
+    const rw = (r.payload as { _rewrite?: KeptRewrite } | null)?._rewrite;
+    if (rw) kept.set(r.id, rw);
+  }
+  return kept;
+}
+
+const counts = { created: 0, updated: 0, unchanged: 0, linked: 0, unpinned: 0, rewritten: 0 };
 
 async function importPlaces(type: PlaceType, raws: RawItem[], all: Place[]) {
   const taken = new Set(all.map((p) => p.slug));
@@ -123,13 +145,32 @@ async function importPlaces(type: PlaceType, raws: RawItem[], all: Place[]) {
 async function importEvents(raws: RawItem[], allPlaces: Place[]) {
   const existing: Event[] = await db.select().from(events);
   const taken = new Set(existing.map((e) => e.slug));
-  for (const raw of raws) {
-    const v = toEvent(raw);
-    if (!v.title) continue;
-    const record = await upsertRecord('events', raw, v.modifiedAt, v.portalSyncedAt);
+  const listed = raws.map((raw) => ({ raw, parsed: toEvent(raw) })).filter((x) => x.parsed.title);
+  const { rewrites, fresh } = await inGuideVoice(
+    listed.map(({ parsed: p }) => ({ id: p.externalId, kind: 'event' as const, name: p.title, summary: p.summary, description: p.description })),
+    await keptRewrites('events'),
+    'events',
+  );
+  counts.rewritten += fresh;
+  for (const { raw, parsed: given } of listed) {
+    const rw = rewrites.get(given.externalId);
+    // Types from their words as they wrote them; then the copy in the guide's voice.
+    const typed = given.eventTypes.length ? given : { ...given, eventTypes: categorise(given) };
+    const v = rw ? { ...typed, summary: rw.snippet, description: rw.description } : typed;
+    const record = await upsertRecord('events', rw ? { ...raw, _rewrite: rw } : raw, v.modifiedAt, v.portalSyncedAt);
     const stamp = { source: SOURCE, ref: `events/${v.externalId}`, at: new Date().toISOString() };
     const venue = matchVenue(v.venue, v, allPlaces);
-    const current = record.eventId ? existing.find((e) => e.id === record.eventId) : undefined;
+    let current = record.eventId ? existing.find((e) => e.id === record.eventId) : undefined;
+    // Listed first by another source (scripts/import-events.ts): link it, and since
+    // Visit Jersey lists it too, it no longer waits for review.
+    if (!current) {
+      current = findSameEvent({ title: v.title, dates: v.dates, placeId: venue?.id ?? null }, existing) ?? undefined;
+      if (current) {
+        await db.update(sourceRecords).set({ eventId: current.id }).where(eq(sourceRecords.id, record.id));
+        if (current.review === 'pending') await db.update(events).set({ review: 'approved' }).where(eq(events.id, current.id));
+        counts.linked += 1;
+      }
+    }
 
     if (!current) {
       const slug = uniqueSlug(`${v.title} ${v.startsOn?.slice(0, 4) ?? ''}`, (s) => taken.has(s));
@@ -167,14 +208,15 @@ function experienceFields(v: VjExperience, providerId: string | null) {
 }
 
 /**
- * The provider a tour names, found or created by name. Contact details
+ * The provider a tour names, found by its name or one it was merged from, or created. Contact details
  * come from their own listing when the tour links one, else the tour.
  * The code is never set here: codes are ours.
  */
 async function providerFor(v: VjExperience, known: Provider[], allPlaces: Place[]): Promise<Provider | null> {
   if (!v.provider) return null;
   const key = normaliseName(v.provider);
-  const existing = known.find((p) => normaliseName(p.name) === key);
+  // A merge comes first: staff chose that provider for this name, even while the old record is still there.
+  const existing = known.find((p) => p.aliases.some((a) => normaliseName(a) === key)) ?? known.find((p) => normaliseName(p.name) === key);
   if (existing) return existing;
   let place: Place | undefined;
   if (v.providerListingId) {
@@ -202,10 +244,17 @@ async function importExperiences(raws: RawItem[], allPlaces: Place[]) {
   const existing: Experience[] = await db.select().from(experiences);
   const known: Provider[] = await db.select().from(providers);
   const taken = new Set(existing.map((e) => e.slug));
-  for (const raw of raws) {
-    const v = toExperience(raw);
-    if (!v.title) continue;
-    const record = await upsertRecord('tours-and-activities', raw, v.modifiedAt, v.portalSyncedAt);
+  const listed = raws.map((raw) => ({ raw, given: toExperience(raw) })).filter((x) => x.given.title);
+  const { rewrites, fresh } = await inGuideVoice(
+    listed.map(({ given: g }) => ({ id: g.externalId, kind: 'experience' as const, name: g.title, summary: g.summary, description: g.description })),
+    await keptRewrites('tours-and-activities'),
+    'tours',
+  );
+  counts.rewritten += fresh;
+  for (const { raw, given } of listed) {
+    const rw = rewrites.get(given.externalId);
+    const v = rw ? { ...given, summary: rw.snippet, description: rw.description } : given;
+    const record = await upsertRecord('tours-and-activities', rw ? { ...raw, _rewrite: rw } : raw, v.modifiedAt, v.portalSyncedAt);
     const stamp = { source: SOURCE, ref: `tours-and-activities/${v.externalId}`, at: new Date().toISOString() };
     const provider = await providerFor(v, known, allPlaces);
     const current = record.experienceId ? existing.find((e) => e.id === record.experienceId) : undefined;
@@ -266,6 +315,7 @@ for (const type of [...types].sort((a, b) => ORDER(a) - ORDER(b))) {
 
 console.log(
   `created ${counts.created}, updated ${counts.updated}, unchanged ${counts.unchanged}, ` +
-    `linked to an existing place ${counts.linked}, no usable pin ${counts.unpinned}, no longer listed ${missing}`,
+    `linked to an existing place ${counts.linked}, no usable pin ${counts.unpinned}, no longer listed ${missing}, ` +
+    `reworded ${counts.rewritten}`,
 );
 await client.end();

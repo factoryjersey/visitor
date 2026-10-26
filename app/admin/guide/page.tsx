@@ -1,6 +1,14 @@
+import '@fontsource/barlow-semi-condensed/400.css';
+import '@fontsource/barlow-semi-condensed/500.css';
+import '@fontsource/barlow-semi-condensed/500-italic.css';
+import '@fontsource/barlow-semi-condensed/600.css';
+import '@fontsource/barlow-semi-condensed/600-italic.css';
+import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
-import type { GuideEvent, GuideTour, GuideVenue } from '@/lib/domain/guide-entry';
-import { buildGuide, windowFrom } from '@/lib/guide';
+import { GuideBook } from '@/components/guide/book';
+import { layoutFrom, type GuideVenue } from '@/lib/domain/guide-entry';
+import { includeDraft } from '@/app/actions';
+import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
@@ -19,81 +27,101 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
 export default async function Guide({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const window = windowFrom({ from: one(sp.from), to: one(sp.to) });
-  const { highlights, events, tours, providers, venues } = await buildGuide(window);
-  const allSeason = events.filter((e) => e.block === 'all season');
-  const dated = events.filter((e) => e.block === 'dated');
-  const datedTours = tours.filter((t) => t.kind === 'dated');
-  const onDemand = tours.filter((t) => t.kind === 'on demand');
-  const qs = `from=${window.from}&to=${window.to}`;
+  // A draft lays out everything eligible; with nothing chosen yet, it is where the page starts.
+  const asked = one(sp.draft);
+  const layout = layoutFrom(one(sp.grid));
+  let draft = isDraft(asked);
+  let guide = await buildGuide(window, { draft, layout });
+  if (asked === undefined && !draft && !guide.events.length && !guide.tours.length && !guide.highlights.length) {
+    draft = true;
+    guide = await buildGuide(window, { draft, layout });
+  }
+  const { highlights, events, pages, tours, tourPages, providers, venues, leftOut } = guide;
+  const listed = events.filter((e) => e.frame !== 'image').length;
+  const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${layout === 'top' ? '' : `&grid=${layout}`}`;
+  const year = Number(window.from.slice(0, 4));
+  // Where What's On starts in the printed guide; the 2026 editions open it on page 36.
+  const firstPage = Math.max(1, Math.min(400, Number(one(sp.page)) || 36));
+  const presets = [...editions(year - 1).slice(3), ...editions(year), ...editions(year + 1).slice(0, 2)];
+  const href = (w: { from: string; to: string }, d = draft, g = layout) => `/admin/guide?from=${w.from}&to=${w.to}&draft=${d ? 1 : 0}${g === 'top' ? '' : `&grid=${g}`}`;
+  const layouts = [['top', 'Pictures on top'], ['grid6', 'Grid of 6'], ['grid8', 'Grid of 8']] as const;
+  const pill = (active: boolean) => `rounded-full border px-3 py-1 ${active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 hover:bg-stone-100'}`;
 
   return (
     <>
-      <form action="/admin/guide" className="no-print mb-6 flex flex-wrap items-end gap-3 rounded border border-stone-200 bg-white p-3 text-sm">
-        <label className="flex flex-col">
-          <span className="text-xs text-stone-500">Edition from</span>
-          <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
-        </label>
-        <label className="flex flex-col">
-          <span className="text-xs text-stone-500">to</span>
-          <input type="date" name="to" defaultValue={window.to} className="rounded border border-stone-300 px-2 py-1" />
-        </label>
-        <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
-        <span className="ml-auto text-stone-600">{highlights.length} highlights · {events.length} events · {tours.length} tours · {venues.length} venues</span>
-        <span className="flex w-full flex-wrap justify-end gap-2">
-          <span className="self-center text-xs text-stone-500">For InDesign:</span>
+      <div className="no-print mb-6 space-y-3 rounded border border-stone-200 bg-white p-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-stone-500">Edition</span>
+          {presets.map((p) => (
+            <Link key={p.name} href={href(p.window)} className={pill(p.window.from === window.from && p.window.to === window.to)}>{p.name}</Link>
+          ))}
+        </div>
+        <form action="/admin/guide" className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="draft" value={draft ? '1' : '0'} />
+          {layout !== 'top' && <input type="hidden" name="grid" value={layout} />}
+          <label className="flex flex-col">
+            <span className="text-xs text-stone-500">From</span>
+            <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-xs text-stone-500">to</span>
+            <input type="date" name="to" defaultValue={window.to} className="rounded border border-stone-300 px-2 py-1" />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-xs text-stone-500">First page</span>
+            <input type="number" name="page" min={1} max={400} defaultValue={firstPage} className="w-20 rounded border border-stone-300 px-2 py-1" />
+          </label>
+          <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
+          <span className="ml-auto flex gap-1">
+            <Link href={href(window, false)} className={pill(!draft)}>Selected</Link>
+            <Link href={href(window, true)} className={pill(draft)}>Draft: everything eligible</Link>
+          </span>
+        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-stone-500">Events layout</span>
+          {layouts.map(([g, label]) => <Link key={g} href={href(window, draft, g)} className={pill(layout === g)}>{label}</Link>)}
+          {layout !== 'top' && <span className="text-xs text-stone-500">Walks and tours go on the grid of eight too. Each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph.</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-stone-600">{highlights.length} highlights · {listed} events · {pages.length} event pages{tourPages ? ` · ${tourPages.length} tour pages` : ''} · {tours.filter((t) => t.frame !== 'image').length} tours · {venues.length} venues</span>
+          <span className="ml-auto self-center text-xs text-stone-500">For InDesign:</span>
           <a href={`/admin/guide/export/highlights.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Highlights</a>
           <a href={`/admin/guide/export/whats-on.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">What&apos;s On</a>
           <a href={`/admin/guide/export/tours.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tours</a>
           <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
-        </span>
-      </form>
-
-      <div className="guide-pages">
-        {highlights.map((e) => <HighlightPage key={e.title} e={e} />)}
-        <section className="guide-page">
-          <h2 className="guide-tab">Events this season</h2>
-          {events.length === 0 && (
-            <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>.</p>
-          )}
-          {allSeason.length > 0 && (
-            <>
-              <h3 className="guide-area">On all season</h3>
-              <div className="guide-columns">
-                {allSeason.map((e) => <EventEntry key={e.title + e.sortKey} e={e} />)}
-              </div>
-              {dated.length > 0 && <h3 className="guide-area">Dates for the diary</h3>}
-            </>
-          )}
-          <div className="guide-columns">
-            {dated.map((e) => <EventEntry key={e.title + e.sortKey} e={e} />)}
-          </div>
-        </section>
-
-        {tours.length > 0 && (
-          <section className="guide-page">
-            <h2 className="guide-tab">Walks and tours</h2>
-            <h3 className="guide-area">Tour guides &amp; providers</h3>
-            <div className="guide-key">
-              {providers.map((p) => (
-                <p key={p.name}><strong>{p.code || '??'}</strong> {p.name} {p.contact} {p.website}</p>
-              ))}
-            </div>
-            {datedTours.length > 0 && (
-              <>
-                <h3 className="guide-area">Tours &amp; experiences on these dates</h3>
-                <div className="guide-columns">{datedTours.map((t) => <TourEntry key={t.title} t={t} />)}</div>
-              </>
-            )}
-            {group(onDemand, (t) => t.genre || 'Other').map(([genre, ts]) => (
-              <div key={genre}>
-                <h3 className="guide-area">On demand: {genre.toLowerCase()}</h3>
-                <div className="guide-columns">{ts.map((t) => <TourEntry key={t.title} t={t} />)}</div>
-              </div>
-            ))}
-          </section>
+        </div>
+        {leftOut.length > 0 && (
+          <details className="text-xs text-stone-600">
+            <summary className="cursor-pointer">{leftOut.length} events left out of print as not aimed at visitors: training and work, business, and health and wellbeing</summary>
+            <p className="mt-1">{leftOut.join(' · ')}</p>
+            <p className="mt-1 text-stone-500">To print one, set its kinds by hand on its page: without Professional &amp; training or Business &amp; networking, and with Health &amp; wellbeing only alongside something visitors come for.</p>
+          </details>
         )}
+        {draft && (
+          <div className="flex flex-wrap items-center gap-3 rounded bg-amber-50 px-3 py-2 text-amber-900">
+            <p className="mr-auto">
+              <strong>Draft.</strong> Every approved event and tour on in these dates that nobody has left out, business events aside. Leave out what should not print from
+              {' '}<Link href="/admin/whats-on" className="underline">What&apos;s on</Link>, then make the rest the selection:
+            </p>
+            {(['events', 'tours'] as const).map((what) => (
+              <form key={what} action={includeDraft}>
+                <input type="hidden" name="from" value={window.from} />
+                <input type="hidden" name="to" value={window.to} />
+                <input type="hidden" name="what" value={what} />
+                <button type="submit" className="rounded border border-amber-300 bg-white px-3 py-1 hover:bg-amber-100">Include all {what} shown</button>
+              </form>
+            ))}
+          </div>
+        )}
+      </div>
 
+      {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
+        <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
+      )}
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} providers={providers} venues={venues} firstPage={firstPage} />
+
+      <div className="guide-pages mt-8">
         {group(venues, (v) => v.section).map(([section, inSection]) => (
           <section key={section} className="guide-page">
             <h2 className="guide-tab">{section}</h2>
@@ -112,53 +140,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   );
 }
 
-function EventEntry({ e }: { e: GuideEvent }) {
-  return (
-    <article className="guide-entry">
-      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
-      <h4 className="guide-title">{e.title}</h4>
-      <p>{e.copy} {e.price && <strong>{e.price}</strong>}</p>
-      <p className="guide-venue">{e.venue}</p>
-      {e.address && <p>{e.address}</p>}
-      {e.contact && <p>{e.contact}</p>}
-      {e.website && <p className="guide-web">{e.website}</p>}
-    </article>
-  );
-}
 
-/** A highlight's full page: the large image, then the extended listing. Images print from the original upload. */
-function HighlightPage({ e }: { e: GuideEvent }) {
-  return (
-    <section className="guide-page guide-highlight">
-      <h2 className="guide-tab">Highlight</h2>
-      {e.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.imageUrl} alt="" className="guide-highlight-image" />
-      )}
-      <p className="guide-when">{e.dates}{e.times && <span>{e.times}</span>}</p>
-      <h3 className="guide-highlight-title">{e.title}</h3>
-      <div className="guide-highlight-copy">
-        {e.extendedCopy.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
-      </div>
-      <p className="mt-2">{e.price && <strong>{e.price}</strong>}</p>
-      <p className="guide-venue">{e.venue}</p>
-      {e.address && <p>{e.address}</p>}
-      {e.contact && <p>{e.contact}</p>}
-      {e.website && <p className="guide-web">{e.website}</p>}
-    </section>
-  );
-}
 
-function TourEntry({ t }: { t: GuideTour }) {
-  return (
-    <article className="guide-entry">
-      {t.dates && <p className="guide-when">{t.dates}</p>}
-      <p>
-        <strong>{t.title}</strong> <strong>{t.code || '??'}</strong> {t.duration}{t.times && `, ${t.times}`} {t.copy}
-      </p>
-    </article>
-  );
-}
 
 function VenueEntry({ v }: { v: GuideVenue }) {
   return (

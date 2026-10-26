@@ -1,0 +1,1 @@
+ALTER TABLE "places" ADD COLUMN IF NOT EXISTS "former_slugs" text[] DEFAULT '{}' NOT NULL;

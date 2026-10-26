@@ -1,4 +1,5 @@
 import type { Event, Experience, Place, Provider } from '@/lib/db/schema';
+import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
   printAddress,
@@ -7,6 +8,7 @@ import {
   printPrice,
   printTimes,
   printTourDates,
+  printTitle,
   printWebsite,
 } from './house-style';
 
@@ -34,9 +36,153 @@ export type GuideEvent = {
   extendedCopy: string;
   /** The first date inside the edition, for ordering. Not printed. */
   sortKey: string;
+  /** A web-sized copy of the picture for the on-screen proof; the export keeps the original. Not printed. */
+  preview: string;
+  /** A charity or community event: listed, but a picture slot goes to something else first. Not printed. */
+  community: boolean;
+  /** The copy cut for each frame it might take, a picture cell's or a listing's; the page layout picks. Not printed. */
+  fits: { picture: string; listing: string };
+  /** Which frame it takes on its page, set by the page layout: a pictured cell, a listing, or (in the grid) the picture box beside its listing. */
+  frame: 'picture' | 'listing' | 'image';
+  /** Staff chose its picture for the grid's picture box, ahead of the rest on its page. Not printed. */
+  guidePicture: boolean;
+  /** Its kinds, which the page prints as key icons. */
+  types: string[];
+  /** Every whole-sentence version of the copy, fullest first: the proof measures its frame and prints the first that fits. Not printed. */
+  options: string[];
 };
 
 export type Window = { from: string; to: string };
+
+/**
+ * The frames an event prints in, six to a page: a top row of two 45.5 ×
+ * 52mm cells with a 16mm picture, then four 45.5 × 43mm listings without.
+ * The 2026 editions' 70mm picture cell is the default.
+ */
+export type Frame = { height: number; picture: boolean };
+export const FRAMES = { picture: { height: 52, picture: true }, listing: { height: 43, picture: false } } as const satisfies Record<string, Frame>;
+
+/**
+ * Room in an event's printed frame: the picture if it has one, the date
+ * line, the title, the copy and the venue block. Line counts are estimated from characters at the
+ * frame's width, a little short of the real figure so that what fits here
+ * fits in InDesign too.
+ */
+const LINE = { date: 3.6, title: 3.4, copy: 3.24, small: 2.75 };
+const PER_LINE = { date: 30, title: 30, copy: 32, small: 40 };
+const lines = (text: string, per: number) => (text ? Math.ceil(text.length / per) : 0);
+
+export function copyBudget(e: { dates: string; times: string; title: string; price: string; venue: string; address: string; contact: string; website: string }, frame: Frame = { height: 70, picture: true }): number {
+  const used =
+    (frame.picture ? 18.7 : 2) + // the picture, its rule and the space under it; a listing's rule
+    lines(`${e.dates}  ${e.times}`.trim(), PER_LINE.date) * LINE.date +
+    lines(e.title, PER_LINE.title) * LINE.title + 0.5 +
+    (e.venue ? 2.2 + lines(e.venue, PER_LINE.small) * LINE.small : 0) +
+    lines(e.address, PER_LINE.small) * LINE.small +
+    lines(e.contact, PER_LINE.small) * LINE.small +
+    (e.website ? 1.4 + lines(e.website, PER_LINE.small) * LINE.small : 0);
+  const copyLines = Math.max(0, Math.floor((frame.height - used) / LINE.copy));
+  return copyLines ? copyLines * PER_LINE.copy - (e.price ? e.price.length + 1 : 0) : 0;
+}
+
+/**
+ * Copy cut to its frame: as many whole sentences as fit, and if not even
+ * the first does, its words up to the room left and an ellipsis.
+ */
+export function fitCopy(text: string, budget: number): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= budget) return clean;
+  const sentences = clean.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) ?? [clean];
+  let out = '';
+  for (const s of sentences) {
+    const next = `${out} ${s.trim()}`.trim();
+    if (next.length > budget) break;
+    out = next;
+  }
+  if (out) return out;
+  const words = clean.split(' ');
+  let cut = '';
+  for (const w of words) {
+    if (`${cut} ${w}`.trim().length > budget - 1) break;
+    cut = `${cut} ${w}`.trim();
+  }
+  return `${cut.replace(/[,;:–-]+$/, '')}…`;
+}
+
+/**
+ * The copy a frame prints. Ours, when it fits, as an editor wrote it for
+ * print. Otherwise the fullest that fits in whole sentences: the
+ * description cut at a sentence, the card's one-sentence version, or the
+ * print line written to fit the smallest frame, whichever says more. Only if neither fits whole is a sentence cut.
+ */
+export function printCopy(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }, budget: number): string {
+  // No room for a line of copy: the dates, title and venue say it.
+  if (budget <= 0) return '';
+  return copyOptions(e).find((c) => c.length <= budget) ?? '';
+}
+
+/**
+ * The copy a frame could print, in order of preference: ours whole, then
+ * every whole-sentence version of ours, the description, the card
+ * sentence and the print line, fullest first, then none.
+ */
+export function copyOptions(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
+  const tidy = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
+  const ours = tidy(e.guideCopy);
+  const snippet = tidy(e.printLine);
+  // The snippet sums the listing up for print: whole, or its first sentence alone.
+  const texts = snippet ? [snippet] : [tidy(e.description), tidy(e.summary)];
+  const prefixes = new Set<string>();
+  for (const text of [ours, ...texts]) {
+    let out = '';
+    for (const s of sentences(text)) {
+      out = `${out} ${s}`.trim();
+      if (out.length > 600) break;
+      if (!trailsOff(out)) prefixes.add(out);
+    }
+  }
+  return [...new Set([...(ours ? [ours] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
+}
+
+/** Copy the source cut short ("…", "..."): never printed. */
+const trailsOff = (t: string) => /(\.\.|…)\s*$/.test(t) || /(\.\.|…)\s/.test(t);
+/** A full stop that ends a short form, not a sentence: "St. Helier", "Dr. Smith", "e.g. this". */
+const SHORT_FORM = /(?:^|\s)(?:St|Ste|Mt|Dr|Mr|Mrs|Ms|No|Nos|approx|e\.g|i\.e|vs|[A-Z])\.$/;
+function sentences(t: string): string[] {
+  const out: string[] = [];
+  for (const piece of (t.match(/[^.!?…]+(?:[.!?…]+|$)(?=\s|$)/g) ?? []).map((s) => s.trim()).filter(Boolean)) {
+    const last = out.at(-1);
+    // Glued back on: after a short form, or when what follows starts in lower case.
+    if (last && (SHORT_FORM.test(last) || /^[a-z0-9]/.test(piece))) out[out.length - 1] = `${last} ${piece}`;
+    else out.push(piece);
+  }
+  return out;
+}
+
+/**
+ * A picture the guide prints: the listing's own (not stock or a club's
+ * photograph we credit), and not a poster or flyer, which crops badly.
+ */
+const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
+
+/** Sites that sell for everyone: in print they say nothing about the event. */
+const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
+
+/**
+ * The address the guide prints: the event's own, unless that is a ticket
+ * platform and the venue has a site of its own, which a reader can type
+ * and remember.
+ */
+export function guideWebsite(eventSite: string | null, venueSite: string | null): string | null {
+  if (!eventSite) return venueSite;
+  let host = '';
+  try {
+    host = new URL(/^https?:/i.test(eventSite) ? eventSite : `https://${eventSite}`).hostname.replace(/^www\./, '');
+  } catch {
+    return eventSite;
+  }
+  return TICKET_PLATFORMS.test(host) && venueSite ? venueSite : eventSite;
+}
 
 export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
@@ -48,22 +194,126 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
     ? printAddress(e)
     : venue ? printAddress(venue) : null;
 
-  return {
+  const entry = {
     dates,
     times: e.printTimes ?? printTimes(inside.length ? inside : e.dates) ?? '',
-    title: e.title,
-    copy: e.guideCopy ?? e.summary ?? '',
+    title: printTitle(e.title),
     price: e.printPrice ?? printPrice(e.fromPricePence, e.toPricePence, { free: e.free }) ?? '',
     venue: e.venueName ?? venue?.name ?? e.venue?.split(',')[0] ?? '',
     address: address ?? '',
     contact: printContact(e.phone ?? venue?.phone ?? null, e.email) ?? '',
-    website: printWebsite(e.website ?? venue?.website ?? null) ?? '',
-    imageUrl: e.headerImage?.url ?? '',
-    block: UNIQUE.includes(e.occurrence) ? 'dated' : 'all season',
+    website: printWebsite(guideWebsite(e.website, venue?.website ?? null)) ?? '',
+    // Stock, credited and poster pictures are for the web only: print uses the listing's own photograph or none.
+    imageUrl: printable(e.headerImage) ? e.headerImage!.url : '',
+    preview: printable(e.headerImage) ? webImage(e.headerImage!, 520, 182) : '',
+    block: (UNIQUE.includes(e.occurrence) ? 'dated' : 'all season') as GuideEvent['block'],
     highlight: e.highlight,
     extendedCopy: e.guideCopy ?? e.description ?? e.summary ?? '',
     sortKey: inside[0]?.date ?? e.startsOn ?? '',
   };
+  const fits = { picture: printCopy(e, copyBudget(entry, FRAMES.picture)), listing: printCopy(e, copyBudget(entry, FRAMES.listing)) };
+  const community = e.eventTypes.includes('Charity');
+  return { ...entry, community, guidePicture: e.guidePicture, types: e.eventTypes, fits, frame: 'listing', copy: fits.listing, options: copyOptions(e) };
+}
+
+/**
+ * How What's On is laid out. 'top': six to a page, a pictured pair across
+ * the top. 'grid6' and 'grid8': six or eight equal boxes, two across,
+ * every listing without a picture and one box a picture beside the listing it belongs to.
+ */
+export const LAYOUTS = ['top', 'grid6', 'grid8'] as const;
+export type Layout = (typeof LAYOUTS)[number];
+export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
+
+export const PER_PAGE = 6;
+const PICTURES_PER_PAGE = 2;
+/** Its copy would be cut mid-sentence, or dropped, in a picture cell. */
+const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
+
+/** The grid's boxes: 142.4mm of page, rows 2mm apart. */
+export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 } } as const;
+
+/**
+ * Events onto pages in date order, as the layout asks. Top: six at a
+ * time; on each page the two with the strongest claim to a picture take
+ * the top row: one with its own picture, not a community event unless
+ * nothing else has one, and one whose copy fits the smaller frame in
+ * whole sentences before one that would be cut. The rest follow as
+ * listings, still in date order.
+ *
+ * Grid: five or seven listings a page and a picture box in the same row
+ * as its listing, to its right, so that the reader sees whose picture it
+ * is; a listing in the right-hand column swaps with the one before it. The
+ * picture is the one staff chose, else the first with its own picture
+ * that is not a community event, else any. A page with no picture to show
+ * takes one more listing instead.
+ */
+export function layoutEvents(events: GuideEvent[], layout: Layout = 'top'): GuideEvent[][] {
+  if (layout !== 'top') return gridEvents(events, GRID[layout]);
+  const pages: GuideEvent[][] = [];
+  for (let i = 0; i < events.length; i += PER_PAGE) {
+    const page = events.slice(i, i + PER_PAGE);
+    const ranked = page
+      .map((e, at) => ({ e, at }))
+      .filter(({ e }) => e.imageUrl)
+      .sort((a, b) => Number(a.e.community) - Number(b.e.community) || Number(cut(a.e)) - Number(cut(b.e)) || a.at - b.at)
+      .slice(0, PICTURES_PER_PAGE)
+      .sort((a, b) => a.at - b.at)
+      .map(({ e }) => e);
+    const pictured = new Set(ranked);
+    pages.push([
+      ...ranked.map((e) => ({ ...e, frame: 'picture' as const, copy: e.fits.picture })),
+      ...page.filter((e) => !pictured.has(e)).map((e) => ({ ...e, frame: 'listing' as const, copy: e.fits.listing })),
+    ]);
+  }
+  return pages;
+}
+
+function gridEvents(events: GuideEvent[], grid: { cells: number; height: number }): GuideEvent[][] {
+  const frame = { height: grid.height, picture: false };
+  return gridPages(events, grid.cells, {
+    listing: (e) => ({ ...e, frame: 'listing', copy: e.options.find((c) => c.length <= copyBudget(e, frame)) ?? '' }),
+    image: (e) => ({ ...e, frame: 'image', copy: '' }),
+  });
+}
+
+type Pictured = { imageUrl: string; guidePicture: boolean; community?: boolean };
+/** Eventbrite's pictures, linked from its servers, do not always show elsewhere: a page's picture is one of them only when nothing else has a picture. */
+const hotlinked = (url: string) => /^https:\/\/img\.evbuc\.com\//.test(url);
+
+/**
+ * Entries onto pages of a two-across grid, in order: a box a page for a
+ * picture and the rest listings. The picture is the one staff chose, else
+ * the first with its own picture that is not linked from Eventbrite or a
+ * community event, else any;
+ * it follows its listing in the same row, and a listing in the
+ * right-hand column swaps with the one before it to make room. A page
+ * with no picture to show takes one more listing instead.
+ */
+export function gridPages<T extends Pictured>(items: T[], cells: number, cell: { listing: (t: T) => T; image: (t: T) => T }): T[][] {
+  const pages: T[][] = [];
+  let i = 0;
+  while (i < items.length) {
+    const page = items.slice(i, i + cells - 1);
+    const pick = page
+      .map((e, at) => ({ e, at }))
+      .filter(({ e }) => e.imageUrl)
+      .sort((a, b) => Number(b.e.guidePicture) - Number(a.e.guidePicture) || Number(hotlinked(a.e.imageUrl)) - Number(hotlinked(b.e.imageUrl)) || Number(!!a.e.community) - Number(!!b.e.community) || a.at - b.at)[0];
+    if (!pick) {
+      // Nothing on this page to picture: a listing fills the box instead.
+      const full = items.slice(i, i + cells);
+      pages.push(full.map(cell.listing));
+      i += full.length;
+      continue;
+    }
+    const listed = page.map(cell.listing);
+    const at = pick.at - (pick.at % 2);
+    const [chosen] = listed.splice(pick.at, 1);
+    listed.splice(at, 0, chosen!, cell.image(page[pick.at]!));
+    pages.push(listed);
+    i += page.length;
+  }
+  return pages;
 }
 
 /** The current season if none is chosen: today to three months on. */
@@ -125,6 +375,15 @@ export type GuideTour = {
   times: string;
   copy: string;
   sortKey: string;
+  imageUrl: string;
+  /** A web-sized copy of the picture for the on-screen proof. Not printed. */
+  preview: string;
+  /** Staff chose its picture for the grid's picture box. Not printed. */
+  guidePicture: boolean;
+  /** Every whole-sentence version of the copy, fullest first, for a grid box to fit. Not printed. */
+  options: string[];
+  /** In the grid: a listing, or the picture box beside it. */
+  frame: 'listing' | 'image';
 };
 
 export function guideTour(
@@ -145,7 +404,7 @@ export function guideTour(
     kind: dated ? 'dated' : 'on demand',
     genre: x.genre ?? '',
     dates: dates ?? '',
-    title: x.title,
+    title: printTitle(x.title),
     code: provider?.code ?? '',
     provider: provider?.name ?? '',
     duration: x.duration ?? '',
@@ -153,5 +412,25 @@ export function guideTour(
     times: times.split(/ \| |, /).length > 2 ? '' : times,
     copy: x.guideCopy ?? x.summary ?? '',
     sortKey: inside[0]?.date ?? '',
+    imageUrl: printable(x.headerImage) ? x.headerImage!.url : '',
+    preview: printable(x.headerImage) ? webImage(x.headerImage!, 520, 182) : '',
+    guidePicture: x.guidePicture,
+    options: copyOptions(x),
+    frame: 'listing',
   };
+}
+
+/** A tour's box on the grid: when (or, on the on-demand pages, its genre), its title, the copy, then the provider's code and the duration. The code points to the key. */
+const TOUR_BOX = { height: GRID.grid8.height, picture: false };
+export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
+
+/** Walks and tours on the grid of eight, in the order they print: seven listings and a picture a page. */
+export function gridTours(tours: GuideTour[]): GuideTour[][] {
+  return gridPages(tours, GRID.grid8.cells, {
+    listing: (t) => {
+      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, TOUR_BOX);
+      return { ...t, frame: 'listing', copy: t.options.find((c) => c.length <= room) ?? '' };
+    },
+    image: (t) => ({ ...t, frame: 'image', copy: '' }),
+  });
 }

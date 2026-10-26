@@ -50,7 +50,36 @@ export function webWhen(dates: readonly EventDate[], occurrence: Occurrence, tod
   return `${days.slice(0, 3).map(full).join(', ')} + ${days.length - 3} more`;
 }
 
+/**
+ * When, for a card: as webWhen, but scattered dates give only the next
+ * one. "Sun 18 Oct", not "Sun 18 Oct, Sat 7 Nov, Sun 8 Nov + 3 more";
+ * the event's own page lists them all.
+ */
+export function cardWhen(dates: readonly EventDate[], occurrence: Occurrence, today: string): string | null {
+  const when = webWhen(dates, occurrence, today);
+  if (occurrence === 'ongoing' || occurrence === 'regular' || !when?.includes(', ')) return when;
+  return when.split(', ')[0]!;
+}
+
 /** The next date on or after today, for ordering a list. */
 export function nextDate(dates: readonly EventDate[], today: string): string | null {
   return upcomingDates(dates, today)[0] ?? null;
+}
+
+/**
+ * When, for the top of a listing's page: the next date to the fore, the
+ * rest after it in smaller type. "Sat 24 Oct" and "and Sat 7 Nov"; many
+ * later dates are counted, not listed, as the page lists them below. A
+ * run of days, or something regular or ongoing, is one phrase.
+ */
+export function headerWhen(dates: readonly EventDate[], occurrence: Occurrence, today: string): { main: string; more: string | null } | null {
+  const when = webWhen(dates, occurrence, today);
+  if (!when) return null;
+  const days = upcomingDates(dates, today).map(parse);
+  const consecutive = days.at(-1)!.t - days[0]!.t + 1 === days.length;
+  if (occurrence === 'ongoing' || occurrence === 'regular' || days.length === 1 || consecutive) return { main: when, more: null };
+  const thisYear = parse(today).y;
+  const full = (x: (typeof days)[number]) => `${DAYS[x.dow]} ${x.d} ${MONTHS[x.m - 1]}${x.y !== thisYear ? ` ${x.y}` : ''}`;
+  const rest = days.slice(1);
+  return { main: full(days[0]!), more: rest.length <= 2 ? `and ${rest.map(full).join(', ')}` : `and ${rest.length} more dates` };
 }

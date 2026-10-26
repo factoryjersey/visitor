@@ -1,16 +1,53 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { isEmailDomainAllowed } from '@/lib/auth/permissions';
 import { isProtectedPath } from '@/lib/auth/public-paths';
 
+const SESSION_PATHS = /^\/(admin|account|login|logout|auth|invite)(\/|$)/;
+
+/** Pages with a Markdown version: the public site's sections and listings. */
+const MARKDOWN_PATHS = /^\/($|whats-on(\/[^/]+)?$|tours(\/[^/]+)?$|venues(\/[^/]+)?$|organisers(\/[^/]+)?$|list$)/;
+
+/** Asked for Markdown before HTML: an agent, not a browser. */
+const wantsMarkdown = (accept: string | null) => {
+  if (!accept) return false;
+  const q = (type: string) => {
+    const part = accept.split(',').map((p) => p.trim()).find((p) => p.split(';')[0] === type);
+    if (!part) return -1;
+    const m = /;\s*q=([\d.]+)/.exec(part);
+    return m ? Number(m[1]) : 1;
+  };
+  return q('text/markdown') > Math.max(q('text/html'), -0.5);
+};
+
 /**
- * Refreshes the Supabase session and sends anyone under /admin who is not
- * signed in, or signed in from outside the allowed domains, to /login.
- * The public site needs no session.
- * As factoryOS does; the allowlist is checked here too because a shared
- * Supabase project may hold accounts this app should not admit.
+ * The public site for agents: /whats-on/x.md, or /whats-on/x asked
+ * for as text/markdown, is the Markdown version; every HTML page says
+ * where its Markdown is, in a Link header. No session, no database.
+ */
+function forAgents(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const asMd = path.endsWith('.md') ? (path === '/index.md' ? '/' : path.slice(0, -3)) : null;
+  const page = asMd ?? path;
+  if (!MARKDOWN_PATHS.test(page)) return NextResponse.next();
+  if (asMd !== null || wantsMarkdown(request.headers.get('accept'))) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/md${page === '/' ? '' : page}`;
+    return NextResponse.rewrite(url);
+  }
+  const response = NextResponse.next();
+  response.headers.set('Link', `<${page === '/' ? '/index' : page}.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"; type="text/markdown", </openapi.json>; rel="service-desc"; type="application/json"`);
+  response.headers.set('Vary', 'Accept');
+  return response;
+}
+
+/**
+ * Refreshes the Supabase session and sends anyone under /admin or
+ * /account who is not signed in to /login. The public site needs no
+ * session. Whether the person has an account here, and which role, is
+ * checked by the pages: this runs at the edge, without the database.
  */
 export async function middleware(request: NextRequest) {
+  if (!SESSION_PATHS.test(request.nextUrl.pathname)) return forAgents(request);
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -31,9 +68,7 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const allowed = !!user?.email && isEmailDomainAllowed(user.email, process.env.ALLOWED_EMAIL_DOMAINS);
-
-  if (!allowed && isProtectedPath(request.nextUrl.pathname)) {
+  if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.search = '';
@@ -46,8 +81,8 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Only the editing side and the sign-in flow need the session. The public
-// site skips middleware entirely, so it can be cached.
+// Only the editing side, a provider's pages and the sign-in flow need the session; the public
+// pages pass through forAgents above. Assets, the API and the agent files skip middleware.
 export const config = {
-  matcher: ['/admin/:path*', '/admin', '/login', '/logout', '/auth/:path*'],
+  matcher: ['/((?!_next/|api/|md/|mcp|\\.well-known/|favicon|guide/|.*\\.(?:svg|png|jpe?g|webp|ico|css|js|txt|xml|json)$).*)'],
 };

@@ -8,20 +8,37 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().url(),
 
-  // Supabase Auth. Point these at factoryOS's project and the same
-  // accounts sign in to both.
+  // Supabase Auth: visitor's own project. It proves who somebody is;
+  // the users table decides whether they get in.
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  // Only the create-user script needs it; the app never does.
+  // Server only. Accepting an invite with a password creates the
+  // Supabase account with it; Google sign-in needs nothing.
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // The canonical public URL. Redirects are built from this, never from
   // the request, which behind Railway's proxy says localhost.
   NEXT_PUBLIC_APP_URL: z.string().url(),
 
-  // Comma-separated, e.g. "factory.je". Unset means no restriction —
-  // fine locally, never in production.
-  ALLOWED_EMAIL_DOMAINS: z.string().optional(),
+  // Comma-separated addresses that become superadmin on first sign-in,
+  // so the first account needs no invite. Everyone else is invited.
+  SUPERADMIN_EMAILS: z.string().optional(),
+
+  // Claude, for putting providers' own words into the guide's voice. Without
+  // it their text is saved as they wrote it.
+  ANTHROPIC_API_KEY: z.string().optional(),
+
+  // Resend, for invites and claim emails. Without the key nothing is sent:
+  // invite links are shown to copy, as before.
+  RESEND_API_KEY: z.string().optional(),
+  /** Stock pictures for listings with none (pexels.com, free). Without it, Openverse's public-domain photos. */
+  PEXELS_API_KEY: z.string().optional(),
+  /** Google Maps Platform, Places API (New): matches venues to Google and shows their rating and reviews. Without it the reviews panel is not shown. */
+  GOOGLE_MAPS_API_KEY: z.string().optional(),
+  // The sender: an address on a domain verified in Resend.
+  EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
+  // Who hears about new claims, comma-separated. Unset: every staff account.
+  STAFF_NOTIFY_EMAILS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

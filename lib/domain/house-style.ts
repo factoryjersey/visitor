@@ -32,6 +32,31 @@ function day(iso: string): Day {
 
 const dm = (x: Day) => `${x.d} ${MONTHS[x.m - 1]}`;
 
+const WEEKDAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+const short = (w: number) => WEEKDAYS[w]!.slice(0, 3);
+
+/**
+ * The same one to four weekdays, filled most weeks for a fortnight or
+ * more: "FRIDAY", "SAT & SUN", "THU - SUN". Null for anything else, a
+ * daily run or dates that skip about.
+ */
+function everyWeek(days: Day[]): string | null {
+  const first = days[0]!;
+  const last = days.at(-1)!;
+  if (days.length < 4 || last.t - first.t < 13) return null;
+  const dow = (x: Day) => new Date(x.t * 86_400_000).getUTCDay();
+  const weekdays = [...new Set(days.map(dow))].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  if (weekdays.length > 4) return null;
+  let slots = 0;
+  for (let t = first.t; t <= last.t; t += 1) if (weekdays.includes(new Date(t * 86_400_000).getUTCDay())) slots += 1;
+  if (days.length / slots < 0.75) return null;
+  if (weekdays.length === 1) return WEEKDAYS[weekdays[0]!]!;
+  const mon = weekdays.map((w) => (w + 6) % 7);
+  const run = mon.every((w, i) => i === 0 || w === mon[i - 1]! + 1);
+  if (run && weekdays.length > 2) return `${short(weekdays[0]!)} - ${short(weekdays.at(-1)!)}`;
+  return weekdays.length === 2 ? `${short(weekdays[0]!)} & ${short(weekdays[1]!)}` : weekdays.map(short).join(', ');
+}
+
 /**
  * An event's dates as the guide prints them, keeping only those inside
  * the edition's window.
@@ -39,6 +64,8 @@ const dm = (x: Day) => `${x.d} ${MONTHS[x.m - 1]}`;
  *   one date                          26 OCT
  *   two                               1 SEP & 15 SEP
  *   a short run of consecutive days   1 - 5 SEP, 30 SEP - 4 OCT
+ *   the same days most weeks          EVERY FRIDAY, 6 NOV - 18 DEC
+ *                                     EVERY THU - SUN, 26 NOV - 20 DEC
  *   a long run, mostly daily          1 SEP UNTIL 29 OCT
  *   anything else                     1 SEP, 3/8/10/15 SEP, 2 OCT
  *
@@ -60,6 +87,8 @@ export function printDates(dates: readonly EventDate[], window?: { from: string;
   if (consecutive && span <= 7) {
     return first.m === last.m ? `${first.d} - ${last.d} ${MONTHS[last.m - 1]}` : `${dm(first)} - ${dm(last)}`;
   }
+  const weekly = everyWeek(days);
+  if (weekly) return `EVERY ${weekly}, ${dm(first)} - ${dm(last)}`;
   // Open most days over a long stretch: an exhibition, a season.
   if (days.length >= 8 && days.length / span >= 0.4) return `${dm(first)} UNTIL ${dm(last)}`;
   if (days.length === 2) return `${dm(first)} & ${dm(last)}`;
@@ -140,4 +169,45 @@ export function printTourDates(dates: readonly EventDate[], window?: { from: str
     else groups.push({ key, label: TOUR_MONTHS[m - 1]!, days: [d] });
   }
   return groups.map((g) => `${g.days.join('/')} ${g.label}`).join(', ');
+}
+
+/** Words a title keeps small unless they open or close it, or follow a colon or dash. */
+const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'v', 'vs', 'via', 'with', 'de', 'du', 'la', 'le', 'les', 'des']);
+
+/**
+ * A heading in title case, as the guide prints them: "An Island Christmas
+ * Carol at 16 New Street", "Jersey Bulls v Hartley Wintney". What its
+ * source already wrote with care is kept: acronyms (JCG, RFC), names with
+ * capitals inside (O'Sullivan, McQueen, iNED). A title shouted in
+ * capitals is cased again from scratch.
+ */
+export function printTitle(title: string): string {
+  const letters = title.replace(/[^A-Za-z]/g, '');
+  const shouted = letters.length > 3 && letters === letters.toUpperCase();
+  const source = shouted ? title.toLowerCase() : title;
+  const words = source.split(/(\s+)/);
+  const real = words.map((w, i) => (/\S/.test(w) ? i : -1)).filter((i) => i >= 0);
+  const first = real[0];
+  const last = real.at(-1);
+  return words
+    .map((w, i) => {
+      if (!/\S/.test(w)) return w;
+      const before = words.slice(0, i).join('').trimEnd();
+      const opens = i === first || i === last || /[:–—\-(]$/.test(before);
+      return w
+        .split('-')
+        .map((part, j) => {
+          const core = part.replace(/^[^A-Za-z0-9]+/, '');
+          const lead = part.slice(0, part.length - core.length);
+          if (!core) return part;
+          // Already deliberate: an acronym or a capital inside the word.
+          if (!shouted && (/^[A-Z0-9&.]{2,}$/.test(core.replace(/[^A-Za-z0-9&.]/g, '')) || /[a-z][A-Z]/.test(core) || /^[a-z]+[A-Z]/.test(core))) return part;
+          const bare = core.toLowerCase().replace(/[^a-z]/g, '');
+          if (j === 0 && !opens && MINOR.has(bare)) return lead + core.toLowerCase();
+          if (/^\d/.test(core)) return part;
+          return lead + core.charAt(0).toUpperCase() + core.slice(1);
+        })
+        .join('-');
+    })
+    .join('');
 }

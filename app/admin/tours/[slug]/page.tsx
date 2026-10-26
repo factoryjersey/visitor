@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { saveTourPrint } from '@/app/actions';
+import { BusinessControl } from '@/components/business-control';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { GenreControl } from '@/components/genre-control';
@@ -30,7 +31,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
       <div className="space-y-4">
         <Link href="/admin/tours" className="text-sm text-stone-500 hover:underline">← Tours &amp; experiences</Link>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="font-serif text-3xl">{x.title}</h1>
+          <h1 className="font-display text-3xl">{x.title}</h1>
           <InclusionBadge inclusion={x.inclusion} />
         </div>
         {x.headerImage && (
@@ -53,7 +54,7 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
       <aside className="space-y-4">
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
-          <InclusionControl kind="experience" id={x.id} inclusion={x.inclusion} />
+          {x.review === 'approved' ? <InclusionControl kind="experience" id={x.id} inclusion={x.inclusion} /> : <p className="text-xs text-stone-500">Once approved in Review.</p>}
           <div className="my-3 border-t border-stone-100 pt-3"><HighlightControl kind="experience" id={x.id} highlight={x.highlight} /></div>
           <DecidedBy inclusion={x.inclusion} by={x.inclusionSetBy} at={x.inclusionSetAt} editedBy={x.editedBy} editedAt={x.editedAt} />
         </div>
@@ -84,12 +85,20 @@ export default async function TourPage({ params }: { params: Promise<{ slug: str
               <span className="text-xs text-stone-500">Times</span>
               <input name="printTimes" defaultValue={x.printTimes ?? ''} placeholder={printTimes(x.dates) ?? ''} className="mt-0.5 w-full rounded border border-stone-300 p-1.5 text-sm" />
             </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="guidePicture" defaultChecked={x.guidePicture} disabled={!entry?.imageUrl} className="mt-1" />
+              <span>
+                Use its picture in the guide grid
+                <span className="block text-xs text-stone-500">{entry?.imageUrl ? 'Its page’s picture box shows this one ahead of the others.' : 'It has no photograph the guide can print: none, a stock picture, or one with words on it.'}</span>
+              </span>
+            </label>
             <button type="submit" className="rounded border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100">Save print details</button>
           </form>
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
           <EditorialForm kind="experience" id={x.id} guideCopy={x.guideCopy} inclusionNote={x.inclusionNote} sourceCopy={x.summary} />
         </div>
+        <BusinessControl kind="experience" id={x.id} businessId={x.businessId} review={x.review} />
         <SourcePanel sourceLink={x.sourceLink} sourceModifiedAt={x.sourceModifiedAt} fieldSources={x.fieldSources} />
       </aside>
     </div>

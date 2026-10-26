@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { use, useActionState } from 'react';
 import { signInAction, signInWithGoogleAction } from './actions';
 
@@ -9,20 +10,20 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_missing_code: 'Google sign-in failed (no code returned). Try again.',
   oauth_exchange: "Couldn't complete Google sign-in. Try again.",
   oauth_start: "Couldn't start Google sign-in. Check your network and try again.",
-  domain: 'Only Factory accounts can sign in here.',
+  no_account: 'There is no account for that Google address. Use the address you were invited with, or ask for a new invite.',
 };
 
 export default function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next: nextParam, error: errorParam } = use(searchParams);
   const [state, formAction, pending] = useActionState<SignInState, FormData>(signInAction, null);
-  const next = nextParam ?? '/admin';
+  const next = nextParam ?? '';
   const oauthError = errorParam ? ERROR_MESSAGES[errorParam] ?? null : null;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center bg-stone-50 px-4">
       <div className="rounded border border-stone-200 bg-white p-8">
-        <h1 className="mb-1 font-serif text-2xl">Sign in</h1>
-        <p className="mb-6 text-sm text-stone-600">Use your Factory Google account.</p>
+        <h1 className="mb-1 font-display text-2xl">Sign in</h1>
+        <p className="mb-6 text-sm text-stone-600">With Google, or the password you set from your invite.</p>
 
         {oauthError && <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{oauthError}</p>}
 
@@ -58,6 +59,7 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ ne
             {pending ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <p className="mt-4 text-center text-sm"><Link href="/login/forgot" className="text-stone-500 hover:text-stone-900 hover:underline">Forgotten your password?</Link></p>
       </div>
     </div>
   );

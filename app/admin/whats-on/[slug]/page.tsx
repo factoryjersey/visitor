@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { BusinessControl } from '@/components/business-control';
 import { DecidedBy } from '@/components/decided-by';
 import { EditorialForm } from '@/components/editorial-form';
 import { EventPrintForm } from '@/components/event-print-form';
@@ -38,7 +39,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
       <div className="space-y-4">
         <Link href="/admin/whats-on" className="text-sm text-stone-500 hover:underline">← What&apos;s on</Link>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="font-serif text-3xl">{e.title}</h1>
+          <h1 className="font-display text-3xl">{e.title}</h1>
           <InclusionBadge inclusion={e.inclusion} />
         </div>
         {e.headerImage && (
@@ -65,7 +66,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
       <aside className="space-y-4">
         <div className="rounded border border-stone-200 bg-white p-3">
           <h2 className="mb-2 text-sm font-medium">In the guide?</h2>
-          <InclusionControl kind="event" id={e.id} inclusion={e.inclusion} />
+          {e.review === 'approved' ? <InclusionControl kind="event" id={e.id} inclusion={e.inclusion} /> : <p className="text-xs text-stone-500">Once approved in Review.</p>}
           <div className="my-3 border-t border-stone-100 pt-3"><HighlightControl kind="event" id={e.id} highlight={e.highlight} /></div>
           <DecidedBy inclusion={e.inclusion} by={e.inclusionSetBy} at={e.inclusionSetAt} editedBy={e.editedBy} editedAt={e.editedAt} />
         </div>
@@ -81,8 +82,9 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <EditorialForm kind="event" id={e.id} guideCopy={e.guideCopy} inclusionNote={e.inclusionNote} sourceCopy={e.summary} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
-          <EventPrintForm id={e.id} entry={entry} computed={computed} current={{ dates: e.printDates, times: e.printTimes, price: e.printPrice }} />
+          <EventPrintForm id={e.id} entry={entry} computed={computed} current={{ dates: e.printDates, times: e.printTimes, price: e.printPrice, line: e.printLine, guidePicture: e.guidePicture }} />
         </div>
+        <BusinessControl kind="event" id={e.id} businessId={e.businessId} review={e.review} />
         <SourcePanel sourceLink={e.sourceLink} sourceModifiedAt={e.sourceModifiedAt} fieldSources={e.fieldSources} />
       </aside>
     </div>

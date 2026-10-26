@@ -1,12 +1,15 @@
+import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isEmailDomainAllowed, safeNext } from '@/lib/auth/permissions';
+import { recordSignIn, resolveAccount } from '@/lib/auth/accounts';
+import { safeNext } from '@/lib/auth/permissions';
+import { homeFor } from '@/lib/auth/roles';
 import { getSupabaseServer } from '@/lib/auth/supabase-server';
 import { env } from '@/lib/env';
 
 /**
- * Supabase OAuth callback: exchange the code, then refuse the session if
- * the account is outside the allowed domains — Supabase cannot filter
- * before Google signs somebody in.
+ * Supabase's return leg, for Google sign-in and for the password reset
+ * email: exchange the code, then refuse the session unless the address
+ * has an account here — Supabase will sign in any Google account.
  *
  * Redirects use NEXT_PUBLIC_APP_URL, never the request's origin, which
  * behind Railway's proxy is localhost.
@@ -22,10 +25,16 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user?.email) return NextResponse.redirect(`${base}/login?error=oauth_exchange`);
 
-  if (!isEmailDomainAllowed(data.user.email, env.ALLOWED_EMAIL_DOMAINS)) {
+  const account = await resolveAccount(data.user);
+  if (!account) {
     await supabase.auth.signOut();
-    return NextResponse.redirect(`${base}/login?error=domain`);
+    return NextResponse.redirect(`${base}/login?error=no_account`);
   }
+  await recordSignIn(account);
 
-  return NextResponse.redirect(`${base}${safeNext(searchParams.get('next'))}`);
+  // The path asked for, or the one remembered when Supabase dropped it.
+  const jar = await cookies();
+  const next = searchParams.get('next') ?? jar.get('after_sign_in')?.value;
+  jar.delete('after_sign_in');
+  return NextResponse.redirect(`${base}${next ? safeNext(next) : homeFor(account.role)}`);
 }

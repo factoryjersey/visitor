@@ -35,6 +35,8 @@ export type VjPlace = {
   lowRatePence: number | null;
   highRatePence: number | null;
   aaRating: string | null;
+  /** Accommodation only: Hotel, Guest house, Self-catering… Left out for other listings, so a hotel's restaurant listing does not clear it. */
+  stayType?: string | null;
   headerImage: Image | null;
   gallery: Image[];
   sourceLink: string | null;
@@ -69,7 +71,11 @@ export type VjEvent = {
   fromPricePence: number | null;
   toPricePence: number | null;
   headerImage: Image | null;
+  /** More pictures, after the header: Visit Jersey sends several. */
+  gallery?: Image[];
   sourceLink: string | null;
+  /** Who puts it on, when the source says: an Eventbrite organiser, the charity in the diary. */
+  organiser?: string | null;
   modifiedAt: Date | null;
   portalSyncedAt: Date | null;
 };
@@ -260,6 +266,7 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
     lowRatePence: pence(acf.low_season_rate),
     highRatePence: pence(acf.high_season_rate),
     aaRating: labelOf(acf.aa_rating) ?? labels(acf.aa_rating)[0] ?? null,
+    ...(type === 'accommodation' ? { stayType: labels(Array.isArray(acf.type) ? acf.type : [acf.type])[0] ?? null } : {}),
     headerImage: header,
     gallery: images(acf.gallery_images_data),
     sourceLink: str(raw.link),
@@ -311,7 +318,7 @@ export function toEvent(raw: RawItem): VjEvent {
     website: str(acf.website),
     eventTypes: labels(acf.type),
     free,
-    occurrence: classifyOccurrence(dates.map((x) => x.date)),
+    occurrence: classifyOccurrence(dates.map((x) => x.date), { starts: dates.map((x) => x.start) }),
     ...pin(acf),
     dates,
     startsOn: isoDate(acf.event_dates_start) ?? dates[0]?.date ?? null,
@@ -319,6 +326,7 @@ export function toEvent(raw: RawItem): VjEvent {
     fromPricePence: pence(acf.from_price),
     toPricePence: pence(acf.price_to),
     headerImage: images(acf.header_image_data)[0] ?? null,
+    gallery: images(acf.gallery_images_data),
     sourceLink: str(raw.link),
     modifiedAt: utc(raw.modified_gmt),
     portalSyncedAt: utc(acf.portal_last_synced),
@@ -353,6 +361,7 @@ export type VjExperience = {
   lat: number | null;
   lon: number | null;
   headerImage: Image | null;
+  gallery: Image[];
   sourceLink: string | null;
   modifiedAt: Date | null;
   portalSyncedAt: Date | null;
@@ -391,7 +400,7 @@ export function toExperience(raw: RawItem): VjExperience {
     tags,
     genre: suggestGenre(title, tags),
     dates,
-    occurrence: classifyOccurrence(dates.map((x) => x.date), { tour: true }),
+    occurrence: classifyOccurrence(dates.map((x) => x.date), { tour: true, starts: dates.map((x) => x.start) }),
     fromPricePence: pence(acf.price_from ?? acf.from_price),
     toPricePence: pence(acf.price_to),
     meetingPoint: str(loc?.name) ?? str(loc?.address),
@@ -401,6 +410,7 @@ export function toExperience(raw: RawItem): VjExperience {
     website: str(acf.website),
     ...pin(acf),
     headerImage: images(acf.header_image_data)[0] ?? null,
+    gallery: images(acf.gallery_images_data),
     sourceLink: str(raw.link),
     modifiedAt: utc(raw.modified_gmt),
     portalSyncedAt: utc(acf.portal_last_synced),

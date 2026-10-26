@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, ilike, inArray, isNotNull, lte, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, gte, ilike, inArray, isNotNull, lte, or, sql, type SQL, ne } from 'drizzle-orm';
 import { db } from './index';
 import { events, experiences, places, providers, type Category, type Inclusion } from './schema';
 import type { Genre } from '@/lib/domain/genre';
@@ -24,8 +24,12 @@ function monthBounds(month: string): [string, string] | null {
   return [`${m[1]}-${m[2]}-01`, `${m[1]}-${m[2]}-${String(last).padStart(2, '0')}`];
 }
 
+/**
+ * The admin lists hold what is public. A provider's listing joins them
+ * once approved; until then it is in the review queue (lib/listings.ts).
+ */
 export async function listEvents(f: EventFilter = {}) {
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(events.review, 'approved')];
   if (f.inclusion) where.push(eq(events.inclusion, f.inclusion));
   if (f.venueId) where.push(eq(events.placeId, f.venueId));
   if (f.occurrences) where.push(inArray(events.occurrence, [...f.occurrences]));
@@ -37,7 +41,7 @@ export async function listEvents(f: EventFilter = {}) {
     .select({ event: events, venue: { id: places.id, name: places.name, slug: places.slug } })
     .from(events)
     .leftJoin(places, eq(places.id, events.placeId))
-    .where(where.length ? and(...where) : undefined)
+    .where(and(...where))
     .orderBy(asc(events.startsOn), asc(events.title));
 }
 
@@ -50,7 +54,9 @@ export async function getEvent(slug: string) {
   return row ?? null;
 }
 
-const eventCount = sql<number>`(select count(*) from ${events} where ${events.placeId} = ${places.id})::int`;
+// Spelled out: drizzle leaves columns unqualified inside a subquery, so
+// `${places.id}` there became the events table's own "id" and every count was 0.
+const eventCount = sql<number>`(select count(*) from "events" e where e.place_id = "places"."id")::int`;
 
 export type VenueFilter = {
   inclusion?: Inclusion;
@@ -61,7 +67,7 @@ export type VenueFilter = {
 };
 
 export async function listVenues(f: VenueFilter = {}) {
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(places.review, 'approved')];
   if (f.inclusion) where.push(eq(places.inclusion, f.inclusion));
   if (f.category) where.push(eq(places.category, f.category));
   if (f.q) where.push(or(ilike(places.name, `%${f.q}%`), ilike(places.parish, `%${f.q}%`))!);
@@ -69,7 +75,7 @@ export async function listVenues(f: VenueFilter = {}) {
   return db
     .select({ place: places, eventCount })
     .from(places)
-    .where(where.length ? and(...where) : undefined)
+    .where(and(...where))
     .orderBy(sql`${eventCount} desc`, asc(places.name));
 }
 
@@ -81,15 +87,22 @@ export async function getVenue(slug: string) {
 }
 
 /** What the guide currently holds. */
-export async function guideSelection() {
+/**
+ * What the guide prints: what staff have included, or, as a draft, every
+ * approved listing nobody has left out, so an edition can be laid out
+ * before it is chosen. A draft leaves out business events, which are not
+ * for visitors, and venues, which are always chosen by hand.
+ */
+export async function guideSelection(opts: { draft?: boolean } = {}) {
+  const chosen = (col: typeof events.inclusion) => (opts.draft ? ne(col, 'excluded') : eq(col, 'included'));
   const [chosenEvents, chosenVenues] = await Promise.all([
     db
       .select({ event: events, venue: places })
       .from(events)
       .leftJoin(places, eq(places.id, events.placeId))
-      .where(eq(events.inclusion, 'included'))
+      .where(and(chosen(events.inclusion), eq(events.review, 'approved'), ...(opts.draft ? [sql`not ('Business & networking' = any(${events.eventTypes}))`] : [])))
       .orderBy(asc(events.startsOn), asc(events.title)),
-    db.select().from(places).where(eq(places.inclusion, 'included')).orderBy(asc(places.category), asc(places.name)),
+    db.select().from(places).where(and(eq(places.inclusion, 'included'), eq(places.review, 'approved'))).orderBy(asc(places.category), asc(places.name)),
   ]);
   return { events: chosenEvents, venues: chosenVenues };
 }
@@ -99,7 +112,7 @@ export async function mapPoints(opts: { includedOnly: boolean }) {
   const venues = await db
     .select({ id: places.id, slug: places.slug, name: places.name, lat: places.lat, lon: places.lon, inclusion: places.inclusion, eventCount })
     .from(places)
-    .where(and(isNotNull(places.lat), sql`${eventCount} > 0`, ...inc));
+    .where(and(isNotNull(places.lat), eq(places.review, 'approved'), sql`${eventCount} > 0`, ...inc));
   return venues;
 }
 
@@ -111,7 +124,7 @@ export async function placesNear(lat: number, lon: number, limit = 15) {
   const rows = await db
     .select({ id: places.id, name: places.name, lat: places.lat, lon: places.lon })
     .from(places)
-    .where(and(gte(places.lat, lat - dLat), lte(places.lat, lat + dLat), gte(places.lon, lon - dLon), lte(places.lon, lon + dLon)));
+    .where(and(eq(places.review, 'approved'), gte(places.lat, lat - dLat), lte(places.lat, lat + dLat), gte(places.lon, lon - dLon), lte(places.lon, lon + dLon)));
   return rows
     .map((r) => ({ ...r, metres: metresBetween({ lat, lon }, { lat: r.lat!, lon: r.lon! }) }))
     .sort((a, b) => a.metres - b.metres)
@@ -137,7 +150,7 @@ function onInMonth(month: string): SQL | null {
 const firstDate = sql<string>`(select min(d->>'date') from jsonb_array_elements(${experiences.dates}) d where d->>'date' >= to_char(now(), 'YYYY-MM-DD'))`;
 
 export async function listExperiences(f: ExperienceFilter = {}) {
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(experiences.review, 'approved')];
   if (f.inclusion) where.push(eq(experiences.inclusion, f.inclusion));
   if (f.genre === 'none') where.push(sql`${experiences.genre} is null`);
   else if (f.genre) where.push(eq(experiences.genre, f.genre));
@@ -150,7 +163,7 @@ export async function listExperiences(f: ExperienceFilter = {}) {
     .select({ experience: experiences, provider: providers, firstDate })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
-    .where(where.length ? and(...where) : undefined)
+    .where(and(...where))
     .orderBy(sql`${firstDate} asc nulls last`, asc(experiences.title));
 }
 
@@ -164,15 +177,15 @@ export async function getExperience(slug: string) {
 }
 
 export async function listProviders() {
-  const total = sql<number>`(select count(*) from ${experiences} where ${experiences.providerId} = ${providers.id})::int`;
-  const included = sql<number>`(select count(*) from ${experiences} where ${experiences.providerId} = ${providers.id} and ${experiences.inclusion} = 'included')::int`;
+  const total = sql<number>`(select count(*) from "experiences" x where x.provider_id = "providers"."id")::int`;
+  const included = sql<number>`(select count(*) from "experiences" x where x.provider_id = "providers"."id" and x.inclusion = 'included')::int`;
   return db.select({ provider: providers, total, included }).from(providers).orderBy(sql`${providers.code} asc nulls last`, asc(providers.name));
 }
 
-export async function includedExperiences() {
+export async function includedExperiences(opts: { draft?: boolean } = {}) {
   return db
     .select({ experience: experiences, provider: providers })
     .from(experiences)
     .leftJoin(providers, eq(providers.id, experiences.providerId))
-    .where(eq(experiences.inclusion, 'included'));
+    .where(and(opts.draft ? ne(experiences.inclusion, 'excluded') : eq(experiences.inclusion, 'included'), eq(experiences.review, 'approved')));
 }

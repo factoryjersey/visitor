@@ -17,6 +17,12 @@ export function transformed(url: string, transformation: string): string {
 
 /** A web-sized, cropped derivative. */
 export function webImage(img: Image, width: number, height?: number): string {
+  // Pexels resizes by query string.
+  if (img.url.startsWith('https://images.pexels.com/')) {
+    const u = new URL(img.url);
+    u.search = new URLSearchParams({ auto: 'compress', cs: 'tinysrgb', w: String(width), ...(height ? { h: String(height), fit: 'crop' } : {}) }).toString();
+    return u.toString();
+  }
   const crop = height ? `,h_${height},c_fill,g_auto` : ',c_limit';
   return transformed(img.url, `w_${width}${crop},q_auto,f_auto`);
 }

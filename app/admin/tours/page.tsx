@@ -38,7 +38,7 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   return (
     <>
       <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl">Tours &amp; experiences</h1>
+        <h1 className="font-display text-2xl">Tours &amp; experiences</h1>
         <p className="text-sm text-stone-500">
           {rows.length} shown · <Link href="/admin/tours/providers" className="hover:underline">Providers and codes</Link>
         </p>

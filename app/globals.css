@@ -24,12 +24,12 @@ body { @apply bg-white text-stone-900 antialiased; }
 .guide-tab { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 9pt; margin-bottom: 3mm; border-bottom: 0.3mm solid currentColor; padding-bottom: 1mm; }
 .guide-area { font-weight: 700; font-size: 8.5pt; margin: 3mm 0 1.5mm; }
 .guide-columns { column-count: 2; column-gap: 4mm; }
-.guide-entry { break-inside: avoid; margin-bottom: 2.5mm; }
+.guide-entry { break-inside: avoid; margin-bottom: 2.5mm; overflow-wrap: break-word; }
 .guide-when { font-weight: 700; }
 .guide-when span { margin-left: 2.5mm; font-weight: 400; }
 .guide-title { font-weight: 700; font-size: 8pt; }
 .guide-venue { font-weight: 700; margin-top: 0.8mm; }
-.guide-web { text-transform: uppercase; font-weight: 600; }
+.guide-web { text-transform: uppercase; font-weight: 600; overflow-wrap: anywhere; }
 .guide-label { display: inline-block; border: 0.25mm solid currentColor; padding: 0 1mm; font-size: 6pt; font-weight: 600; letter-spacing: 0.05em; margin: 0.5mm 0; }
 .guide-empty { font-size: 10pt; }
 .guide-highlight-image { width: calc(100% + 14mm); max-width: none; margin: -2mm -7mm 3mm; height: 78mm; object-fit: cover; }
@@ -43,4 +43,114 @@ body { @apply bg-white text-stone-900 antialiased; }
   @page guide { size: 115mm 165mm; margin: 0; }
   .guide-pages { display: block; }
   .guide-page { page: guide; box-shadow: none; break-after: page; }
+}
+
+/*
+ * The guide as printed, 2026 editions (whatson_merge_events / _tours):
+ * 230 × 165mm spreads of 115 × 165mm pages. Outer margin 8mm, inner
+ * 12mm. Events: a 2 × 2 grid of 45.5mm cells, a 45.5 × 16mm picture
+ * each, rows 72mm apart from 11.6mm down. Tours: one ruled column.
+ * Proxima Nova Condensed where installed (Adobe Fonts); Barlow Semi
+ * Condensed otherwise, so the proof is close but the type is not final.
+ */
+.gp-book {
+  --gp-ink: #000; --gp-ink80: rgb(0 0 0 / 0.8);
+  --gp-orange: #f58353; --gp-green: #93b66d; --gp-pale: #add581; --gp-teal: #43a19a; --gp-deep: #009187;
+  --gp-cond: 'Proxima Nova Condensed', 'ProximaNovaCond', 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
+  --gp-sans: 'Proxima Nova', 'Mulish Variable', 'Helvetica Neue', Arial, sans-serif;
+  display: flex; flex-direction: column; align-items: center; gap: 8mm; color: var(--gp-ink);
+}
+.gp-spread { display: flex; box-shadow: 0 1px 4px rgb(0 0 0 / 0.18); background: white; }
+.gp-page { position: relative; width: 115mm; height: 165mm; overflow: hidden; background: white; font-family: var(--gp-cond); }
+.gp-page.gp-left { border-right: 0.2mm dashed rgb(0 0 0 / 0.08); }
+.gp-blank { background: #fafaf9; }
+.gp-tab { position: absolute; top: 8.1mm; width: 3.9mm; height: 33.9mm; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.gp-tab.gp-left { left: 0; } .gp-tab.gp-right { right: 0; }
+.gp-tab span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 600; font-size: 5.2pt; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.gp-folio { position: absolute; top: 148.9mm; width: 3.9mm; height: 8.1mm; background: #000; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.gp-folio.gp-left { left: 0; } .gp-folio.gp-right { right: 0; }
+.gp-folio span { writing-mode: vertical-rl; color: white; font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; }
+.gp-folio.gp-left span { transform: rotate(180deg); }
+.gp-content { position: absolute; top: 8.5mm; bottom: 15mm; }
+.gp-page.gp-left .gp-content { left: 7.9mm; right: 12mm; }
+.gp-page.gp-right .gp-content { left: 12mm; right: 7.9mm; }
+
+/* Events: four fixed frames. */
+.gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 52mm 43mm 43mm; row-gap: 2mm; }
+/* The grid layouts: equal boxes, two across, one of them a picture filling its box. */
+.gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
+.gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
+.gp-image { margin: 0; }
+.gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
+.gp-tour-grid .gp-event-title { color: var(--gp-green); }
+/* Key icons: two at most on a listing, top right; the page's key runs down the 3.9mm edge column under the tabs, 4mm clear of the grid. */
+.gp-icons { float: right; display: inline-flex; gap: 0.8mm; margin: 0.2mm 0 0 1mm; color: var(--gp-ink80); }
+.gp-icons svg { width: 3mm; height: 3mm; }
+.gp-key { position: absolute; width: 3.9mm; bottom: 18mm; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 1.6mm; writing-mode: vertical-rl; overflow: hidden; z-index: 2; font-family: var(--gp-sans); font-weight: 600; font-size: 5pt; letter-spacing: 0.02em; text-transform: uppercase; color: var(--gp-ink80); }
+.gp-key.gp-left { left: 0; } .gp-key.gp-right { right: 0; }
+.gp-key.gp-below-tab { top: 44mm; } .gp-key.gp-below-marker { top: 74.6mm; }
+.gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
+.gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
+.gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-pale); }
+.gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 600; font-size: 7pt; color: var(--gp-teal); }
+.gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }
+.gp-tour-footer svg { width: 2.8mm; height: 2.8mm; }
+.gp-tour-meta { display: flex; flex-wrap: wrap; margin: 0.8mm 0 0 -1mm; }
+.gp-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gp-listing { border-top: 0.6pt solid var(--gp-orange); padding-top: 1.6mm; }
+.gp-event { overflow: hidden; font-size: 8.5pt; line-height: 1.08; }
+.gp-event-image { display: block; width: 45.5mm; height: 15.9mm; object-fit: cover; border-bottom: 0.6pt solid var(--gp-orange); margin-bottom: 2.6mm; }
+.gp-event-when { font-weight: 600; font-size: 9pt; text-transform: uppercase; }
+.gp-event-when em { font-weight: 500; font-style: italic; color: var(--gp-ink80); margin-left: 2mm; text-transform: none; }
+.gp-event-title { font-weight: 700; font-size: 9pt; color: var(--gp-orange); margin: 0.2mm 0 0.3mm; }
+.gp-event-copy { font-weight: 400; }
+.gp-price { color: var(--gp-orange); }
+.gp-event-venue { margin-top: 2.2mm; font-weight: 700; font-size: 7.5pt; color: var(--gp-orange); display: flex; align-items: center; gap: 0.8mm; }
+.gp-event-venue svg { width: 2.4mm; height: 2.4mm; stroke-width: 2.4; flex: none; color: rgb(0 0 0 / 0.7); }
+.gp-event-address, .gp-event-contact { font-size: 7.5pt; color: var(--gp-orange); font-style: italic; font-stretch: condensed; }
+.gp-event-address { font-weight: 600; }
+.gp-event-web { margin-top: 1.4mm; font-weight: 700; font-size: 7.5pt; color: var(--gp-ink80); text-transform: uppercase; overflow-wrap: anywhere; }
+.gp-overset { outline: 0.6mm solid #dc2626; outline-offset: 0.6mm; }
+
+/* The section opener: a picture to the edges and the section's name. */
+.gp-opener { position: absolute; inset: 0; background: #57534e; }
+.gp-opener img { width: 100%; height: 100%; object-fit: cover; }
+.gp-opener h2 { position: absolute; left: 8.1mm; bottom: 34mm; color: white; font-family: var(--gp-sans); font-weight: 800; font-size: 30pt; line-height: 0.92; text-transform: uppercase; text-shadow: 0 0.5mm 2mm rgb(0 0 0 / 0.35); }
+.gp-caption { position: absolute; left: 8.1mm; bottom: 10mm; max-width: 80mm; background: #000; color: white; font-family: var(--gp-sans); font-weight: 600; font-size: 5.5pt; padding: 0.8mm 1.5mm; }
+
+.gp-highlight-image { width: 100%; height: 62mm; object-fit: cover; margin-bottom: 3mm; }
+.gp-highlight-title { font-weight: 700; font-size: 15pt; line-height: 1.05; color: var(--gp-orange); margin: 0.5mm 0 2mm; }
+.gp-highlight-copy { font-size: 8.5pt; line-height: 1.15; column-count: 2; column-gap: 3.9mm; }
+.gp-highlight-copy p + p { margin-top: 1.5mm; }
+
+/* Walks and tours: one ruled column, poured page by page. */
+.gp-flow, .gp-measure { font-size: 7pt; }
+.gp-measure { position: absolute; left: -9999px; top: 0; width: 94.9mm; font-family: var(--gp-cond); }
+.gp-key-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 12pt; color: var(--gp-deep); margin-bottom: 1mm; }
+.gp-provider { display: flex; align-items: center; gap: 1mm; white-space: nowrap; overflow: hidden; font-size: 8pt; line-height: 1.25; color: var(--gp-teal); border-bottom: 0.5pt solid var(--gp-pale); padding: 0.25mm 0; }
+.gp-provider svg { width: 2.8mm; height: 2.8mm; flex: none; }
+.gp-provider b { font-weight: 700; }
+.gp-provider strong { color: var(--gp-ink); font-weight: 700; font-size: 8.5pt; }
+.gp-provider em { color: var(--gp-ink80); font-size: 8.5pt; font-stretch: condensed; overflow: hidden; text-overflow: ellipsis; }
+.gp-break { height: 3mm; }
+.gp-tour-heading { margin: 1mm 0 3.5mm; color: var(--gp-pale); font-family: var(--gp-sans); }
+.gp-tour-heading p { font-weight: 700; font-size: 9pt; }
+.gp-tour-heading h3 { font-size: 18pt; line-height: 1.1; font-weight: 400; }
+.gp-tour-heading h3 b { font-weight: 700; }
+.gp-tour { border-top: 0.5pt solid var(--gp-pale); padding: 0.7mm 0 2.6mm; }
+.gp-tour-head { font-size: 8pt; line-height: 1.3; }
+.gp-tour-head b { font-weight: 700; color: var(--gp-ink); }
+.gp-tour-title { font-weight: 700; color: var(--gp-green); margin-left: 0.6mm; }
+.gp-code, .gp-duration { display: inline-flex; align-items: center; gap: 0.4mm; margin-left: 1mm; }
+.gp-code { color: var(--gp-teal); font-size: 7.5pt; }
+.gp-duration { font-weight: 600; font-style: italic; font-size: 7pt; color: var(--gp-ink80); }
+.gp-code svg, .gp-duration svg { width: 2.6mm; height: 2.6mm; }
+.gp-tour-copy { font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; line-height: 1.38; color: var(--gp-ink80); margin-top: 0.4mm; }
+
+@media print {
+  @page gpspread { size: 230mm 165mm; margin: 0; }
+  .gp-book { display: block; }
+  .gp-spread { page: gpspread; box-shadow: none; break-after: page; }
+  .gp-page.gp-left { border-right: 0; }
+  .gp-overset { outline: none; }
 }

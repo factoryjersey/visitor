@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<venues>
+  <venue id="126565980">
+    <name>
+      <![CDATA[Alternative Venue - See Website]]>
+    </name>
+    <shows>
+      <show id="873689085">
+        <name>
+          <![CDATA[G&S Festival: A talk on G&S]]>
+        </name>
+        <description>
+          <![CDATA[<p>This year Jersey will have its very own &ldquo;Gilbert and Sullivan Festival&rdquo;.</p><p>Held at the Town Church.</p>]]>
+        </description>
+        <event_category>Music</event_category>
+        <url>http://artscentre.je/</url>
+        <images>
+          <image priority="0">
+            <url size="large">https://d235gwso45fsgz.cloudfront.net/as-assets/large</url>
+            <url size="medium">https://d235gwso45fsgz.cloudfront.net/as-assets/medium</url>
+            <alt/>
+          </image>
+        </images>
+        <events>
+          <event id="129695299">
+            <name>
+              <![CDATA[18 Oct 2026 - 14:30 @ Alternative Venue - See Website]]>
+            </name>
+            <date_time_iso format="ISO 8601" zone="IST">2026-10-18T14:30:00+01:00</date_time_iso>
+            <url>https://artscentre.ticketsolve.com/shows/873689085/events/129695299</url>
+            <status>available</status>
+          </event>
+        </events>
+        <status>available</status>
+      </show>
+    </shows>
+  </venue>
+  <venue id="979782">
+    <name>
+      <![CDATA[Jersey Arts Centre]]>
+    </name>
+    <shows>
+      <show id="900000001">
+        <name>
+          <![CDATA[Dear Evan Hansen]]>
+        </name>
+        <description>
+          <![CDATA[<p>The Tony-winning musical.</p>]]>
+        </description>
+        <event_category>Theatre</event_category>
+        <images></images>
+        <events>
+          <event id="1">
+            <date_time_iso format="ISO 8601" zone="GMT">2026-11-20T19:30:00+00:00</date_time_iso>
+            <status>available</status>
+          </event>
+          <event id="2">
+            <date_time_iso format="ISO 8601" zone="GMT">2026-11-19T19:30:00+00:00</date_time_iso>
+            <status>sold_out</status>
+          </event>
+          <event id="3">
+            <date_time_iso format="ISO 8601" zone="GMT">2026-11-21T14:30:00+00:00</date_time_iso>
+            <status>cancelled</status>
+          </event>
+        </events>
+        <status>available</status>
+      </show>
+      <show id="900000002">
+        <name><![CDATA[Cancelled Show]]></name>
+        <events>
+          <event id="9"><date_time_iso>2026-12-01T19:30:00+00:00</date_time_iso><status>available</status></event>
+        </events>
+        <status>cancelled</status>
+      </show>
+    </shows>
+  </venue>
+</venues>

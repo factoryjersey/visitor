@@ -13,7 +13,7 @@ Matches factoryOS so the two can be joined later:
 
 - Next.js 15 (App Router), TypeScript strict
 - Postgres via Drizzle ORM (Supabase in production, like factoryOS)
-- Supabase Auth: Google or password, limited to allowed email domains
+- Supabase Auth (Google or password); who may sign in, and as what, is a `users` table here
 - Tailwind, Zod, Vitest
 - Leaflet on OpenStreetMap tiles for the map
 
@@ -33,31 +33,87 @@ for working without network access. It is not real data.
 Behind a proxy, Node's `fetch` needs `NODE_USE_ENV_PROXY=1` to use
 `HTTPS_PROXY`.
 
-## Signing in
+## Accounts and roles
 
-The same as factoryOS: every page under `/admin` needs a Supabase session,
-signed-out requests go to `/login`, and only addresses in `ALLOWED_EMAIL_DOMAINS` are
-admitted, checked at sign-in and again on every request. Each server action
-checks for itself as well, since a form POST can be replayed from anywhere.
+Supabase proves who somebody is; the `users` table decides whether they get
+in, and as what (`lib/auth/roles.ts`):
 
-Point `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at
-factoryOS's Supabase project and the same accounts work in both. On that
-project:
+| Role | Can |
+|---|---|
+| superadmin | everything, and is the only one who makes staff |
+| staff | the editing side under `/admin`: review, inclusion, the guide and its exports, provider accounts |
+| provider | their own business's listings under `/account`, and its team |
+
+Accounts are invite only. An invite (`/admin/people`, or a provider's
+`/account/team`) makes the account and a link to set a password, shown once
+to whoever made it to pass on; we send no email. Signing in with Google as
+the invited address works without the link. The first superadmin is whoever
+signs in as an address in `SUPERADMIN_EMAILS`, or
+`pnpm auth:create-user --email=… --password='…'`.
+
+Middleware sends anyone signed out of `/admin` or `/account` to `/login`.
+Every page and server action checks the role for itself; a provider who
+finds an `/admin` URL gets a 404. An address Supabase has not confirmed
+never matches an account, so a self-made sign-up with somebody else's
+address gets nothing. Forgotten passwords go by Supabase's own email.
+
+Visitor has its own Supabase project, separate from factoryOS. On it:
 
 - add `<NEXT_PUBLIC_APP_URL>/auth/callback` to Auth → URL Configuration →
-  Redirect URLs, or Google sign-in returns to the wrong place;
-- set `ALLOWED_EMAIL_DOMAINS=factory.je` in production. Unset, anyone with
-  an account on the project gets in.
+  Redirect URLs, or Google sign-in and password reset return to the wrong place;
+- for Google sign-in, enable Google under Auth → Providers.
 
-Google sign-in needs no setup per person. For a password account:
-
-```bash
-pnpm auth:create-user --email=someone@factory.je --password='...'
-```
-
-There are no roles: everyone signed in can include, leave out and edit.
 Who included or left out each entry, and who last edited it, is recorded
 and shown on its page.
+
+## Providers' listings
+
+A business (`businesses`) looks after listings: venues, events, tours. Its
+people add them under `/account`, and staff can hand an imported listing to
+a business on its admin page ("Looked after by").
+
+- A new listing arrives as `review = pending`: hidden from the site, the
+  guide and the admin lists, waiting in `/admin/review`. Its business can
+  keep editing it until staff approve or turn it down (with a note they see).
+- Once approved, a provider's edit no longer writes the listing. It waits in
+  `listing_changes`, one open change per listing, and `/admin/review` shows
+  it field by field against the live version.
+- Whatever a provider wrote is locked, so the next import keeps their answer.
+- Providers write only what the listing is (`PROVIDER_FIELDS` in
+  `lib/domain/listing-form.ts`). Our copy, the guide section, inclusion,
+  highlights and print overrides stay with staff.
+- A business that lists a tour becomes a tour provider for the guide's key.
+- "Copy as a new event" on a provider's event or tour opens the new form
+  filled in from it, dates blank: the same thing again, on new dates.
+
+## Claims
+
+Venues, organisers and tour operators find their way in from the public
+site: `/list` (linked in the footer) to search for their listing or ask for
+an account, and the "Claim it" links on event and tour pages, shown while
+nobody looks after the listing. A claim (`claims`) is a request, so
+accounts stay invite only:
+
+- A honeypot field and a minimum time to fill the form keep bots out; one
+  address may have five open requests.
+- Staff see them in `/admin/claims`, with any account the person already
+  has and businesses their email or name suggests. Approving gives the
+  listing (and, for a venue, its upcoming events nobody looks after) to the
+  chosen business, or a new one named from the claim, and makes an invite
+  for someone without an account: a link to copy, or send with the
+  prefilled email. Someone already on that business's team needs nothing.
+
+## Email
+
+Through Resend (`lib/email`), when `RESEND_API_KEY` is set; without it
+nothing is sent and invite links are shown to copy, as before. A failed
+send never stops what caused it, and an invite link is always shown too.
+
+- Invites, from People, a provider's team page and approved claims.
+- A new claim: to staff (`STAFF_NOTIFY_EMAILS`, else every staff account),
+  replying straight to the claimant; and a "we have your request" to them.
+- A claim approved (for someone with an account; others get the invite)
+  or turned down. Our note on a turned-down claim stays ours.
 
 ## How it fits together
 
@@ -76,6 +132,79 @@ alone links Hamptonne Museum's events to the holiday flat in its stable
 block. Anything else is left for a person to set on the event page, and a
 venue set by hand is locked.
 
+## Other event sources
+
+Visit Jersey misses much of what is on, the smaller one-off nights above
+all, so `pnpm import:events` adds events from elsewhere after it:
+
+| Source | How | Goes on the site |
+|---|---|---|
+| Jersey Arts Centre | Ticketsolve's public feed, `artscentre.ticketsolve.com/shows.xml` | straight away |
+| Jersey Opera House | the same, `jerseyoperahouse.ticketsolve.com/shows.xml` | straight away |
+| Eventbrite | the schema.org Event data on its Jersey listing pages and each event's page | after review in `/admin/review` |
+| Jersey Charities diary | its diary page, read as written, and each entry's page for the description | after review |
+| Island Ticket Hut | The Events Calendar's WordPress API, `/wp-json/tribe/events/v1/events`; Guernsey's nights left out by postcode, a show's performances joined (`lib/integrations/tribe-events`, any such site is a line in `SITES`) | after review |
+| Jersey Bulls | the fixtures page, `bulls.je/fixtures/?team=all`: home matches only (Jersey named first), men, women and U23 | straight away |
+| Jersey RFC | the fixtures and results page, `jrfc.je/results/`: home matches still to be played | straight away |
+
+A show sold night by night ("Legally Blonde Tuesday 1st December", "…
+Wednesday 2nd December") or as a matinee and an evening is one event with
+every date, whichever source it comes from: same venue, same title once
+the words naming the performance are taken out (`lib/domain/join-runs.ts`).
+The nights' own events come off the site with a note saying where they went.
+
+After the sources, anything still to come without a picture of its own
+gets one, in this order (`lib/images/fallback.ts`, `lib/integrations/stock`):
+
+1. its organiser's fallback picture, when staff have set one (the Bulls
+   and Jersey RFC have their own photographs, credited to the club);
+2. its venue's: the fallback staff set on the venue page, or failing that
+   the venue's own Visit Jersey picture;
+3. a royalty-free stock photograph: Pexels when `PEXELS_API_KEY` is set,
+   otherwise Openverse's public-domain ones, searched for by what the
+   listing is and credited on the page as illustrative.
+
+A fallback set as a link to someone else's site is copied into our storage,
+so it does not break when they move theirs. A source's own picture, or one
+a person chose, always wins. Stock and club photographs stay out of print.
+
+Then two passes by Claude for the printed guide (`lib/integrations/claude`):
+
+- **Guide snippets** (`print-line.ts`): two sentences summing up each event,
+  the first at most 80 characters and able to stand alone, both at most
+  170. Written again only when the event's words change; one a person has
+  set in quick edit or on the admin print form is never replaced.
+- **Pictures with text** (`image-text.ts`): each event picture is looked at
+  once; posters, flyers and pictures with titles or dates over them stay on
+  the website but are not printed, as they crop badly.
+
+Both need `ANTHROPIC_API_KEY`; without it they are skipped and the guide
+falls back to whole sentences of the listing's own copy.
+
+Each match gets copy of its own from Claude (`lib/integrations/claude/fixture.ts`),
+a line about the two clubs meeting and the card's sentence, written once
+and kept until the opponent, competition or ground changes. Without a key,
+a plain line naming both sides.
+
+An event another source already gave us (a date in common and most of the
+title, `lib/domain/event-match.ts`) is linked to it, not repeated, and the
+second source only fills what the first left empty; Visit Jersey links an
+event the same way when it lists one Eventbrite had first, and approves
+it. Each source's own records are kept in `source_records`. Anybody can
+post on Eventbrite, so its events wait for staff; `/admin/review` approves
+them one by one or all at once.
+
+Events that arrive without types, from Eventbrite and the charities' diary
+above all, are typed from their own words (`lib/domain/categorise.ts`):
+Visit Jersey's labels, plus Charity, Nightlife, Talks & learning, Markets &
+fairs, and Business & networking, which marks what is not for visitors so
+it is quick to turn down in review and never offered as a public filter.
+
+Railway's `import` service runs `pnpm import:visit-jersey`, then
+`pnpm seed:provider-codes`, then `pnpm import:events`, daily at 05:17 UTC.
+`pnpm import:events --only <step>` runs one part: a source, or `stock`
+(pictures), `print-lines` (snippets) or `pictures` (the text check).
+
 ## Public site
 
 The site visitors see is at the root, with no sign-in:
@@ -87,11 +216,31 @@ The site visitors see is at the root, with no sign-in:
   bookable any day
 - `/whats-on/[slug]`, `/tours/[slug]` — the listing, all its dates,
   booking and directions; events carry schema.org Event data
+- `/venues` — venues and businesses with events or tours coming up; "See
+  all" lists every one we have (all of Visit Jersey's), by the guide's
+  sections, the Visitor guide featured first
+- `/organisers`, `/organisers/[slug]` — who puts events on, and what they have coming up
+
+Listing headings are in title case on the site and in print
+(`printTitle` in `lib/domain/house-style.ts`), keeping acronyms and names
+as their source wrote them.
+
+Staff signed in see a pencil on every event and tour page for quick fixes
+(picture, categories, title, card sentence, guide snippet, description,
+taking it off the site), and a fallback picture panel on organiser and
+venue pages.
 
 It shows everything not left out (the site is the whole picture; the guide
 is the edited selection), only what is still to come, and highlights
 always, whatever the tick. Filters are a GET form, so every view is a link
 and works without JavaScript; the tick submits itself when it can.
+
+## Pages (providers)
+
+- `/account` — the business's listings and where each stands
+- `/account/{venues,events,tours}/new`, `…/[slug]` — add and edit
+- `/account/team` — colleagues, and inviting more
+- `/account/password` — set a new one (staff use it too)
 
 ## Highlights
 
@@ -99,17 +248,26 @@ A highlight gets a full page in the guide (the extended listing and a large
 image, exported separately for its own InDesign template) and leads the
 public listings. Set it on the event or tour page in the admin.
 
-## Pages (admin, signed in)
+## Pages (admin, staff)
+
+- `/admin/review` — providers' new listings and changes, to approve or turn down
+- `/admin/people` — invite providers and staff, businesses, switch accounts off
 
 - `/admin/whats-on` — every event, filter by month and status, include or leave out
 - `/admin/whats-on/[slug]` — details, venue, our copy, source freshness
-- `/admin/venues` — places hosting events (or every listing), include or leave out
+- `/admin/venues` — places hosting events (or every listing), include or leave out; filter by tag
+- Venue tags, on each venue's admin page: **Visitor guide featured** (shown on
+  the site: the edition of the printed guide it was last in) and **Client**
+  (admin only, with a note). `pnpm tag:venues --file names.txt
+  (--recommended "Autumn 2026" | --client) [--apply]` tags from a list of
+  names and reports what it cannot match. Client lists hold contacts and
+  billing: keep them out of the repository.
 - `/admin/venues/[slug]` — contact, months open, rates, facilities, events held there
 - `/admin/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
 - `/admin/tours/providers` — provider codes for the guide's key
-- `/admin/guide` — the selection for an edition's dates, set as the printed guide
-  sets it (115 × 165mm pages, the printed field order), with the InDesign
-  exports
+- `/admin/guide` — the selection for an edition's dates (Spring, Summer,
+  Autumn, Winter presets; Draft lays out everything eligible), set as the
+  2026 editions print it, with the InDesign exports
 - `/admin/map` — event venues, green for those in the guide
 
 ## Unique first: events and tours
@@ -121,8 +279,8 @@ thing a listing is (`lib/domain/occurrence.ts`):
 |---|---|---|---|
 | One-off | 1–3 dates, or a run of up to a week | dated listings | dated listings |
 | Specific dates | a handful of irregular dates (tide walks) | dated listings | dated listings |
-| Regular | a weekly rhythm (parkrun) | "On all season" block | on demand, by genre |
-| Ongoing | most days for three weeks or more; for a tour, a week of daily dates | "On all season" block | on demand, by genre |
+| Regular | a weekly rhythm (parkrun), or the same few weekdays filled week after week (a castle's costumed guide every Tuesday and Thursday of half-term) | "On all season" block | on demand, by genre |
+| Ongoing | most days for three weeks or more; every day for over a week in the daytime (a half-term trail); for a tour, a week of daily dates | "On all season" block | on demand, by genre |
 
 What's On and Tours list the unique kinds by default, with ticks to show
 regular and ongoing ones. A person can change a listing's kind and a
@@ -161,14 +319,71 @@ The files are UTF-16 with a byte-order mark: from UTF-8, InDesign garbles
 every curly apostrophe and accent. The venues export carries section, area,
 label (`CASUAL`, `SPANISH`), listing size and copy, set on each venue page.
 
-The proof page lays entries out in two columns but does not paginate them;
-InDesign does that.
+The proof page lays the pages out as the 2026 editions print them: 230 ×
+165mm spreads, coloured tabs and folios, events six to a page (two with
+pictures across the top, four listings under them), walks and tours poured
+into ruled columns after the providers' key. Picture slots go to events
+with a photograph of their own, not a community event unless nothing else
+on the page has one. Each frame measures itself and prints the fullest
+whole-sentence copy that fits (ours, then the guide snippet, whole or its
+first sentence), dropping the phone line before the copy; copy that trails
+off is never printed. Print it to PDF from the browser. The What's On
+export gives each row its frame (picture or listing), in page order.
+
+"Events layout" on the proof page switches to a grid of six or eight equal
+boxes (`?grid=grid6` or `grid8`, the export takes the same): listings
+without pictures, and on each page one box filled by a picture, in the same
+row as its listing. The picture is the one staff ticked "Use its picture in
+the guide grid" on the event's admin page, else the first with a printable
+photograph of its own, a community event last. A page with nothing to
+picture takes another listing. In the export, the picture box is a row of
+its own (frame `image`) with the image URL and its listing's title.
+
+On either grid, walks and tours go on the grid of eight too, after the
+providers' key: seven tours and a picture a page, chosen the same way (the
+tick is on the tour's admin page). Dated tours come first, then on-demand
+ones from a new page, each page with a marker tab under the section's
+("On these dates", "On demand") in place of the section headings. Each box
+gives the dates (or, on demand, the genre), the title, the fullest
+whole-sentence copy that fits, and the provider's code with the duration;
+the provider's name is in the key, and each page's footer repeats the
+symbol with "Locate guide on index page" and the key's page number. The
+tours export gains Frame and Image URL columns. The nightly picture check
+looks at tour pictures as well as event ones.
+
+The printed guide is for visitors, so it leaves out what is not aimed at
+them, by Visit Jersey's labels or the event's own words: Professional &
+training (courses for nurses and carers, careers, employment law,
+start-ups) and Business & networking always; Health & wellbeing (classes,
+care, support, parenting) unless also outdoors, sport, food and drink,
+music, arts, heritage, a festival or a market. The proof page lists what it left out; setting an event's kinds by
+hand on its page decides it instead. Listings print up to two of the
+website's category icons (a tour, its genre's), and each page's key of the
+icons it uses runs down the 3.9mm edge column under the tabs, 4mm clear of
+the grid; the exports carry them in an Icons column.
+
+Venue pages show the venue's Google rating and up to three reviews
+(`GOOGLE_MAPS_API_KEY`, Places API (New); without the key, no panel). Each
+venue is matched to its Google place by name and distance, a batch of 150 a
+night (`--only google`), unmatched ones retried monthly; staff can set,
+clear or re-match it on the venue's admin page, which locks it. Google's
+terms allow keeping only the place ID, so the rating and reviews are
+fetched live from Google, and only when the panel scrolls into view;
+robots.txt keeps crawlers off the endpoint.
+
+Every provider has a key code: the nightly import gives one from the
+initials of its name to any provider without (`--only codes`), and the
+guide does the same in the meantime. Staff can change codes on the
+providers page; a code once set is kept. Providers merged by staff keep the other
+names as aliases, and the Visit Jersey import finds the provider that
+stayed by any of them, so a merged provider is not created again.
 
 ## Not built yet
 
 - Editions: a dated, signed-off snapshot of the selection.
-- factoryOS link: which venues are clients (`factoryos_contact_id`), and UPRNs.
-- A scheduled import. Agree the schedule with Visit Jersey first.
+- factoryOS link (`factoryos_contact_id`) and UPRNs. Clients are tagged by hand or from a list for now.
+- Emailing review outcomes on providers' listings.
+- Images on providers' listings: they need somewhere to upload to.
 
 ## Checks
 
@@ -176,3 +391,24 @@ InDesign does that.
 pnpm check    # typecheck + tests
 pnpm build
 ```
+
+## For agents and AI search
+
+The public site is built to be read by programs as well as people (what
+ora.ai and similar agent-readiness checks look for). All of it is
+read-only and needs no key.
+
+| Address | What |
+|---|---|
+| `/robots.txt` | every crawler welcome on the public site, the AI ones by name; Content Signals; the sitemap |
+| `/sitemap.xml` | every section, event, tour, venue and organiser page |
+| `/llms.txt`, `/llms-full.txt` | the site described for language models; every listing in one Markdown file |
+| any page + `.md`, or `Accept: text/markdown` | that page as Markdown (`lib/agents/markdown.ts`); HTML pages say so in a `Link` header |
+| `/api/v1/events`, `/events/{slug}`, `/tours`, `/tours/{slug}`, `/venues` | JSON, open to any origin |
+| `/openapi.json`, `/.well-known/api-catalog` | the API described (OpenAPI 3.1) and catalogued (RFC 9727) |
+| `/mcp`, `/.well-known/mcp/server-card.json` | an MCP server over streamable HTTP: `search_events`, `get_event`, `search_tours`, `get_tour`, `list_venues` |
+
+Every page carries schema.org data (`lib/agents/schema-org.ts`): Event,
+TouristTrip, Place, Organization and WebSite with a search action,
+breadcrumbs, and item lists. The API, the MCP tools, the Markdown and the
+JSON-LD all describe a listing from the same fields (`lib/agents/data.ts`).

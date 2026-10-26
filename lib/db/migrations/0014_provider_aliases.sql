@@ -1,0 +1,1 @@
+ALTER TABLE "providers" ADD COLUMN IF NOT EXISTS "aliases" text[] DEFAULT '{}' NOT NULL;
