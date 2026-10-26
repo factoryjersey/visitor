@@ -2,18 +2,12 @@ import type { Metadata } from 'next';
 import Form from 'next/form';
 import Link from 'next/link';
 import { Search as SearchIcon } from 'lucide-react';
-import { publicSearch } from '@/lib/db/public';
-import { hiddenByDefault } from '@/lib/domain/categorise';
-import { printPrice } from '@/lib/domain/house-style';
-import { UNIQUE } from '@/lib/domain/occurrence';
-import { KINDS, KIND_LABEL, asKind, fit, kindCounts, parishFrom, searchWords, sortHits, type Hit, type Kind } from '@/lib/domain/search';
-import { tourKind } from '@/lib/domain/tour-kind';
-import { cardWhen } from '@/lib/domain/web-dates';
+import { runSearch } from '@/lib/search';
+import { KINDS, KIND_LABEL, asKind, searchWords, type Kind } from '@/lib/domain/search';
 import { jerseyToday, rangeLabel, resolveWhen } from '@/lib/domain/when';
-import { cardLocation } from '@/components/site/listing-card';
 import { SearchHit } from '@/components/site/search-hit';
 import { WhenPicker } from '@/components/site/when-picker';
-import { CATEGORY_LABEL, one, type SearchParams } from '@/lib/params';
+import { many, one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Search', description: 'Search events, tours, experiences and venues across Jersey, on the days you choose.', robots: { index: false, follow: true } };
@@ -24,10 +18,9 @@ const PREVIEW = 4;
 const MAX = 120;
 
 /**
- * One search box for the whole site, made for a phone: what is typed is
- * looked for in events, tours, experiences and venues at once. Tabs narrow
- * it by kind, and the When chips by day, for all but venues. Nothing typed and a
- * day picked is everything on that day.
+ * The search as a page: an address to share, the search panel's "see all",
+ * and search for browsers without scripts. Same search as the panel
+ * (lib/search.ts): words, kind, when and category.
  */
 export default async function SearchPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
@@ -37,62 +30,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   const today = jerseyToday();
   const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to) };
   const range = resolveWhen(asked, today);
-  // Cards give each listing's first day in the range chosen.
-  const shownFrom = range && range.from > today ? range.from : today;
   const dates = range?.pick === 'dates' ? { from: range.from, to: range.to === '9999-12-31' ? undefined : range.to } : {};
   const when = range?.pick ?? (asked.when === 'dates' ? 'dates' : undefined);
-  const browsing = !words.length && !range;
+  const cats = many(sp.cat);
+  const browsing = !words.length && !range && !cats.length;
 
-  const found = browsing ? { events: [], tours: [], venues: [] } : await publicSearch(words, range);
-  const hits: Hit[] = [
-    // Health listings are for people who live here: found when asked for by name, not when browsing a day.
-    ...found.events
-      .filter((r) => words.length || !hiddenByDefault(r.event))
-      .map(({ event: e, venue, next }): Hit => ({
-        kind: 'events',
-        id: e.id,
-        href: `/whats-on/${e.slug}`,
-        title: e.title,
-        parish: parishFrom(e.parish, venue?.parish),
-        when: cardWhen(e.dates, e.occurrence, shownFrom),
-        line: [cardLocation(e.venueName ?? venue?.name ?? e.venue, null), printPrice(e.fromPricePence, e.toPricePence, { free: e.free })].filter(Boolean).join(' · ') || null,
-        image: e.headerImage,
-        highlight: e.highlight,
-        fit: fit(e.title, words),
-        // Ongoing ones after the dated.
-        order: UNIQUE.includes(e.occurrence) || e.highlight ? next : `~${next}`,
-      })),
-    ...found.tours.map(({ tour: t, provider, next }): Hit => ({
-      kind: tourKind(t.title, t.tags, t.genre) === 'tour' ? 'tours' : 'experiences',
-      id: t.id,
-      href: `/tours/${t.slug}`,
-      title: t.title,
-      parish: parishFrom(t.parish),
-      when: UNIQUE.includes(t.occurrence) ? cardWhen(t.dates, t.occurrence, shownFrom) : 'Book any day',
-      line: [t.meetingPoint, provider?.name].filter(Boolean).join(' · ') || null,
-      image: t.headerImage,
-      highlight: t.highlight,
-      fit: fit(t.title, words),
-      order: UNIQUE.includes(t.occurrence) || t.highlight ? next : `~${t.title.toLowerCase()}`,
-    })),
-    ...found.venues.map((v): Hit => ({
-      kind: 'venues',
-      id: v.id,
-      href: `/venues/${v.slug}`,
-      title: v.name,
-      parish: parishFrom(v.parish),
-      when: null,
-      line: v.stayType ?? CATEGORY_LABEL[v.category],
-      image: v.headerImage,
-      highlight: false,
-      fit: fit(v.name, words),
-      // Those our guide features first among equals.
-      order: `${v.recommendedIn ? 0 : 1}${v.name.toLowerCase()}`,
-    })),
-  ];
-
-  const kinds = kindCounts(hits);
-  const shown = sortHits(kind ? hits.filter((h) => h.kind === kind) : hits);
+  const answer = await runSearch({ q, kind, when: asked.when, from: asked.from, to: asked.to, cats });
+  const kinds = answer.counts;
+  const shown = answer.hits;
 
   const href = (k?: Kind) => {
     const p = new URLSearchParams();
@@ -101,6 +46,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
     if (when && when !== 'dates') p.set('when', when);
     if (dates.from) p.set('from', dates.from);
     if (dates.to) p.set('to', dates.to);
+    for (const c of cats) p.append('cat', c);
     const s = p.toString();
     return s ? `/search?${s}` : '/search';
   };
@@ -116,6 +62,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
       <h1 className="sr-only">Search</h1>
       <Form key={JSON.stringify({ q, kind, when, ...dates })} action="/search" scroll={false} role="search" className="sticky top-0 z-20 -mx-4 bg-white/95 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         {kind && <input type="hidden" name="kind" value={kind} />}
+        {cats.map((c) => <input key={c} type="hidden" name="cat" value={c} />)}
         <div className="relative">
           <SearchIcon aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-harbour/50" />
           <input
