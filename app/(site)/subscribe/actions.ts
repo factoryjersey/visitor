@@ -8,7 +8,7 @@ export type SubscribeState = { ok: true } | { ok: false; error: string; email: s
 
 const schema = z.object({
   email: z.string().trim().email('That does not look like an email address').max(200),
-  source: z.enum(['popover', 'page']).catch('page'),
+  source: z.enum(['popover', 'page', 'footer']).catch('page'),
 });
 
 /** Seconds a person takes at least; a form sent faster was not filled in by one. */

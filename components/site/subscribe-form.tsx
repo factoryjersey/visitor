@@ -5,9 +5,9 @@ import { subscribeAction, type SubscribeState } from '@/app/(site)/subscribe/act
 
 /**
  * An email address and a button, for the weekly email: the same form in
- * the front page's popover and on /subscribe.
+ * the front page's popover, on /subscribe and at the foot of every page.
  */
-export function SubscribeForm({ source, autoFocus }: { source: 'popover' | 'page'; autoFocus?: boolean }) {
+export function SubscribeForm({ source, autoFocus }: { source: 'popover' | 'page' | 'footer'; autoFocus?: boolean }) {
   const [state, action, pending] = useActionState<SubscribeState, FormData>(subscribeAction, null);
   const [started] = useState(() => String(Date.now()));
   if (state?.ok) {
