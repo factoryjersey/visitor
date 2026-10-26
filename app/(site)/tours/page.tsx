@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
+import { CARD_GRID, asView } from '@/lib/view';
 import { alternates } from '@/lib/agents/data';
 import { CategoryList } from '@/components/site/category-list';
 import { CategoryMenu } from '@/components/site/category-menu';
@@ -25,6 +28,7 @@ export const metadata: Metadata = { title: 'Tours & experiences', description: '
  */
 export default async function Tours({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
+  const view = asView((await cookies()).get('view')?.value);
   const today = jerseyToday();
   const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
   const range = resolveWhen(asked, today);
@@ -81,11 +85,11 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList('Tours & experiences in Jersey', rows.map((r) => `${SITE}/tours/${r.tour.slug}`))} />
       <h1 className="mb-2 font-display text-3xl font-bold text-ink">Tours &amp; experiences</h1>
       <p className="mb-8 max-w-2xl text-harbour/70">Walks on the seabed at low tide, ghost walks, boat trips and workshops, with local guides.</p>
-      <FilterPane active={active} results={rows.length} noun="tours">
+      <FilterPane active={active} results={rows.length} noun="tours" aside={<ViewToggle />}>
         <FilterBar
           action="/tours"
           today={today}
@@ -100,21 +104,24 @@ export default async function Tours({ searchParams }: { searchParams: SearchPara
         <CategoryMenu action="/tours" values={values} counts={counts} total={placed.length} of="tours" />
         <CategoryList action="/tours" values={values} counts={counts} of="tours" />
       </FilterPane>
+      <div className="mb-6 hidden justify-end md:flex">
+        <ViewToggle />
+      </div>
       {dated.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">On these dates</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{dated.map(card)}</div>
+          <div className={CARD_GRID}>{dated.map(card)}</div>
         </section>
       )}
       {onDemand.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">Book any day</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{onDemand.map(card)}</div>
+          <div className={CARD_GRID}>{onDemand.map(card)}</div>
         </section>
       )}
       {rows.length === 0 && (
         <p className="rounded-lg bg-white p-8 text-center text-harbour/70">Nothing matches. Try another month{values.any !== '1' && ', or include tours you can book any day'}.</p>
       )}
-    </div>
+    </ViewFrame>
   );
 }

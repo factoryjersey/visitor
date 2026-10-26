@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { ViewFrame, ViewToggle } from '@/components/site/view-switch';
+import { CARD_GRID, asView } from '@/lib/view';
 import { alternates } from '@/lib/agents/data';
 import { CategoryList } from '@/components/site/category-list';
 import { CategoryMenu } from '@/components/site/category-menu';
@@ -31,6 +34,7 @@ function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
  */
 export default async function WhatsOn({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
+  const view = asView((await cookies()).get('view')?.value);
   const today = jerseyToday();
   const asked = { when: one(sp.when), from: one(sp.from), to: one(sp.to), month: one(sp.month) };
   const range = resolveWhen(asked, today);
@@ -74,16 +78,17 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       types={e.eventTypes}
       tag={UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing'}
       highlight={highlight}
+      featured={highlight}
       wide={wide}
       summary={wide ? (e.guideCopy ?? e.summary) : (e.summary ?? e.guideCopy)}
     />
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
       <JsonLd data={itemList('What’s on in Jersey', rows.map((r) => `${SITE}/whats-on/${r.event.slug}`))} />
       <h1 className="sr-only">What&apos;s on</h1>
-      <FilterPane active={active} results={rows.length} noun="events">
+      <FilterPane active={active} results={rows.length} noun="events" aside={<ViewToggle />}>
         <FilterBar
           action="/whats-on"
           today={today}
@@ -97,6 +102,9 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
         <CategoryMenu action="/whats-on" values={values} counts={counts} total={shown.length} />
         <CategoryList action="/whats-on" values={values} counts={counts} />
       </FilterPane>
+      <div className="mb-6 hidden justify-end md:flex">
+        <ViewToggle />
+      </div>
 
       {highlights.length > 0 && (
         <section className="mb-12">
@@ -112,9 +120,9 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       {group(rest, (r) => r.next.slice(0, 7)).map(([month, items]) => (
         <section key={month} className="mb-12">
           <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">{monthHeading(month)}</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((r) => card(r))}</div>
+          <div className={CARD_GRID}>{items.map((r) => card(r))}</div>
         </section>
       ))}
-    </div>
+    </ViewFrame>
   );
 }
