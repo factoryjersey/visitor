@@ -111,6 +111,35 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-event-address { font-weight: 600; }
 .gp-event-web { margin-top: 1.4mm; font-weight: 700; font-size: 7.5pt; color: var(--gp-ink80); text-transform: uppercase; overflow-wrap: anywhere; }
 .gp-overset { outline: 0.6mm solid #dc2626; outline-offset: 0.6mm; }
+/* Venue sections, on the events' grid for now, in the section's colour (--gp-accent, set on each page). */
+.gp-venue-grid .gp-venue { border-top: 0.6pt solid var(--gp-accent); padding-top: 1.6mm; }
+.gp-venue-grid .gp-venue-feature { grid-column: 1 / -1; grid-row: span 2; }
+.gp-venue-feature .gp-venue-picture { height: 38mm; margin-bottom: 2mm; }
+.gp-venue-picture { position: relative; overflow: hidden; background: #e7e5e4; }
+.gp-venue-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gp-venue-label { position: absolute; left: 0; top: 0; background: white; color: var(--gp-accent); font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; letter-spacing: 0.04em; padding: 0.6mm 1.4mm; }
+.gp-venue-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5mm; margin-bottom: 0.4mm; }
+.gp-venue-name { font-weight: 700; font-size: 9pt; color: var(--gp-accent); }
+.gp-venue-feature .gp-venue-name { font-size: 12pt; }
+.gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-accent); }
+.gp-venue .gp-event-address { color: var(--gp-ink80); margin-top: 1.2mm; }
+.gp-venue-full .gp-venue-picture { height: 62mm; margin-bottom: 3mm; }
+.gp-venue-name-big { display: block; font-size: 15pt; line-height: 1.05; margin: 0.5mm 0 2mm; }
+.gp-venue-copy { font-size: 8.5pt; line-height: 1.15; }
+.gp-venue-copy p + p { margin-top: 1.5mm; }
+.gp-venue-copy .gp-standfirst { font-weight: 700; }
+.gp-venue-foot { position: absolute; left: 0; right: 0; bottom: 0; font-size: 7.5pt; line-height: 1.3; }
+.gp-venue-foot p { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5mm 2mm; }
+.gp-venue-foot b { color: var(--gp-accent); font-size: 9pt; display: inline-flex; align-items: center; gap: 0.8mm; }
+.gp-venue-foot em { color: var(--gp-ink80); }
+.gp-venue-foot strong { display: inline-flex; align-items: center; gap: 0.8mm; }
+.gp-venue-foot svg { width: 2.6mm; height: 2.6mm; flex: none; }
+.gp-venue-where { font-weight: 600; font-style: italic; color: var(--gp-ink80); }
+.gp-directory-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 11pt; color: var(--gp-accent); margin-bottom: 1.5mm; }
+.gp-directory { display: flex; align-items: baseline; gap: 1.5mm; font-size: 8pt; line-height: 1.25; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.5mm 0; }
+.gp-directory b { font-weight: 700; color: var(--gp-accent); }
+.gp-directory span:last-child { color: var(--gp-ink80); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-page:has(.gp-venue-grid) .gp-tab.gp-marker, .gp-page:has(.gp-venue-full) .gp-tab.gp-marker, .gp-page:has(.gp-directory) .gp-tab.gp-marker { background: var(--gp-accent); opacity: 0.7; }
 
 /* The section opener: a picture to the edges and the section's name. */
 .gp-opener { position: absolute; inset: 0; background: #57534e; }

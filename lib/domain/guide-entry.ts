@@ -1,4 +1,4 @@
-import type { Event, Experience, Place, Provider } from '@/lib/db/schema';
+import type { Event, Experience, ListingSize, Place, Provider } from '@/lib/db/schema';
 import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
@@ -328,12 +328,17 @@ export type GuideVenue = {
   area: string;
   name: string;
   label: string;
-  size: string;
+  size: ListingSize;
   copy: string;
   address: string;
   phone: string;
+  email: string;
   website: string;
   imageUrl: string;
+  /** A web-sized copy of the picture for the on-screen proof. Not printed. */
+  preview: string;
+  /** Every whole-sentence version of the copy, fullest first, for a box to fit. Not printed. */
+  options: string[];
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -341,6 +346,7 @@ const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
 };
 
 export function guideVenue(p: Place): GuideVenue {
+  const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
   return {
     section: p.guideSection ?? SECTION_OF_CATEGORY[p.category],
     area: p.guideArea ?? '',
@@ -351,9 +357,63 @@ export function guideVenue(p: Place): GuideVenue {
     copy: p.listingSize === 'directory' ? '' : p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
     phone: p.phone ?? '',
+    email: p.email ?? '',
     website: printWebsite(p.website) ?? '',
-    imageUrl: p.headerImage?.url ?? '',
+    imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
+    preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
+    options: p.listingSize === 'directory' ? [] : options,
   };
+}
+
+/**
+ * The venue sections in the order the 2026 editions print them (Visit,
+ * See, Do, Buy, Eat), then any other section a venue is set to; areas
+ * in the order the guide reads the island, then any other, then those
+ * with no area.
+ */
+export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
+export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South'] as const;
+const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'two-thirds': 1, listing: 2, directory: 3 };
+const ranked = (order: readonly string[], v: string) => {
+  const i = order.indexOf(v);
+  return i < 0 ? order.length + (v ? 0 : 1) : i;
+};
+
+/** A box on a venue grid page: the two-thirds feature (half the grid, across the top) or a listing (one box). */
+export type VenueCell = GuideVenue & { frame: 'feature' | 'listing' };
+export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
+export type VenueArea = { area: string; pages: VenuePage[]; directory: GuideVenue[] };
+export type VenueSection = { section: string; areas: VenueArea[] };
+
+/** The grid of eight: a feature takes the top four boxes, a listing one. */
+const FEATURE_CELLS = 4;
+
+/**
+ * Venues onto pages, section by section and area by area, on the grid the
+ * events and tours use. A full-page entry is a page of its own; each
+ * two-thirds entry opens a grid page across its top half, with listings
+ * under it; listings then fill grids of eight; directory lines follow the
+ * area's pages as a ruled list. Within a size, by name.
+ */
+export function venueSections(venues: GuideVenue[]): VenueSection[] {
+  const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
+  return sections.map((section) => {
+    const inSection = venues.filter((v) => v.section === section);
+    const areas = [...new Set(inSection.map((v) => v.area))].sort((a, b) => ranked(VENUE_AREA_ORDER, a) - ranked(VENUE_AREA_ORDER, b) || a.localeCompare(b));
+    return {
+      section,
+      areas: areas.map((area) => {
+        const here = inSection.filter((v) => v.area === area).sort((a, b) => SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
+        const pages: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
+        const listings: VenueCell[] = here.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+        for (const v of here.filter((x) => x.size === 'two-thirds')) {
+          pages.push({ kind: 'grid', cells: [{ ...v, frame: 'feature' }, ...listings.splice(0, GRID.grid8.cells - FEATURE_CELLS)] });
+        }
+        while (listings.length) pages.push({ kind: 'grid', cells: listings.splice(0, GRID.grid8.cells) });
+        return { area, pages, directory: here.filter((v) => v.size === 'directory') };
+      }),
+    };
+  });
 }
 
 /**
