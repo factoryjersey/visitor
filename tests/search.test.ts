@@ -45,7 +45,7 @@ describe('parishFrom', () => {
 describe('kindCounts', () => {
   it('counts each kind and all', () => {
     const hits = [hit({ kind: 'events', id: 'e1' }), hit({ kind: 'events', id: 'e2' }), hit({ kind: 'tours', id: 't1' }), hit({ kind: 'venues', id: 'v1' })];
-    expect(kindCounts(hits)).toEqual({ all: 4, events: 2, tours: 1, venues: 1 });
+    expect(kindCounts(hits)).toEqual({ all: 4, events: 2, tours: 1, experiences: 0, venues: 1 });
   });
 });
 

@@ -8,7 +8,7 @@ import type { Hit } from '@/lib/domain/search';
 export function SearchHit({ hit }: { hit: Hit }) {
   const parish = printParish(hit.parish);
   return (
-    <li>
+    <li className="min-w-0">
       <Link href={hit.href} className="group flex gap-3 rounded-lg bg-white p-2.5 shadow-sm ring-1 ring-harbour/5 transition hover:shadow-md">
         <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-harbour/10">
           {hit.image && (

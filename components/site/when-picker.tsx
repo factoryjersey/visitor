@@ -22,7 +22,7 @@ export function WhenPicker(props: { when?: string; from?: string; to?: string; t
     if (!props.row || !chosen) return;
     const on = chips.current?.querySelector<HTMLElement>('input:checked + span');
     const box = chips.current;
-    if (on && box) box.scrollLeft = on.offsetLeft - box.offsetLeft - 16;
+    if (on && box) box.scrollLeft += on.getBoundingClientRect().left - box.getBoundingClientRect().left - 16;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -34,7 +34,7 @@ export function WhenPicker(props: { when?: string; from?: string; to?: string; t
   };
 
   const chip = (value: string, label: React.ReactNode) => (
-    <label key={value} className="shrink-0 cursor-pointer">
+    <label key={value} className="relative shrink-0 cursor-pointer">
       <input type="radio" name="when" value={value} checked={chosen === value} onChange={(e) => choose(value, e)} className="peer sr-only" />
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm ring-1 ring-harbour/15 transition-colors hover:ring-brand/40 peer-checked:bg-harbour peer-checked:text-white peer-checked:ring-harbour peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-sea">
         {label}
