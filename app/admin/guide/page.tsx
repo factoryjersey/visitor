@@ -6,18 +6,12 @@ import '@fontsource/barlow-semi-condensed/600-italic.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
 import { GuideBook } from '@/components/guide/book';
-import { layoutFrom, type GuideVenue } from '@/lib/domain/guide-entry';
+import { layoutFrom } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
-
-function group<T>(items: T[], key: (t: T) => string): [string, T[]][] {
-  const m = new Map<string, T[]>();
-  for (const i of items) m.set(key(i), [...(m.get(key(i)) ?? []), i]);
-  return [...m.entries()];
-}
 
 /**
  * The selection as the guide prints it: the pocket page (115 × 165mm),
@@ -36,7 +30,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
     draft = true;
     guide = await buildGuide(window, { draft, layout });
   }
-  const { highlights, events, pages, tours, tourPages, providers, venues, leftOut } = guide;
+  const { highlights, events, pages, tours, tourPages, providers, venues, sections, leftOut } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${layout === 'top' ? '' : `&grid=${layout}`}`;
   const year = Number(window.from.slice(0, 4));
@@ -119,39 +113,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} providers={providers} venues={venues} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} providers={providers} venues={venues} venueSections={sections} firstPage={firstPage} />
 
-      <div className="guide-pages mt-8">
-        {group(venues, (v) => v.section).map(([section, inSection]) => (
-          <section key={section} className="guide-page">
-            <h2 className="guide-tab">{section}</h2>
-            {group(inSection, (v) => v.area).map(([area, inArea]) => (
-              <div key={area}>
-                {area && <h3 className="guide-area">{section} {area}</h3>}
-                <div className="guide-columns">
-                  {inArea.map((v) => <VenueEntry key={v.name} v={v} />)}
-                </div>
-              </div>
-            ))}
-          </section>
-        ))}
-      </div>
     </>
-  );
-}
-
-
-
-
-function VenueEntry({ v }: { v: GuideVenue }) {
-  return (
-    <article className="guide-entry">
-      <h4 className="guide-title">{v.name}</h4>
-      {v.label && <p className="guide-label">{v.label}</p>}
-      {v.copy && <p>{v.copy}</p>}
-      {v.address && <p>{v.address}</p>}
-      {v.phone && <p>{v.phone}</p>}
-      {v.size !== 'directory' && v.website && <p className="guide-web">{v.website}</p>}
-    </article>
   );
 }

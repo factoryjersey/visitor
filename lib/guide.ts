@@ -8,10 +8,12 @@ import {
   guideVenue,
   gridTours,
   layoutEvents,
+  venueSections,
   type GuideEvent,
   type Layout,
   type GuideTour,
   type GuideVenue,
+  type VenueSection,
   type Window,
 } from '@/lib/domain/guide-entry';
 import { printContact, printWebsite } from '@/lib/domain/house-style';
@@ -60,6 +62,8 @@ export type Guide = {
   tourPages: GuideTour[][] | null;
   providers: GuideProvider[];
   venues: GuideVenue[];
+  /** The venues laid out as the sections print them: per section and area, full pages, grid pages, then the directory. */
+  sections: VenueSection[];
 };
 
 const genreOrder = (g: string) => {
@@ -112,14 +116,14 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' }))
     .sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
 
-  const venues = selection.venues
-    .map(guideVenue)
-    .sort((a, b) => a.section.localeCompare(b.section) || a.area.localeCompare(b.area) || a.name.localeCompare(b.name));
+  const sections = venueSections(selection.venues.map(guideVenue));
+  // In page order, as the sections print them.
+  const venues = sections.flatMap((s) => s.areas.flatMap((a) => [...a.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...a.directory]));
 
   // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
   const tourPages = layout === 'top' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated')), ...gridTours(tours.filter((t) => t.kind === 'on demand'))];
 
-  return { highlights, events, pages, layout, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues };
+  return { highlights, events, pages, layout, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
@@ -129,4 +133,5 @@ export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'P
 /** On a grid, in page order: Frame says which row is the picture box beside its listing. */
 export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL', 'Icons'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
-export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Copy', 'Address', 'Phone', 'Website', 'Image URL'] as const;
+/** In page order: section, area, then full pages, grid pages (Frame says feature or listing) and directory lines. */
+export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Frame', 'Copy', 'Address', 'Phone', 'Email', 'Website', 'Image URL'] as const;

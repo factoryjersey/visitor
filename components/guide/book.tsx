@@ -1,8 +1,8 @@
 'use client';
 
-import { BadgeCheck, Clock, MapPin } from 'lucide-react';
+import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout } from '@/lib/domain/guide-entry';
+import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 
@@ -24,6 +24,12 @@ import { iconsFor, ListingIcons, PageKey } from './key-icons';
 export type Section = { name: string; colour: string };
 const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
+/**
+ * The venue sections' colours. For now, until the section templates are
+ * matched to the InDesign files: the flow first, on the events' grid.
+ */
+const VENUE_COLOURS: Record<string, string> = { Visit: '#43a19a', See: '#4d8fcc', Do: '#e5a823', Buy: '#d9558b', Eat: '#7cae4a', Stay: '#8a7bb8' };
+const venueSection = (name: string): Section => ({ name, colour: VENUE_COLOURS[name] ?? '#78716c' });
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
 type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
@@ -39,7 +45,7 @@ function Folio({ n, side }: { n: number; side: 'left' | 'right' }) {
 function Frame({ page, n }: { page: Page; n: number }) {
   const side = n % 2 === 0 ? 'left' : 'right';
   return (
-    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`}>
+    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour } as React.CSSProperties}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
       {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}
@@ -189,6 +195,72 @@ function ProviderRow({ p }: { p: GuideProvider }) {
   );
 }
 
+/** A venue's contact, as the full page prints it: phone, email, website; then where. */
+function VenueFoot({ v }: { v: GuideVenue }) {
+  return (
+    <div className="gp-venue-foot">
+      <p>
+        {v.phone && <b><Phone aria-hidden="true" />{v.phone}</b>}
+        {v.email && <em>{v.email}</em>}
+        {v.website && <strong><Globe aria-hidden="true" />{v.website}</strong>}
+      </p>
+      {v.address && <p className="gp-venue-where"><MapPin aria-hidden="true" />{v.address}</p>}
+    </div>
+  );
+}
+
+/** A full-page venue: its picture with the label on it, the name, the copy (the first paragraph standing out), and how to find it. */
+function VenueFullBody({ v }: { v: GuideVenue }) {
+  // The copy as written, paragraphs and all: a full page has room for it.
+  const paras = v.copy.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return (
+    <div className="gp-content gp-venue-full">
+      <div className="gp-venue-picture">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {v.preview && <img src={v.preview} alt="" />}
+        {v.label && <span className="gp-venue-label">{v.label}</span>}
+      </div>
+      <h3 className="gp-venue-name gp-venue-name-big">{v.name}</h3>
+      <div className="gp-venue-copy">{paras.map((p, i) => <p key={i} className={i === 0 && paras.length > 1 ? 'gp-standfirst' : undefined}>{p}</p>)}</div>
+      <VenueFoot v={v} />
+    </div>
+  );
+}
+
+/** A venue on the grid: a listing in one box, or the two-thirds feature across the top four with its picture. Copy fitted as the events' is. */
+function VenueBox({ c }: { c: VenueCell }) {
+  const contact = [c.address, c.phone].filter(Boolean).join(' · ');
+  const { ref, copy, keep, overset } = useFit(c.options.length ? c.options : [c.copy], !!contact);
+  return (
+    <article ref={ref} className={`gp-event gp-venue gp-venue-${c.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+      {c.frame === 'feature' && c.preview && (
+        <div className="gp-venue-picture">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={c.preview} alt="" />
+        </div>
+      )}
+      <p className="gp-venue-head">
+        <span className="gp-venue-name">{c.name}</span>
+        {c.label && <span className="gp-venue-tag">{c.label}</span>}
+      </p>
+      <p className="gp-event-copy">{copy}</p>
+      {contact && keep && <p className="gp-event-address">{contact}</p>}
+      {c.website && <p className="gp-event-web">{c.website}</p>}
+    </article>
+  );
+}
+
+/** A directory line: the name, and where and how to reach it. */
+function DirectoryLine({ v }: { v: GuideVenue }) {
+  return (
+    <p className="gp-directory">
+      <b>{v.name}</b>
+      {v.label && <span className="gp-venue-tag">{v.label}</span>}
+      <span>{[v.address, v.phone].filter(Boolean).join(' · ')}</span>
+    </p>
+  );
+}
+
 function TourHeading({ over, title, rest }: { over: string; title: string; rest: string }) {
   return (
     <div className="gp-tour-heading">
@@ -198,7 +270,8 @@ function TourHeading({ over, title, rest }: { over: string; title: string; rest:
   );
 }
 
-type Flow = { key: string; node: ReactNode; heading?: boolean };
+/** A flowing item; one that starts a group (a venue section's area) starts a new page. */
+type Flow = { key: string; node: ReactNode; heading?: boolean; group?: string; startsGroup?: boolean };
 
 /**
  * Pours flowing items into pages of FLOW_MM: each is measured at the
@@ -220,7 +293,7 @@ function usePoured(items: Flow[]): [Flow[][] | null, ReactNode] {
         const h = heights[i] ?? 0;
         const next = items[i + 1];
         const needed = item.heading && next ? h + (heights[i + 1] ?? 0) : h;
-        if (used > 0 && used + needed > max) {
+        if (used > 0 && (used + needed > max || item.startsGroup)) {
           out.push([]);
           used = 0;
         }
@@ -253,6 +326,8 @@ export function GuideBook(props: {
   tourGrid: GuideTour[][] | null;
   providers: GuideProvider[];
   venues: GuideVenue[];
+  /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
+  venueSections: VenueSection[];
   firstPage: number;
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
@@ -280,6 +355,19 @@ export function GuideBook(props: {
     return items;
   });
   const [tourPages, measuring] = usePoured(flow);
+  // Each area's directory lines flow onto pages of their own, after the area's grid pages.
+  const [dirFlow] = useState<Flow[]>(() =>
+    props.venueSections.flatMap((s) =>
+      s.areas.filter((a) => a.directory.length).flatMap((a) => {
+        const group = `${s.section}|${a.area}`;
+        return [
+          { key: `dh-${group}`, group, startsGroup: true, heading: true, node: <h3 className="gp-directory-heading">{[s.section, a.area].filter(Boolean).join(' ')}: more places</h3> },
+          ...a.directory.map((v, i) => ({ key: `dl-${group}-${i}-${v.name}`, group, node: <DirectoryLine v={v} /> })),
+        ];
+      }),
+    ),
+  );
+  const [dirPages, measuringDir] = usePoured(dirFlow);
 
   // The opener's picture: the first highlight's, else the first event with its own picture.
   const lead = highlights.find((e) => e.preview) ?? events.find((e) => e.preview);
@@ -320,6 +408,25 @@ export function GuideBook(props: {
     }
   }
 
+  // The venue sections, each from a left-hand page: an area's full pages and grid pages, then its directory.
+  for (const vs of props.venueSections) {
+    const section = venueSection(vs.section);
+    if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: pages.at(-1)?.section ?? section, body: <div className="gp-content" /> });
+    for (const a of vs.areas) {
+      const marker = a.area || undefined;
+      for (const p of a.pages) {
+        pages.push(
+          p.kind === 'full'
+            ? { section, marker, body: <VenueFullBody v={p.venue} /> }
+            : { section, marker, body: <div className="gp-content gp-grid gp-grid8 gp-venue-grid">{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div> },
+        );
+      }
+      for (const items of (dirPages ?? []).filter((pg) => pg[0]?.group === `${vs.section}|${a.area}`)) {
+        pages.push({ section, marker, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+      }
+    }
+  }
+
   // Into spreads: the first page faces left or right by its number.
   const numbered = pages.map((p, i) => ({ page: p, n: props.firstPage + i }));
   const spreads: (typeof numbered[number] | null)[][] = [];
@@ -330,6 +437,7 @@ export function GuideBook(props: {
   return (
     <div className="gp-book">
       {measuring}
+      {measuringDir}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
       {spreads.map((pair, i) => (
         <div key={i} className="gp-spread">
