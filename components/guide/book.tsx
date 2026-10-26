@@ -4,6 +4,7 @@ import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
+import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 
 /**
@@ -24,12 +25,8 @@ import { iconsFor, ListingIcons, PageKey } from './key-icons';
 export type Section = { name: string; colour: string };
 const EVENTS: Section = { name: 'Events this season', colour: '#f58353' };
 const TOURS: Section = { name: 'Walks and tours', colour: '#add581' };
-/**
- * The venue sections' colours. For now, until the section templates are
- * matched to the InDesign files: the flow first, on the events' grid.
- */
-const VENUE_COLOURS: Record<string, string> = { Visit: '#43a19a', See: '#4d8fcc', Do: '#e5a823', Buy: '#d9558b', Eat: '#7cae4a', Stay: '#8a7bb8' };
-const venueSection = (name: string): Section => ({ name, colour: VENUE_COLOURS[name] ?? '#78716c' });
+/** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
+const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
 type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
@@ -45,7 +42,7 @@ function Folio({ n, side }: { n: number; side: 'left' | 'right' }) {
 function Frame({ page, n }: { page: Page; n: number }) {
   const side = n % 2 === 0 ? 'left' : 'right';
   return (
-    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour } as React.CSSProperties}>
+    <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-tint20': tint(page.section.colour, 20), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
       {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}
