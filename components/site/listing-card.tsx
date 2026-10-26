@@ -2,19 +2,11 @@ import Link from 'next/link';
 import { printTitle } from '@/lib/domain/house-style';
 import type { Image } from '@/lib/db/schema';
 import type { Genre } from '@/lib/domain/genre';
-import { printParish } from '@/lib/domain/house-style';
 import { CardMore } from './card-more';
 import { CategoryMarkers } from './category-markers';
 import { webImage } from '@/lib/domain/images';
 
-/** Where, for a card: the venue or meeting point, and the parish unless the name already says it. "Jersey Arts Centre, St. Helier". */
-export function cardLocation(place: string | null | undefined, parish: string | null | undefined): string | null {
-  const name = place?.trim() || null;
-  const p = printParish(parish ?? null);
-  const letters = (s: string) => s.toLowerCase().replace(/^(st\.?|saint)\s+/, '').replace(/[^a-z]/g, '');
-  if (!name || !p) return name ?? p;
-  return letters(name).includes(letters(p)) ? name : `${name}, ${p}`;
-}
+export { cardLocation } from '@/lib/domain/house-style';
 
 /** One event or tour in a list: picture, when, what, where. */
 export function ListingCard(props: {

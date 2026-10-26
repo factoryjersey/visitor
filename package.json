@@ -17,7 +17,8 @@
     "seed:sample": "tsx scripts/import-visit-jersey.ts --fixture tests/fixtures/visit-jersey-listings.json",
     "auth:create-user": "tsx scripts/auth-create-user.ts",
     "seed:provider-codes": "tsx scripts/seed-provider-codes.ts",
-    "tag:venues": "tsx scripts/tag-venues.ts"
+    "tag:venues": "tsx scripts/tag-venues.ts",
+    "email:weekly": "tsx scripts/send-weekly.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

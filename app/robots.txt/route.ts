@@ -8,7 +8,7 @@ import { SITE } from '@/lib/agents/data';
  * answers that cite us, and training, since being known is the point.
  */
 // The Google reviews endpoint costs a call to Google each time: for people, not crawlers.
-const PRIVATE = ['/admin', '/account', '/login', '/logout', '/auth/', '/invite/', '/claim/', '/api/google-reviews/'];
+const PRIVATE = ['/admin', '/account', '/login', '/logout', '/auth/', '/invite/', '/claim/', '/api/google-reviews/', '/subscribe/confirm/', '/subscribe/leave/', '/api/unsubscribe'];
 
 const AI_AGENTS = [
   'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',

@@ -114,6 +114,42 @@ send never stops what caused it, and an invite link is always shown too.
   replying straight to the claimant; and a "we have your request" to them.
 - A claim approved (for someone with an account; others get the invite)
   or turned down. Our note on a turned-down claim stays ours.
+- The weekly What's On email, below.
+
+## The weekly email
+
+Visitors sign up for What's on in the coming week, every Thursday
+morning (`subscribers`, `lib/subscribers.ts`, `lib/newsletter.ts`):
+
+- **Signing up.** The front page offers it once, in a card in the
+  corner a few seconds into someone's first visit (remembered in the
+  browser); it takes no focus and closes with Escape. `/subscribe`,
+  linked in the footer, is the same form for anyone who closed it. Not
+  shown while `RESEND_API_KEY` is unset, as nothing could confirm it.
+- **Double opt-in.** A new address is `pending` and gets one email
+  asking to confirm; only `subscribed` addresses get the weekly email.
+  Asking again within ten minutes sends nothing more, and past 200
+  confirmations in an hour we stop and say to try later (a bot feeding
+  the form). Whether an address was already on the list is never said.
+- **Leaving.** Every weekly email has an unsubscribe link to a page with
+  a button (link checkers open every link, so the link alone does
+  nothing), and a one-click `List-Unsubscribe` header (RFC 8058) that
+  mail apps POST to `/api/unsubscribe`. A row that leaves is kept,
+  `unsubscribed`; signing up again asks for confirmation again.
+- **The email.** The seven days from the day it is sent: up to three
+  highlights with their pictures, then everything else day by day as
+  What's On lists it (unique events, nothing the site hides by
+  default), forty at most, and a link to the week on the site. Nothing
+  on, no email.
+- **Sending.** `pnpm email:weekly`, in batches of a hundred through
+  Resend's batch API. Each batch is marked as sent (`last_sent_for`) as
+  it goes, so running it again that week sends nobody a second copy;
+  only a failed batch is tried again. `--preview week.html` writes the
+  email to a file and sends nothing; `--to you@example.com` sends one
+  copy to that address only.
+
+Railway's `weekly-email` service runs `pnpm email:weekly` on Thursdays at
+07:13 UTC (08:13 in summer, 07:13 in winter, Jersey time).
 
 ## How it fits together
 

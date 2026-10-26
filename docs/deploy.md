@@ -6,6 +6,7 @@ One Railway project, `visitor`, with:
 |---|---|---|
 | `web` | this repo, `main` branch | builds with `pnpm build`; runs migrations before each deploy (pre-deploy command `pnpm db:migrate`), then `pnpm start`; healthcheck `/` |
 | `import` | this repo, cron | `sh -c "pnpm import:visit-jersey; pnpm seed:provider-codes; pnpm import:events"`, daily at `17 5 * * *`. It runs on its schedule; a redeploy rebuilds it but does not reliably run it. |
+| `weekly-email` | this repo, cron | `pnpm email:weekly`, Thursdays at `13 7 * * 4`. Variables: `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, as on `web` (`${{web.…}}`). Running it twice in a week sends nobody a second copy. |
 | Postgres | Railway's Postgres plugin, or Supabase | `DATABASE_URL` |
 
 ## Variables on `web` (and on `import`: `DATABASE_URL`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` as `${{visitor.SUPABASE_SERVICE_ROLE_KEY}}` so it can copy fallback pictures into storage)
@@ -19,7 +20,7 @@ One Railway project, `visitor`, with:
 | `NEXT_PUBLIC_APP_URL` | the public URL: `https://visitor.je` (www.visitor.je redirects there) |
 | `SUPERADMIN_EMAILS` | e.g. `ben@factory.je`: becomes superadmin on first sign-in. Everyone else is invited. |
 | `ANTHROPIC_API_KEY` | optional: puts providers' and imported copy in the third person; on `import`, also writes the guide snippets, the club fixtures' copy, and checks event pictures for text |
-| `RESEND_API_KEY` | optional: sends invites and claim emails (Resend, with visitor.je verified) |
+| `RESEND_API_KEY` | optional: sends invites, claim emails and the weekly What's On email (Resend, with visitor.je verified). Without it the front page does not offer the weekly email. |
 | `PEXELS_API_KEY` | optional, on `import`: stock pictures for listings with none come from Pexels; without it, Openverse public-domain photos |
 | `EMAIL_FROM` | optional, default `Visitor <hello@visitor.je>` |
 | `STAFF_NOTIFY_EMAILS` | optional, comma-separated: who hears about new claims (default every staff account) |

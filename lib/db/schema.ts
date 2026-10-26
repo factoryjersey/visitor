@@ -490,9 +490,44 @@ export const claims = pgTable(
   }),
 );
 
+/**
+ * People who asked for the weekly What's On email. Double opt-in: an
+ * address is `pending` until its owner follows the link we send it, and
+ * only `subscribed` ones get the email. Leaving keeps the row, marked
+ * `unsubscribed`, so a second sign-up asks again rather than starting over.
+ */
+export const SUBSCRIBER_STATUSES = ['pending', 'subscribed', 'unsubscribed'] as const;
+export type SubscriberStatus = (typeof SUBSCRIBER_STATUSES)[number];
+
+export const subscribers = pgTable(
+  'subscribers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Lower case, trimmed. */
+    email: text('email').notNull(),
+    status: text('status').$type<SubscriberStatus>().notNull().default('pending'),
+    /** In the confirm and unsubscribe links. Secret, and the only way to act on the row from outside. */
+    token: text('token').notNull(),
+    /** Where they signed up: `popover`, `page`. */
+    source: text('source'),
+    confirmSentAt: timestamp('confirm_sent_at', { withTimezone: true }),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+    unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
+    /** The first day of the last weekly email sent to them, so a second run that week sends nothing. */
+    lastSentFor: date('last_sent_for'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byEmail: uniqueIndex('subscribers_email').on(t.email),
+    byToken: uniqueIndex('subscribers_token').on(t.token),
+    byStatus: index('subscribers_status').on(t.status),
+  }),
+);
+
 export type Experience = typeof experiences.$inferSelect;
 export type Business = typeof businesses.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type ListingChange = typeof listingChanges.$inferSelect;
 export type Claim = typeof claims.$inferSelect;
+export type Subscriber = typeof subscribers.$inferSelect;
