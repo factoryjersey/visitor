@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react';
  * for when. The footer button shows the results, applying a typed search
  * or chosen dates first.
  */
-export function FilterPane(props: { children: React.ReactNode; active: number; results: number; noun: string }) {
+export function FilterPane(props: { children: React.ReactNode; active: number; results: number; noun: string; /** Beside the count on a phone: the view switch. */ aside?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -80,7 +80,10 @@ export function FilterPane(props: { children: React.ReactNode; active: number; r
           Filters
           {props.active > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[0.7rem] text-white">{props.active}</span>}
         </button>
-        <span className="text-sm text-harbour/60">{what}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-harbour/60">{what}</span>
+          {props.aside}
+        </div>
       </div>
 
       <div
