@@ -351,7 +351,7 @@ export async function publicSearch(words: string[], range: { from: string; to: s
       .where(and(...tourWhere)),
     words.length
       ? db
-          .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, stayType: places.stayType, headerImage: places.headerImage, recommendedIn: places.recommendedIn })
+          .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, stayType: places.stayType, headerImage: places.headerImage, recommendedIn: places.recommendedIn, summary: places.summary })
           .from(places)
           .where(and(...venueWhere))
       : Promise.resolve([]),
