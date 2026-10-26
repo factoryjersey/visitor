@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
 import { Wordmark } from './wordmark';
 
 const NAV = [
@@ -15,7 +16,8 @@ const NAV = [
 /**
  * The wordmark with its line beneath, and the menu: along the right on a
  * desktop, behind a burger on tablets and phones that turns into a cross
- * and lets the menu fall open below the bar.
+ * and lets the menu fall open below the bar. Search sits beside it on
+ * every size: one search for events, tours and venues.
  */
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -39,7 +41,7 @@ export function SiteHeader() {
           <Wordmark />
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-8 lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-8 lg:ml-auto lg:flex">
           {NAV.map((n) => (
             <Link
               key={n.href}
@@ -52,20 +54,30 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-controls="site-menu"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          className="group -mr-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-harbour/5 lg:hidden"
-        >
-          <span className="relative block h-3.5 w-6" aria-hidden="true">
-            <span className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-ink transition-transform duration-300 ease-out ${open ? 'translate-y-[6px] rotate-45' : ''}`} />
-            <span className={`absolute left-0 top-[6px] h-0.5 rounded-full bg-ink transition-all duration-300 ease-out ${open ? 'w-0 opacity-0' : 'w-4 group-hover:w-6'}`} />
-            <span className={`absolute left-0 top-3 h-0.5 w-6 rounded-full bg-ink transition-transform duration-300 ease-out ${open ? '-translate-y-[6px] -rotate-45' : ''}`} />
-          </span>
-        </button>
+        <div className="-mr-2 flex items-center gap-1 lg:mr-0">
+          <Link
+            href="/search"
+            aria-label="Search"
+            aria-current={current('/search') ? 'page' : undefined}
+            className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-harbour/5 hover:text-brand ${current('/search') ? 'text-brand' : 'text-ink'}`}
+          >
+            <Search aria-hidden="true" className="h-5 w-5" strokeWidth={2.25} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls="site-menu"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            className="group flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-harbour/5 lg:hidden"
+          >
+            <span className="relative block h-3.5 w-6" aria-hidden="true">
+              <span className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-ink transition-transform duration-300 ease-out ${open ? 'translate-y-[6px] rotate-45' : ''}`} />
+              <span className={`absolute left-0 top-[6px] h-0.5 rounded-full bg-ink transition-all duration-300 ease-out ${open ? 'w-0 opacity-0' : 'w-4 group-hover:w-6'}`} />
+              <span className={`absolute left-0 top-3 h-0.5 w-6 rounded-full bg-ink transition-transform duration-300 ease-out ${open ? '-translate-y-[6px] -rotate-45' : ''}`} />
+            </span>
+          </button>
+        </div>
       </div>
 
       <div

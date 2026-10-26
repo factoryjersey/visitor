@@ -1,5 +1,5 @@
 import { organiserKey } from '@/lib/domain/organiser';
-import { and, asc, eq, ne, or, inArray, notInArray, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, ne, or, inArray, notInArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { db } from './index';
 import { events, experiences, organiserProfiles, places, providers, type Category, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -7,6 +7,7 @@ import { nextDate } from '@/lib/domain/web-dates';
 import type { Genre } from '@/lib/domain/genre';
 import { normaliseName } from '@/lib/domain/same-place';
 import { slugify } from '@/lib/domain/slug';
+import { likeEscape } from '@/lib/domain/search';
 
 /**
  * What the public site shows. Everything not left out — the site is the
@@ -311,4 +312,45 @@ export async function publicVenueNamed(...names: (string | null | undefined)[]) 
 export async function organiserFallback(name: string) {
   const [row] = await db.select({ image: organiserProfiles.fallbackImage }).from(organiserProfiles).where(eq(organiserProfiles.key, organiserKey(name)));
   return row?.image ?? null;
+}
+
+/** Every word typed found in one of these columns or another: "jazz helier" is jazz in St Helier. */
+const allWordsIn = (words: string[], cols: AnyColumn[]) => and(...words.map((w) => or(...cols.map((c) => sql`${c} ilike ${`%${likeEscape(w)}%`}`))));
+
+/**
+ * The site search: events (ongoing ones too), tours (on-demand ones too)
+ * and venues, each matched on every word typed. With nothing typed, all
+ * of them, for browsing an area.
+ */
+export async function publicSearch(words: string[]) {
+  const eventWhere: SQL[] = [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
+  const tourWhere: SQL[] = [ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)];
+  const venueWhere: SQL[] = [ne(places.inclusion, 'excluded'), eq(places.review, 'approved')];
+  if (words.length) {
+    eventWhere.push(allWordsIn(words, [events.title, events.venueName, places.name, events.parish, places.parish, events.summary])!);
+    tourWhere.push(allWordsIn(words, [experiences.title, providers.name, experiences.meetingPoint, experiences.parish, experiences.summary])!);
+    venueWhere.push(allWordsIn(words, [places.name, places.parish, places.summary, places.stayType])!);
+  }
+  const [eventRows, tourRows, venueRows] = await Promise.all([
+    db
+      .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
+      .from(events)
+      .leftJoin(places, eq(places.id, events.placeId))
+      .where(and(...eventWhere)),
+    db
+      .select({ tour: experiences, provider: { id: providers.id, name: providers.name } })
+      .from(experiences)
+      .leftJoin(providers, eq(providers.id, experiences.providerId))
+      .where(and(...tourWhere)),
+    db
+      .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, stayType: places.stayType, headerImage: places.headerImage, recommendedIn: places.recommendedIn })
+      .from(places)
+      .where(and(...venueWhere)),
+  ]);
+  const today = todayIso();
+  return {
+    events: eventRows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })),
+    tours: tourRows.map((r) => ({ ...r, next: nextDate(r.tour.dates, today) ?? '9999' })),
+    venues: venueRows,
+  };
 }
