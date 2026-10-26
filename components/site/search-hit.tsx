@@ -6,7 +6,7 @@ import type { Hit } from '@/lib/domain/search';
 
 /** One result: a small picture, when, what, and where, in a row a thumb can hit. */
 export function SearchHit({ hit }: { hit: Hit }) {
-  const parish = printParish(hit.area);
+  const parish = printParish(hit.parish);
   return (
     <li>
       <Link href={hit.href} className="group flex gap-3 rounded-lg bg-white p-2.5 shadow-sm ring-1 ring-harbour/5 transition hover:shadow-md">

@@ -3,7 +3,7 @@ export function tidyParish(label: string): string {
   return label.replace(/^(St\.|Saint)\s+/i, 'St ').replace(/\s+/g, ' ').trim();
 }
 
-export const PARISHES = ['Grouville', 'St Brelade', 'St Clement', 'St Helier', 'St John', 'St Lawrence', 'St Martin', 'St Mary', 'St Ouen', 'St Peter', 'St Saviour', 'Trinity'];
+const PARISHES = ['Grouville', 'St Brelade', 'St Clement', 'St Helier', 'St John', 'St Lawrence', 'St Martin', 'St Mary', 'St Ouen', 'St Peter', 'St Saviour', 'Trinity'];
 
 /** Jèrriais and French names, as ticketing sites give them, to the English the guide prints. */
 const FRENCH: Record<string, string> = {

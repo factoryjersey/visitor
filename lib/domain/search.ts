@@ -1,11 +1,11 @@
 import type { Image } from '@/lib/db/schema';
-import { PARISHES, parishOf } from './parish';
+import { parishOf } from './parish';
 
 /**
  * One search over everything the site lists: events, tours and venues,
- * narrowed by kind and by area. An area is a parish, the way the island
- * thinks of where things are. Each choice is counted from what the other
- * leaves, so the numbers on the tabs and the chips are what a tap shows.
+ * narrowed by kind and, for events and tours, by when. The island is small
+ * enough that when matters more than where: the parish is shown, and
+ * found when typed, but is not a filter.
  */
 
 export const KINDS = ['events', 'tours', 'venues'] as const;
@@ -20,7 +20,7 @@ export type Hit = {
   href: string;
   title: string;
   /** The parish, as parish.ts spells it ("St Brelade"), or null if we do not know it. */
-  area: string | null;
+  parish: string | null;
   /** When it is on, for events and tours: "Sat 1 Nov", "Book any day". */
   when: string | null;
   /** Where, or what: the venue, who runs a tour, what a venue is. */
@@ -62,31 +62,19 @@ export function fit(title: string, words: string[]): number {
   return inTitle === words.length ? 1 : inTitle > 0 ? 2 : 3;
 }
 
-export const areaSlug = (parish: string) => parish.toLowerCase().replace(/\s+/g, '-');
-export const areaFromSlug = (slug: string | undefined): string | null => (slug ? (PARISHES.find((p) => areaSlug(p) === slug) ?? null) : null);
 /** The parish from however a listing spells it. */
-export const areaOf = (...labels: (string | null | undefined)[]): string | null => labels.map(parishOf).find(Boolean) ?? null;
+export const parishFrom = (...labels: (string | null | undefined)[]): string | null => labels.map(parishOf).find(Boolean) ?? null;
 
 /** Best answers first; then highlights; then by date or name. */
 export function sortHits<T extends Hit>(hits: T[]): T[] {
-  return [...hits].sort((a, b) => a.fit - b.fit || Number(b.highlight) - Number(a.highlight) || a.order.localeCompare(b.order));
+  // By code point, not locale: ongoing listings are ordered under a leading ~, which a locale puts before the digits.
+  const byOrder = (a: Hit, b: Hit) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0);
+  return [...hits].sort((a, b) => a.fit - b.fit || Number(b.highlight) - Number(a.highlight) || byOrder(a, b));
 }
 
-export function narrow<T extends Hit>(hits: T[], o: { kind?: Kind; area?: string | null }): T[] {
-  return hits.filter((h) => (!o.kind || h.kind === o.kind) && (!o.area || h.area === o.area));
-}
-
-/** How many of each kind, in the area chosen. */
-export function kindCounts(hits: Hit[], area: string | null): Record<Kind | 'all', number> {
-  const inArea = narrow(hits, { area });
-  const counts = { all: inArea.length, events: 0, tours: 0, venues: 0 };
-  for (const h of inArea) counts[h.kind]++;
+/** How many of each kind, and in all. */
+export function kindCounts(hits: Hit[]): Record<Kind | 'all', number> {
+  const counts = { all: hits.length, events: 0, tours: 0, venues: 0 };
+  for (const h of hits) counts[h.kind]++;
   return counts;
-}
-
-/** The parishes with something of the kind chosen, in the island's order, each with its count. The one chosen stays, even at none. */
-export function areaCounts(hits: Hit[], kind: Kind | undefined, chosen: string | null): { area: string; slug: string; n: number }[] {
-  const n = new Map<string, number>();
-  for (const h of narrow(hits, { kind })) if (h.area) n.set(h.area, (n.get(h.area) ?? 0) + 1);
-  return PARISHES.filter((p) => n.has(p) || p === chosen).map((p) => ({ area: p, slug: areaSlug(p), n: n.get(p) ?? 0 }));
 }

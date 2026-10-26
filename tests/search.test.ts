@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { areaCounts, areaFromSlug, areaOf, areaSlug, fit, kindCounts, likeEscape, narrow, searchWords, sortHits, type Hit } from '@/lib/domain/search';
+import { fit, kindCounts, likeEscape, parishFrom, searchWords, sortHits, type Hit } from '@/lib/domain/search';
 
-const hit = (o: Partial<Hit> & Pick<Hit, 'kind' | 'id'>): Hit => ({ href: `/${o.id}`, title: o.id, area: null, when: null, line: null, image: null, highlight: false, fit: 0, order: o.id, ...o });
+const hit = (o: Partial<Hit> & Pick<Hit, 'kind' | 'id'>): Hit => ({ href: `/${o.id}`, title: o.id, parish: null, when: null, line: null, image: null, highlight: false, fit: 0, order: o.id, ...o });
 
 describe('searchWords', () => {
   it('lower-cases, splits, trims punctuation and keeps each word once', () => {
@@ -34,45 +34,18 @@ describe('fit', () => {
   });
 });
 
-describe('areas', () => {
-  it('reads a parish however it is spelt, and round-trips its slug', () => {
-    expect(areaOf(null, 'Saint Brelade')).toBe('St Brelade');
-    expect(areaOf('St. Helier', 'Trinity')).toBe('St Helier');
-    expect(areaOf('Jersey')).toBeNull();
-    expect(areaSlug('St Brelade')).toBe('st-brelade');
-    expect(areaFromSlug('st-brelade')).toBe('St Brelade');
-    expect(areaFromSlug('nowhere')).toBeNull();
+describe('parishFrom', () => {
+  it('reads a parish however it is spelt, from the first label that has one', () => {
+    expect(parishFrom(null, 'Saint Brelade')).toBe('St Brelade');
+    expect(parishFrom('St. Helier', 'Trinity')).toBe('St Helier');
+    expect(parishFrom('Jersey')).toBeNull();
   });
 });
 
-describe('narrowing and counting', () => {
-  const hits = [
-    hit({ kind: 'events', id: 'e1', area: 'St Helier' }),
-    hit({ kind: 'events', id: 'e2', area: 'St Brelade' }),
-    hit({ kind: 'tours', id: 't1', area: 'St Helier' }),
-    hit({ kind: 'venues', id: 'v1', area: 'St Helier' }),
-    hit({ kind: 'venues', id: 'v2', area: null }),
-  ];
-
-  it('counts kinds in the area chosen', () => {
-    expect(kindCounts(hits, null)).toEqual({ all: 5, events: 2, tours: 1, venues: 2 });
-    expect(kindCounts(hits, 'St Helier')).toEqual({ all: 3, events: 1, tours: 1, venues: 1 });
-  });
-
-  it('counts areas for the kind chosen, in the island order, keeping the one chosen at none', () => {
-    expect(areaCounts(hits, undefined, null)).toEqual([
-      { area: 'St Brelade', slug: 'st-brelade', n: 1 },
-      { area: 'St Helier', slug: 'st-helier', n: 3 },
-    ]);
-    expect(areaCounts(hits, 'tours', 'St Brelade')).toEqual([
-      { area: 'St Brelade', slug: 'st-brelade', n: 0 },
-      { area: 'St Helier', slug: 'st-helier', n: 1 },
-    ]);
-  });
-
-  it('narrows by kind and area together', () => {
-    expect(narrow(hits, { kind: 'events', area: 'St Helier' }).map((h) => h.id)).toEqual(['e1']);
-    expect(narrow(hits, {}).length).toBe(5);
+describe('kindCounts', () => {
+  it('counts each kind and all', () => {
+    const hits = [hit({ kind: 'events', id: 'e1' }), hit({ kind: 'events', id: 'e2' }), hit({ kind: 'tours', id: 't1' }), hit({ kind: 'venues', id: 'v1' })];
+    expect(kindCounts(hits)).toEqual({ all: 4, events: 2, tours: 1, venues: 1 });
   });
 });
 
@@ -85,5 +58,9 @@ describe('sortHits', () => {
       hit({ kind: 'events', id: 'best', fit: 0, order: '2027-01-01' }),
     ]);
     expect(sorted.map((h) => h.id)).toEqual(['best', 'starred', 'soon', 'late']);
+  });
+  it('puts ongoing listings, ordered under ~, after the dated', () => {
+    const sorted = sortHits([hit({ kind: 'events', id: 'weekly', order: '~2026-10-30' }), hit({ kind: 'events', id: 'dated', order: '2026-11-02' })]);
+    expect(sorted.map((h) => h.id)).toEqual(['dated', 'weekly']);
   });
 });

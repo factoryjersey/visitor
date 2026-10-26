@@ -319,10 +319,11 @@ const allWordsIn = (words: string[], cols: AnyColumn[]) => and(...words.map((w) 
 
 /**
  * The site search: events (ongoing ones too), tours (on-demand ones too)
- * and venues, each matched on every word typed. With nothing typed, all
- * of them, for browsing an area.
+ * and venues, each matched on every word typed. `range` keeps events and
+ * tours to those with a day in it; venues have no dates, so they are only
+ * searched for by name, never listed wholesale.
  */
-export async function publicSearch(words: string[]) {
+export async function publicSearch(words: string[], range: { from: string; to: string } | null = null) {
   const eventWhere: SQL[] = [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
   const tourWhere: SQL[] = [ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)];
   const venueWhere: SQL[] = [ne(places.inclusion, 'excluded'), eq(places.review, 'approved')];
@@ -330,6 +331,10 @@ export async function publicSearch(words: string[]) {
     eventWhere.push(allWordsIn(words, [events.title, events.venueName, places.name, events.parish, places.parish, events.summary])!);
     tourWhere.push(allWordsIn(words, [experiences.title, providers.name, experiences.meetingPoint, experiences.parish, experiences.summary])!);
     venueWhere.push(allWordsIn(words, [places.name, places.parish, places.summary, places.stayType])!);
+  }
+  if (range) {
+    eventWhere.push(inRange(events.dates, range));
+    tourWhere.push(inRange(experiences.dates, range));
   }
   const [eventRows, tourRows, venueRows] = await Promise.all([
     db
@@ -342,12 +347,15 @@ export async function publicSearch(words: string[]) {
       .from(experiences)
       .leftJoin(providers, eq(providers.id, experiences.providerId))
       .where(and(...tourWhere)),
-    db
-      .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, stayType: places.stayType, headerImage: places.headerImage, recommendedIn: places.recommendedIn })
-      .from(places)
-      .where(and(...venueWhere)),
+    words.length
+      ? db
+          .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, stayType: places.stayType, headerImage: places.headerImage, recommendedIn: places.recommendedIn })
+          .from(places)
+          .where(and(...venueWhere))
+      : Promise.resolve([]),
   ]);
-  const today = todayIso();
+  // Each one's first day in the range chosen, not its next day overall.
+  const today = range && range.from > todayIso() ? range.from : todayIso();
   return {
     events: eventRows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })),
     tours: tourRows.map((r) => ({ ...r, next: nextDate(r.tour.dates, today) ?? '9999' })),
