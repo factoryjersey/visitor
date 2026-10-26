@@ -7,6 +7,7 @@ import { hiddenByDefault } from '@/lib/domain/categorise';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { KINDS, KIND_LABEL, asKind, fit, kindCounts, parishFrom, searchWords, sortHits, type Hit, type Kind } from '@/lib/domain/search';
+import { tourKind } from '@/lib/domain/tour-kind';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { jerseyToday, rangeLabel, resolveWhen } from '@/lib/domain/when';
 import { cardLocation } from '@/components/site/listing-card';
@@ -15,7 +16,7 @@ import { WhenPicker } from '@/components/site/when-picker';
 import { CATEGORY_LABEL, one, type SearchParams } from '@/lib/params';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Search', description: 'Search events, tours and venues across Jersey, on the days you choose.', robots: { index: false, follow: true } };
+export const metadata: Metadata = { title: 'Search', description: 'Search events, tours, experiences and venues across Jersey, on the days you choose.', robots: { index: false, follow: true } };
 
 /** In the All view, a few of each kind, with a link to the rest. */
 const PREVIEW = 4;
@@ -24,8 +25,8 @@ const MAX = 120;
 
 /**
  * One search box for the whole site, made for a phone: what is typed is
- * looked for in events, tours and venues at once. Tabs narrow it by kind,
- * and the When chips by day, for events and tours. Nothing typed and a
+ * looked for in events, tours, experiences and venues at once. Tabs narrow
+ * it by kind, and the When chips by day, for all but venues. Nothing typed and a
  * day picked is everything on that day.
  */
 export default async function SearchPage({ searchParams }: { searchParams: SearchParams }) {
@@ -62,7 +63,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
         order: UNIQUE.includes(e.occurrence) || e.highlight ? next : `~${next}`,
       })),
     ...found.tours.map(({ tour: t, provider, next }): Hit => ({
-      kind: 'tours',
+      kind: tourKind(t.title, t.tags, t.genre) === 'tour' ? 'tours' : 'experiences',
       id: t.id,
       href: `/tours/${t.slug}`,
       title: t.title,
@@ -122,7 +123,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
             name="q"
             defaultValue={q ?? ''}
             placeholder="Events, tours, places…"
-            aria-label="Search events, tours and venues"
+            aria-label="Search events, tours, experiences and venues"
             enterKeyHint="search"
             autoComplete="off"
             autoFocus={browsing}

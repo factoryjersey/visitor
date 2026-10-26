@@ -2,15 +2,17 @@ import type { Image } from '@/lib/db/schema';
 import { parishOf } from './parish';
 
 /**
- * One search over everything the site lists: events, tours and venues,
+ * One search over everything the site lists: events, tours, experiences
+ * and venues,
  * narrowed by kind and, for events and tours, by when. The island is small
  * enough that when matters more than where: the parish is shown, and
  * found when typed, but is not a filter.
  */
 
-export const KINDS = ['events', 'tours', 'venues'] as const;
+/** Tours and experiences are one table, told apart by tourKind. */
+export const KINDS = ['events', 'tours', 'experiences', 'venues'] as const;
 export type Kind = (typeof KINDS)[number];
-export const KIND_LABEL: Record<Kind, string> = { events: 'Events', tours: 'Tours', venues: 'Venues' };
+export const KIND_LABEL: Record<Kind, string> = { events: 'Events', tours: 'Tours', experiences: 'Experiences', venues: 'Venues' };
 
 export const asKind = (v: string | undefined): Kind | undefined => (KINDS as readonly string[]).includes(v ?? '') ? (v as Kind) : undefined;
 
@@ -74,7 +76,7 @@ export function sortHits<T extends Hit>(hits: T[]): T[] {
 
 /** How many of each kind, and in all. */
 export function kindCounts(hits: Hit[]): Record<Kind | 'all', number> {
-  const counts = { all: hits.length, events: 0, tours: 0, venues: 0 };
+  const counts = { all: hits.length, events: 0, tours: 0, experiences: 0, venues: 0 };
   for (const h of hits) counts[h.kind]++;
   return counts;
 }
