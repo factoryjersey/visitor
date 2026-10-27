@@ -164,7 +164,7 @@ function sentences(t: string): string[] {
  * A picture the guide prints: the listing's own (not stock or a club's
  * photograph we credit), and not a poster or flyer, which crops badly.
  */
-const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
+export const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
 
 /** Sites that sell for everyone: in print they say nothing about the event. */
 const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
@@ -381,6 +381,8 @@ export type GuideVenue = {
   preview: string;
   /** Every whole-sentence version of the copy, fullest first, for a box to fit. Not printed. */
   options: string[];
+  /** Its area's marker in the section's key, once the section is laid out. */
+  areaCode?: string;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -427,52 +429,77 @@ const ranked = (order: readonly string[], v: string) => {
 export type VenueFrame = 'three-quarters' | 'half' | 'quarter' | 'listing';
 export type VenueCell = GuideVenue & { frame: VenueFrame };
 export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
-export type VenueArea = { area: string; pages: VenuePage[]; directory: GuideVenue[] };
-export type VenueSection = { section: string; grid: VenueGrid; areas: VenueArea[] };
+/** An area's short marker, printed on its boxes as the tour guides' are, and the area it stands for. */
+export type AreaKey = { code: string; area: string };
+export type VenueSection = { section: string; grid: VenueGrid; pages: VenuePage[]; directory: GuideVenue[]; key: AreaKey[] };
 
 /** A page's share each size takes: on the grid of eight, three rows, two and one of four; on sixteen, six, four and two of eight. */
 const SHARE: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3 / 4, half: 1 / 2, quarter: 1 / 4 };
 
+// The areas' markers, where initials alone would clash or mislead.
+const AREA_CODES: Record<string, string> = {
+  'St. Helier': 'SH', 'St. Aubin': 'SA', West: 'W', North: 'N', East: 'E', Gorey: 'GY', South: 'S',
+  'Surf & kite': 'SK', 'On the water': 'OW', Adventure: 'AD', Golf: 'GF', 'Swim & sport': 'SS', Riding: 'R', Yoga: 'Y',
+};
+
+/** A marker for each area, in order: its own, else its initials, lengthened until it is unlike the others. */
+export function areaKey(areas: string[]): AreaKey[] {
+  const taken = new Set<string>();
+  return areas.filter(Boolean).map((area) => {
+    const words = area.replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter((w) => w && !['the', 'and', 'of'].includes(w.toLowerCase()));
+    let code = AREA_CODES[area] ?? words.map((w) => w[0]!.toUpperCase()).join('');
+    const last = words.at(-1) ?? area;
+    for (let i = 1; taken.has(code) && i < last.length; i++) code = code.slice(0, -1) + last.slice(0, i + 1).toUpperCase();
+    while (taken.has(code)) code += '+';
+    taken.add(code);
+    return { code, area };
+  });
+}
+
 /**
- * Venues onto pages, section by section and area by area, on the grid the
- * events and tours use. A full-page entry is a page of its own. The bigger
- * grid entries go first, each onto the first page with rows enough for it
- * (three-quarters and a quarter share a page; so do two halves). Listings
- * then fill the rows left, two to a row, and further grids of eight.
- * Directory lines follow the area's pages as a ruled list. Within a size,
- * by name.
+ * Venues onto pages, a section at a time, on the grid the events and tours
+ * use. A section runs on without a break between its areas, so no page is
+ * left part empty; each box carries its area's marker, and the key says
+ * which is which. A full-page entry is a page of its own, first. The bigger
+ * grid entries go next, by area, each onto the first page with rows enough
+ * for it (three-quarters and a quarter share a page; so do two halves).
+ * Listings then fill the rows left, two to a row, and further grids. The
+ * directory lines follow as one ruled list, by area. Within an area and
+ * size, by name.
  */
 export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8'): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
   return sections.map((section) => {
-    const inSection = venues.filter((v) => v.section === section);
     const grid = gridFor(section);
     // Rows of two boxes; an entry across both columns takes whole rows, a listing half of one.
     const ROWS = GRID[grid].cells / 2;
-    const areas = [...new Set(inSection.map((v) => v.area))].sort((a, b) => ranked(VENUE_AREA_ORDER, a) - ranked(VENUE_AREA_ORDER, b) || a.localeCompare(b));
+    const inArea = (a: GuideVenue, b: GuideVenue) => ranked(VENUE_AREA_ORDER, a.area) - ranked(VENUE_AREA_ORDER, b.area) || a.area.localeCompare(b.area);
+    const here = venues.filter((v) => v.section === section).sort((a, b) => inArea(a, b) || SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
+    const key = areaKey([...new Set(here.map((v) => v.area))]);
+    const code = new Map(key.map((k) => [k.area, k.code]));
+    const keyed = here.map((v) => ({ ...v, areaCode: code.get(v.area) ?? '' }));
+    const fulls: VenuePage[] = keyed.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
+    const grids: { cells: VenueCell[]; free: number }[] = [];
+    for (const v of keyed) {
+      if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
+      const rows = SHARE[v.size] * ROWS;
+      let page = grids.find((g) => g.free >= rows);
+      if (!page) grids.push((page = { cells: [], free: ROWS }));
+      page.cells.push({ ...v, frame: v.size });
+      page.free -= rows;
+    }
+    const listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+    for (const g of grids) {
+      g.cells.push(...listings.splice(0, g.free * 2));
+      g.free = 0;
+    }
+    while (listings.length) grids.push({ cells: listings.splice(0, GRID[grid].cells), free: 0 });
     return {
       section,
       grid,
-      areas: areas.map((area) => {
-        const here = inSection.filter((v) => v.area === area).sort((a, b) => SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
-        const fulls: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
-        const grids: { cells: VenueCell[]; free: number }[] = [];
-        for (const v of here) {
-          if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
-          const rows = SHARE[v.size] * ROWS;
-          let page = grids.find((g) => g.free >= rows);
-          if (!page) grids.push((page = { cells: [], free: ROWS }));
-          page.cells.push({ ...v, frame: v.size });
-          page.free -= rows;
-        }
-        const listings: VenueCell[] = here.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
-        for (const g of grids) {
-          g.cells.push(...listings.splice(0, g.free * 2));
-          g.free = 0;
-        }
-        while (listings.length) grids.push({ cells: listings.splice(0, GRID[grid].cells), free: 0 });
-        return { area, pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))], directory: here.filter((v) => v.size === 'directory') };
-      }),
+      pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))],
+      directory: keyed.filter((v) => v.size === 'directory'),
+      key,
     };
   });
 }

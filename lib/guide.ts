@@ -1,5 +1,9 @@
+import { asc, eq } from 'drizzle-orm';
+import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
-import type { Provider } from '@/lib/db/schema';
+import { doActivities, type Provider } from '@/lib/db/schema';
+import { doSection, type DoSection } from '@/lib/domain/do-section';
+import { webImage } from '@/lib/domain/images';
 import { GENRES } from '@/lib/domain/genre';
 import {
   defaultWindow,
@@ -8,7 +12,9 @@ import {
   guideVenue,
   gridTours,
   layoutEvents,
+  printable,
   venueSections,
+  VENUE_SECTION_ORDER,
   type GuideEvent,
   type Layout,
   type GuideLayouts,
@@ -67,6 +73,8 @@ export type Guide = {
   venues: GuideVenue[];
   /** The venues laid out as the sections print them: per section and area, full pages, grid pages, then the directory. */
   sections: VenueSection[];
+  /** Do's activities and their providers' index, when there are activities to set; printed in the Do section after its venue pages. */
+  doSection: DoSection | null;
 };
 
 const genreOrder = (g: string) => {
@@ -120,15 +128,36 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' }))
     .sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
 
-  const sections = venueSections(selection.venues.map(guideVenue), (s) => layouts.venues[s] ?? 'grid8');
+  // Do's activity providers go in its index rather than a box each; one that booked more space keeps its entry too.
+  const activityRows = await db.select().from(doActivities).where(eq(doActivities.included, true)).orderBy(asc(doActivities.position), asc(doActivities.name));
+  const indexed = selection.venues.filter((p) => p.activityCode && p.activities.length);
+  const inIndex = new Set(indexed.filter((p) => p.listingSize === 'listing' || p.listingSize === 'directory').map((p) => p.id));
+  const doGrid = layouts.venues.Do ?? 'grid8';
+  const doSet = activityRows.length
+    ? doSection(
+        activityRows.map((a) => {
+          // Its own picture, else that of the first provider offering it, by marker, that has one.
+          const image = a.image ?? [...indexed].sort((x, y) => x.activityCode!.localeCompare(y.activityCode!)).find((p) => p.activities.includes(a.slug) && printable(p.headerImage))?.headerImage ?? null;
+          return { slug: a.slug, name: a.name, side: a.side, blurb: a.blurb ?? '', imageUrl: image?.url ?? '', preview: image ? webImage(image, 520, 360) : '', guidePicture: !!a.image };
+        }),
+        indexed.map((p) => ({ code: p.activityCode!, name: p.name, phone: p.phone ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '', activities: p.activities })),
+        doGrid,
+      )
+    : null;
+  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue), (s) => layouts.venues[s] ?? 'grid8');
+  // Do prints even when every provider is in its index and no venue has a page of its own.
+  if (doSet && !sections.some((s) => s.section === 'Do')) {
+    const at = sections.findIndex((s) => VENUE_SECTION_ORDER.indexOf(s.section as never) > VENUE_SECTION_ORDER.indexOf('Do'));
+    sections.splice(at < 0 ? sections.length : at, 0, { section: 'Do', grid: doGrid, pages: [], directory: [], key: [] });
+  }
   // In page order, as the sections print them.
-  const venues = sections.flatMap((s) => s.areas.flatMap((a) => [...a.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...a.directory]));
+  const venues = sections.flatMap((s) => [...s.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...s.directory]);
 
   // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
   const tg = layouts.tours;
   const tourPages = tg === 'columns' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated'), tg), ...gridTours(tours.filter((t) => t.kind === 'on demand'), tg)];
 
-  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections };
+  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
@@ -139,4 +168,4 @@ export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'P
 export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL', 'Icons'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
 /** In page order: section, area, then full pages, grid pages (Frame says feature or listing) and directory lines. */
-export const VENUE_COLUMNS = ['Section', 'Area', 'Name', 'Label', 'Size', 'Frame', 'Copy', 'Address', 'Phone', 'Email', 'Website', 'Image URL'] as const;
+export const VENUE_COLUMNS = ['Section', 'Area', 'Key', 'Name', 'Label', 'Size', 'Frame', 'Copy', 'Address', 'Phone', 'Email', 'Website', 'Image URL'] as const;

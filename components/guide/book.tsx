@@ -2,10 +2,11 @@
 
 import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
+import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
+import { DO_INDEX_ROWS, SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
 /**
  * The guide's pages as the 2026 editions print them, from the InDesign
@@ -244,6 +245,7 @@ function VenueBox({ c }: { c: VenueCell }) {
         <span className="gp-venue-name">{c.name}</span>
         {c.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
+        <AreaCode code={c.areaCode} />
       </p>
       <p className="gp-event-copy">{copy}</p>
       {contact && keep && <p className="gp-event-address">{where}{c.phone}</p>}
@@ -263,10 +265,78 @@ function VenueBox({ c }: { c: VenueCell }) {
   );
 }
 
+/** An activity in Do: its name, its short piece, and the markers of the providers who offer it, found in the index. */
+function DoBoxCell({ b, mixed }: { b: DoBox; mixed: boolean }) {
+  const { ref, copy, overset } = useFit([b.blurb], false);
+  if (b.frame === 'image') return <PictureBox e={{ title: b.name, preview: b.preview }} />;
+  return (
+    <article ref={ref} className={`gp-event gp-venue gp-do-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+      {/* Where the water gives way to land on a page, each box says which it is. */}
+      {mixed && <p className="gp-do-side">{SIDE_TITLE[b.side]}</p>}
+      <h4 className="gp-venue-name gp-do-name">{b.name}</h4>
+      <p className="gp-event-copy">{copy}</p>
+      {b.codes.length > 0 && (
+        <p className="gp-do-codes"><BadgeCheck aria-hidden="true" />{b.codes.join('  ')}</p>
+      )}
+    </article>
+  );
+}
+
+/** Do's index: each provider's marker, name and contact, and a tick under each activity it offers. */
+function DoIndex({ s, rows }: { s: DoSection; rows: DoSection['providers'] }) {
+  return (
+    <div className="gp-content gp-do-index">
+      <h3 className="gp-directory-heading">Activity providers</h3>
+      <table>
+        <thead>
+          <tr>
+            <th className="gp-do-who" />
+            {s.activities.map((a) => <th key={a.slug} className="gp-do-col"><span>{a.name}</span></th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr key={p.code + p.name}>
+              <td className="gp-do-who">
+                <b>{p.code}</b> {p.name}
+                <span>{[p.phone, p.website].filter(Boolean).join(' · ')}</span>
+              </td>
+              {s.activities.map((a) => <td key={a.slug} className="gp-do-tick">{p.activities.includes(a.slug) ? '●' : ''}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** A directory line: the name, and where and how to reach it. */
+/** A venue's area, by its marker in the section's key. */
+function AreaCode({ code }: { code?: string }) {
+  return code ? <span className="gp-code gp-area-code"><MapPin aria-hidden="true" />{code}</span> : null;
+}
+
+/** The key to the area markers on a page, at its foot. */
+function AreaFooter({ keys }: { keys: AreaKey[] }) {
+  if (!keys.length) return null;
+  return (
+    <p className="gp-tour-footer gp-area-key">
+      {keys.map((k) => <span key={k.code}><MapPin aria-hidden="true" /><b>{k.code}</b> {k.area}</span>)}
+    </p>
+  );
+}
+
+/** A page's marker: its one area, two of them, or the first to the last. */
+function areaMarker(areas: string[]): string | undefined {
+  const named = areas.filter(Boolean);
+  if (named.length <= 2) return named.join(' · ') || undefined;
+  return `${named[0]} – ${named.at(-1)}`;
+}
+
 function DirectoryLine({ v }: { v: GuideVenue }) {
   return (
     <p className="gp-directory">
+      <AreaCode code={v.areaCode} />
       <b>{v.name}</b>
       {v.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
       {v.label && <span className="gp-venue-tag">{v.label}</span>}
@@ -285,7 +355,7 @@ function TourHeading({ over, title, rest }: { over: string; title: string; rest:
 }
 
 /** A flowing item; one that starts a group (a venue section's area) starts a new page. */
-type Flow = { key: string; node: ReactNode; heading?: boolean; group?: string; startsGroup?: boolean };
+type Flow = { key: string; node: ReactNode; heading?: boolean; group?: string; startsGroup?: boolean; venue?: GuideVenue };
 
 /**
  * Pours flowing items into pages of FLOW_MM: each is measured at the
@@ -344,6 +414,8 @@ export function GuideBook(props: {
   venues: GuideVenue[];
   /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
   venueSections: VenueSection[];
+  /** Do's activities and providers' index, after Do's venue pages. */
+  doSection?: DoSection | null;
   firstPage: number;
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
@@ -371,17 +443,15 @@ export function GuideBook(props: {
     return items;
   });
   const [tourPages, measuring] = usePoured(flow);
-  // Each area's directory lines flow onto pages of their own, after the area's grid pages.
+  // Each section's directory lines flow onto pages of their own, after its grid pages, by area.
   const [dirFlow] = useState<Flow[]>(() =>
-    props.venueSections.flatMap((s) =>
-      s.areas.filter((a) => a.directory.length).flatMap((a) => {
-        const group = `${s.section}|${a.area}`;
-        return [
-          { key: `dh-${group}`, group, startsGroup: true, heading: true, node: <h3 className="gp-directory-heading">{[s.section, a.area].filter(Boolean).join(' ')}: more places</h3> },
-          ...a.directory.map((v, i) => ({ key: `dl-${group}-${i}-${v.name}`, group, node: <DirectoryLine v={v} /> })),
-        ];
-      }),
-    ),
+    props.venueSections.filter((s) => s.directory.length).flatMap((s) => {
+      const group = s.section;
+      return [
+        { key: `dh-${group}`, group, startsGroup: true, heading: true, node: <h3 className="gp-directory-heading">{s.section}: more places</h3> },
+        ...s.directory.map((v, i) => ({ key: `dl-${group}-${i}-${v.name}`, group, venue: v, node: <DirectoryLine v={v} /> })),
+      ];
+    }),
   );
   const [dirPages, measuringDir] = usePoured(dirFlow);
 
@@ -424,21 +494,35 @@ export function GuideBook(props: {
     }
   }
 
-  // The venue sections, each from a left-hand page: an area's full pages and grid pages, then its directory.
+  // The venue sections, each from a left-hand page and running on: full pages, grid pages, then the directory. Each page keys the areas on it.
   for (const vs of props.venueSections) {
     const section = venueSection(vs.section);
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: pages.at(-1)?.section ?? section, body: <div className="gp-content" /> });
-    for (const a of vs.areas) {
-      const marker = a.area || undefined;
-      for (const p of a.pages) {
-        pages.push(
-          p.kind === 'full'
-            ? { section, marker, body: <VenueFullBody v={p.venue} /> }
-            : { section, marker, body: <div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div> },
-        );
+    const keyed = (vs: VenueSection, on: GuideVenue[]) => {
+      const here = new Set(on.map((v) => v.area));
+      const keys = vs.key.filter((k) => here.has(k.area));
+      return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} /> };
+    };
+    for (const p of vs.pages) {
+      const { marker, foot } = keyed(vs, p.kind === 'full' ? [p.venue] : p.cells);
+      pages.push(
+        p.kind === 'full'
+          ? { section, marker, body: <VenueFullBody v={p.venue} /> }
+          : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
+      );
+    }
+    for (const items of (dirPages ?? []).filter((pg) => pg[0]?.group === vs.section)) {
+      const { marker, foot } = keyed(vs, items.flatMap((i) => (i.venue ? [i.venue] : [])));
+      pages.push({ section, marker, body: <><div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div>{foot}</> });
+    }
+    // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
+    const ds = props.doSection;
+    if (vs.section === 'Do' && ds) {
+      for (const pg of ds.pages) {
+        pages.push({ section, marker: pg.sides.map((side) => SIDE_TITLE[side]).join(' · '), body: <div className={`gp-content gp-grid gp-${ds.grid} gp-venue-grid gp-do-grid`}>{pg.cells.map((b) => <DoBoxCell key={b.frame + b.slug} b={b} mixed={pg.sides.length > 1} />)}</div> });
       }
-      for (const items of (dirPages ?? []).filter((pg) => pg[0]?.group === `${vs.section}|${a.area}`)) {
-        pages.push({ section, marker, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+      for (let i = 0; i < ds.providers.length; i += DO_INDEX_ROWS) {
+        pages.push({ section, marker: 'Providers', body: <DoIndex s={ds} rows={ds.providers.slice(i, i + DO_INDEX_ROWS)} /> });
       }
     }
   }

@@ -168,6 +168,14 @@ export const places = pgTable('places', {
    */
   guideLine: text('guide_line'),
   guideLineKey: text('guide_line_key'),
+  /**
+   * For an activity provider in the guide's Do section: its short marker
+   * (SSC, JSS, BBDC), printed in each activity's box and against its
+   * line in the providers' index, and the activities it offers (slugs of
+   * do_activities). Ours.
+   */
+  activityCode: text('activity_code'),
+  activities: text('activities').array().notNull().default([]),
   /** Where it sits in the guide: section "Eat", area "West", label "CASUAL". Ours. */
   guideSection: text('guide_section'),
   guideArea: text('guide_area'),
@@ -487,6 +495,28 @@ export type Provider = typeof providers.$inferSelect;
  * (events.organiser), matched loosely (lib/domain/organiser.ts), so this
  * is keyed by that match, not by an id an event points to.
  */
+/**
+ * The guide's Do section is set by activity: a box for each (Surf, SUP,
+ * Golf), its short piece, and the markers of the providers who offer it,
+ * on the water first, then on land, a picture a page; then the
+ * providers' index. Staff choose which activities an edition carries, to
+ * fill its pages. Ours: no import touches them.
+ */
+export const DO_SIDES = ['water', 'land'] as const;
+export type DoSide = (typeof DO_SIDES)[number];
+export const doActivities = pgTable('do_activities', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  side: text('side').$type<DoSide>().notNull(),
+  blurb: text('blurb'),
+  image: jsonb('image').$type<Image | null>(),
+  position: integer('position').notNull().default(0),
+  included: boolean('included').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+export type DoActivity = typeof doActivities.$inferSelect;
+
 export const organiserProfiles = pgTable('organiser_profiles', {
   key: text('key').primaryKey(),
   name: text('name').notNull(),
