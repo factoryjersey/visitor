@@ -7,13 +7,13 @@ import type { ListingSize } from '@/lib/db/schema';
  * directory.
  *
  * What earns a story is what the printed guide gave it: a full page,
- * then two-thirds, then a place among those the visitor guide featured, then copy
+ * then three-quarters, a half, a quarter, then a place among those the visitor guide featured, then copy
  * of our own. A story needs a picture; a promoted venue without one
  * heads the sidebar instead. The private client tag plays no part.
  */
 export type Editorial = { listingSize: ListingSize; recommendedIn: string | null; guideCopy: string | null; headerImage: unknown; name: string };
 
-const SIZE: Record<ListingSize, number> = { full: 4, 'two-thirds': 3, listing: 0, directory: 0 };
+const SIZE: Record<ListingSize, number> = { full: 4, 'three-quarters': 3.5, half: 3, quarter: 2.5, listing: 0, directory: 0 };
 
 export const promotion = (v: Editorial) => SIZE[v.listingSize] + (v.recommendedIn ? 2 : 0) + (v.guideCopy ? 1 : 0);
 

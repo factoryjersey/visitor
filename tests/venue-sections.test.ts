@@ -21,13 +21,23 @@ describe('venueSections', () => {
     expect(area!.pages.map((p) => p.kind)).toEqual(['full', 'grid']);
   });
 
-  it('opens a grid page with each two-thirds entry and four listings under it, then fills grids of eight', () => {
+  it('puts the bigger entries first, each on the first page with rows for it, then fills with listings two to a row', () => {
     const listings = Array.from({ length: 13 }, (_, i) => v(`L${String(i).padStart(2, '0')}`));
-    const [area] = venueSections([...listings, v('Phire', { size: 'two-thirds' })])[0]!.areas;
+    const [area] = venueSections([...listings, v('Phire', { size: 'half' }), v('Zest', { size: 'three-quarters' }), v('Drew', { size: 'quarter' }), v('Moor', { size: 'half' })])[0]!.areas;
     const grids = area!.pages.map((p) => (p.kind === 'grid' ? p.cells.map((c) => `${c.frame}:${c.name}`) : []));
-    expect(grids[0]).toEqual(['feature:Phire', 'listing:L00', 'listing:L01', 'listing:L02', 'listing:L03']);
-    expect(grids[1]).toHaveLength(8);
-    expect(grids[2]).toEqual(['listing:L12']);
+    // Three-quarters and a quarter fill one page; the two halves the next.
+    expect(grids[0]).toEqual(['three-quarters:Zest', 'quarter:Drew']);
+    expect(grids[1]).toEqual(['half:Moor', 'half:Phire']);
+    expect(grids[2]).toHaveLength(8);
+    expect(grids[3]).toHaveLength(5);
+  });
+
+  it('fills the rows a big entry leaves with listings', () => {
+    const listings = Array.from({ length: 5 }, (_, i) => v(`L${i}`));
+    const [area] = venueSections([...listings, v('Phire', { size: 'half' })])[0]!.areas;
+    const grids = area!.pages.map((p) => (p.kind === 'grid' ? p.cells.map((c) => c.frame) : []));
+    expect(grids[0]).toEqual(['half', 'listing', 'listing', 'listing', 'listing']);
+    expect(grids[1]).toEqual(['listing']);
   });
 
   it('keeps directory lines off the grid, for the area’s list', () => {

@@ -373,27 +373,31 @@ export function guideVenue(p: Place): GuideVenue {
  */
 export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
 export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South'] as const;
-const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'two-thirds': 1, listing: 2, directory: 3 };
+const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
 const ranked = (order: readonly string[], v: string) => {
   const i = order.indexOf(v);
   return i < 0 ? order.length + (v ? 0 : 1) : i;
 };
 
-/** A box on a venue grid page: the two-thirds feature (half the grid, across the top) or a listing (one box). */
-export type VenueCell = GuideVenue & { frame: 'feature' | 'listing' };
+/** A box on a venue grid page: an entry across both columns for so many rows, or a listing in one box. */
+export type VenueFrame = 'three-quarters' | 'half' | 'quarter' | 'listing';
+export type VenueCell = GuideVenue & { frame: VenueFrame };
 export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
 export type VenueArea = { area: string; pages: VenuePage[]; directory: GuideVenue[] };
 export type VenueSection = { section: string; areas: VenueArea[] };
 
-/** The grid of eight: a feature takes the top four boxes, a listing one. */
-const FEATURE_CELLS = 4;
+/** The grid of eight is four rows of two boxes. An entry across both columns takes whole rows; a listing half of one. */
+const ROWS = GRID.grid8.cells / 2;
+const ROWS_OF: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3, half: 2, quarter: 1 };
 
 /**
  * Venues onto pages, section by section and area by area, on the grid the
- * events and tours use. A full-page entry is a page of its own; each
- * two-thirds entry opens a grid page across its top half, with listings
- * under it; listings then fill grids of eight; directory lines follow the
- * area's pages as a ruled list. Within a size, by name.
+ * events and tours use. A full-page entry is a page of its own. The bigger
+ * grid entries go first, each onto the first page with rows enough for it
+ * (three-quarters and a quarter share a page; so do two halves). Listings
+ * then fill the rows left, two to a row, and further grids of eight.
+ * Directory lines follow the area's pages as a ruled list. Within a size,
+ * by name.
  */
 export function venueSections(venues: GuideVenue[]): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
@@ -404,13 +408,23 @@ export function venueSections(venues: GuideVenue[]): VenueSection[] {
       section,
       areas: areas.map((area) => {
         const here = inSection.filter((v) => v.area === area).sort((a, b) => SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
-        const pages: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
-        const listings: VenueCell[] = here.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
-        for (const v of here.filter((x) => x.size === 'two-thirds')) {
-          pages.push({ kind: 'grid', cells: [{ ...v, frame: 'feature' }, ...listings.splice(0, GRID.grid8.cells - FEATURE_CELLS)] });
+        const fulls: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
+        const grids: { cells: VenueCell[]; free: number }[] = [];
+        for (const v of here) {
+          if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
+          const rows = ROWS_OF[v.size];
+          let page = grids.find((g) => g.free >= rows);
+          if (!page) grids.push((page = { cells: [], free: ROWS }));
+          page.cells.push({ ...v, frame: v.size });
+          page.free -= rows;
         }
-        while (listings.length) pages.push({ kind: 'grid', cells: listings.splice(0, GRID.grid8.cells) });
-        return { area, pages, directory: here.filter((v) => v.size === 'directory') };
+        const listings: VenueCell[] = here.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+        for (const g of grids) {
+          g.cells.push(...listings.splice(0, g.free * 2));
+          g.free = 0;
+        }
+        while (listings.length) grids.push({ cells: listings.splice(0, GRID.grid8.cells), free: 0 });
+        return { area, pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))], directory: here.filter((v) => v.size === 'directory') };
       }),
     };
   });

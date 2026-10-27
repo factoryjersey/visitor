@@ -148,6 +148,13 @@
       "when": 1793111096737,
       "tag": "0020_visitor_map_and_space",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793117267070,
+      "tag": "0021_venue_space_on_grid_of_eight",
+      "breakpoints": true
     }
   ]
 }

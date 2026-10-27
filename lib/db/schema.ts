@@ -55,7 +55,15 @@ export const INCLUSIONS = ['candidate', 'included', 'excluded'] as const;
  * area directory, a listing with its category label, or a 2/3 or full
  * entry with copy and a photo.
  */
-export const LISTING_SIZES = ['directory', 'listing', 'two-thirds', 'full'] as const;
+/**
+ * The space a venue has in the printed guide, on the grid of eight (two
+ * boxes across, four down): a directory line; a listing, one box (an
+ * eighth); a quarter, a row across both columns; a half; three-quarters;
+ * or a page of its own. Earned by the edition's booking: a DPS a page, a
+ * full page three-quarters, a half page a half, a quarter page a quarter,
+ * a banner or square a box.
+ */
+export const LISTING_SIZES = ['directory', 'listing', 'quarter', 'half', 'three-quarters', 'full'] as const;
 export type ListingSize = (typeof LISTING_SIZES)[number];
 export type Inclusion = (typeof INCLUSIONS)[number];
 

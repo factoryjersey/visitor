@@ -7,8 +7,10 @@ const AREAS = ['St. Helier', 'West', 'East', 'North', 'South', 'St. Aubin', 'Gor
 const LABELS = ['CASUAL', 'CLASSIC', 'SPECIAL', 'NEW', 'GASTROPUB', 'SMALL PLATES', 'SEA VIEWS', 'BEACHSIDE', 'COFFEE', 'ITALIAN', 'SPANISH', 'ASIAN', 'TAPAS', 'PIZZA', 'CAFE'];
 const SIZES: { value: ListingSize; label: string }[] = [
   { value: 'directory', label: 'Directory line' },
-  { value: 'listing', label: 'Listing' },
-  { value: 'two-thirds', label: '2/3 page' },
+  { value: 'listing', label: 'Listing (1/8 page)' },
+  { value: 'quarter', label: '1/4 page' },
+  { value: 'half', label: '1/2 page' },
+  { value: 'three-quarters', label: '3/4 page' },
   { value: 'full', label: 'Full page' },
 ];
 

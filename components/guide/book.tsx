@@ -224,18 +224,17 @@ function VenueFullBody({ v }: { v: GuideVenue }) {
   );
 }
 
-/** A venue on the grid: a listing in one box, or the two-thirds feature across the top four with its picture. Copy fitted as the events' is. */
+/**
+ * A venue on the grid: a listing in one box; a quarter across both
+ * columns for a row, its picture beside its copy; a half or
+ * three-quarters across for two or three rows, its picture above. Copy
+ * fitted as the events' is.
+ */
 function VenueBox({ c }: { c: VenueCell }) {
   const contact = [c.address, c.phone].filter(Boolean).join(' · ');
   const { ref, copy, keep, overset } = useFit(c.options.length ? c.options : [c.copy], !!contact);
-  return (
-    <article ref={ref} className={`gp-event gp-venue gp-venue-${c.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
-      {c.frame === 'feature' && c.preview && (
-        <div className="gp-venue-picture">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.preview} alt="" />
-        </div>
-      )}
+  const text = (
+    <>
       <p className="gp-venue-head">
         <span className="gp-venue-name">{c.name}</span>
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
@@ -243,6 +242,17 @@ function VenueBox({ c }: { c: VenueCell }) {
       <p className="gp-event-copy">{copy}</p>
       {contact && keep && <p className="gp-event-address">{contact}</p>}
       {c.website && <p className="gp-event-web">{c.website}</p>}
+    </>
+  );
+  return (
+    <article ref={ref} className={`gp-event gp-venue gp-venue-${c.frame}${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : undefined}>
+      {c.frame !== 'listing' && c.preview && (
+        <div className="gp-venue-picture">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={c.preview} alt="" />
+        </div>
+      )}
+      {c.frame === 'quarter' ? <div className="gp-venue-text">{text}</div> : text}
     </article>
   );
 }
