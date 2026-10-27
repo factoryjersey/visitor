@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { usableLine } from '@/lib/integrations/claude/venue-line';
+import { usableLine } from '@/lib/domain/venue-line';
 
 describe('a venue line for its box in the guide', () => {
   it('takes one finished sentence that fits', () => {

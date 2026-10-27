@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { env } from '@/lib/env';
+import { VENUE_LINE_MAX, usableLine } from '@/lib/domain/venue-line';
 
 /**
  * The guide prints the venues that have not booked more space eight to a
@@ -11,8 +12,6 @@ import { env } from '@/lib/env';
  * Never in the way of an import: with no key, a refusal or any failure,
  * the venue has no line yet and the box cuts its longer copy instead.
  */
-
-export const VENUE_LINE_MAX = 110;
 
 export type VenueWords = { id: string; name: string; section: string; copy: string };
 
@@ -37,9 +36,8 @@ const SCHEMA = {
   additionalProperties: false,
 } as const;
 
-/** A line over the limit by more than a word's slack, or one that trails off, is no use to the box: it waits for the next run. */
+/** One that will not do waits for the next run. */
 const Result = z.object({ lines: z.array(z.object({ id: z.string(), line: z.string().trim() })) });
-export const usableLine = (l: string) => l.length > 0 && l.length <= VENUE_LINE_MAX + 12 && !/(\.\.|…)/.test(l) && /[.?]$/.test(l);
 
 const BATCH = 20;
 let client: Anthropic | null = null;
