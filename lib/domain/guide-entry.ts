@@ -357,15 +357,15 @@ export function guideVenue(p: Place): GuideVenue {
     label: (p.guideLabel ?? '').toUpperCase(),
     size: p.listingSize,
     isNew: isNewVenue(p.firstListedAt),
-    // A directory line has no copy; the bigger entries do.
-    copy: p.listingSize === 'directory' ? '' : p.guideCopy ?? p.summary ?? '',
+    // A directory line has no copy; a listing box its one line, when it has one; the bigger entries their copy.
+    copy: p.listingSize === 'directory' ? '' : p.listingSize === 'listing' && p.guideLine ? p.guideLine : p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
     phone: p.phone ?? '',
     email: p.email ?? '',
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : options,
+    options: p.listingSize === 'directory' ? [] : p.listingSize === 'listing' && p.guideLine ? [p.guideLine] : options,
   };
 }
 

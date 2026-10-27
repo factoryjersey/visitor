@@ -160,6 +160,14 @@ export const places = pgTable('places', {
   description: text('description'),
   /** Our copy. Never touched by an import. */
   guideCopy: text('guide_copy'),
+  /**
+   * One sentence in the guide's voice, what a listing box on the grid of
+   * eight prints: Claude writes it from our copy or the source's, and
+   * again when those words change (guideLineKey); one a person writes is
+   * locked ('guideLine').
+   */
+  guideLine: text('guide_line'),
+  guideLineKey: text('guide_line_key'),
   /** Where it sits in the guide: section "Eat", area "West", label "CASUAL". Ours. */
   guideSection: text('guide_section'),
   guideArea: text('guide_area'),

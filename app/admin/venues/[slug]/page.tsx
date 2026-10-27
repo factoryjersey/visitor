@@ -84,7 +84,7 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
           <EditorialForm kind="venue" id={p.id} guideCopy={p.guideCopy} inclusionNote={p.inclusionNote} sourceCopy={p.summary} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
-          <VenueGuideForm id={p.id} section={p.guideSection} defaultSection={guideVenue({ ...p, guideSection: null }).section} area={p.guideArea} label={p.guideLabel} size={p.listingSize} />
+          <VenueGuideForm id={p.id} section={p.guideSection} defaultSection={guideVenue({ ...p, guideSection: null }).section} area={p.guideArea} label={p.guideLabel} size={p.listingSize} guideLine={p.guideLine} />
         </div>
         <div className="rounded border border-stone-200 bg-white p-3">
           <VenueTagsForm id={p.id} recommendedIn={p.recommendedIn} visitorMap={p.visitorMap} client={p.client} clientNote={p.clientNote} />
