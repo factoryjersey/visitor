@@ -220,7 +220,7 @@ export async function publicVenuesWithSomethingOn() {
 /** Every venue and business we list, by guide section, the visitor guide featured first, then A to Z; with what the printed guide gave each, for the page to lay out as a spread. */
 export async function publicAllVenues(category?: Category) {
   const rows = await db
-    .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, headerImage: places.headerImage, summary: places.summary, recommendedIn: places.recommendedIn, listingSize: places.listingSize, guideCopy: places.guideCopy, guideLabel: places.guideLabel, aaRating: places.aaRating, stayType: places.stayType })
+    .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, category: places.category, headerImage: places.headerImage, summary: places.summary, recommendedIn: places.recommendedIn, listingSize: places.listingSize, guideCopy: places.guideCopy, guideLabel: places.guideLabel, aaRating: places.aaRating, stayType: places.stayType, firstListedAt: places.firstListedAt })
     .from(places)
     .where(and(ne(places.inclusion, 'excluded'), eq(places.review, 'approved'), ...(category ? [eq(places.category, category)] : [])));
   return rows.sort((a, b) => Number(!a.recommendedIn) - Number(!b.recommendedIn) || a.name.localeCompare(b.name));

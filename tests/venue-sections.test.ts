@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
-  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], ...o,
+  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], ...o,
 });
 
 describe('venueSections', () => {

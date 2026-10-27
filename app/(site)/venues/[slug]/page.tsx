@@ -9,6 +9,8 @@ import { StaffFallback } from '@/components/site/staff-fallback';
 import { StaffEdit } from '@/components/site/staff-edit';
 import { Recommended } from '@/components/site/recommended';
 import { OnVisitorMap } from '@/components/site/visitor-map';
+import { NewBadge } from '@/components/site/new-badge';
+import { isNewVenue } from '@/lib/domain/new-venue';
 import { GoogleReviews } from '@/components/site/google-reviews';
 import { googleConfigured } from '@/lib/integrations/google/places';
 import { staffViewer } from '@/lib/auth/session';
@@ -77,8 +79,9 @@ export default async function VenuePage({ params }: Props) {
             <Link href="/venues" className="text-sm text-harbour/60 hover:text-brand">← Venues</Link>
             <header className="mb-6 mt-3">
               <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{venue.name}</h1>
-              {(venue.recommendedIn || venue.visitorMap) && (
+              {(venue.recommendedIn || venue.visitorMap || isNewVenue(venue.firstListedAt)) && (
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {isNewVenue(venue.firstListedAt) && <NewBadge />}
                   {venue.recommendedIn && <Recommended />}
                   {venue.visitorMap && <OnVisitorMap edition={venue.visitorMap} />}
                 </div>

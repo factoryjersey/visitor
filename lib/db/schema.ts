@@ -201,6 +201,13 @@ export const places = pgTable('places', {
   /** The edition of the Visitor Map it is on ("2026"), from its booking; shown on its page. Null when it is on none. Ours. */
   visitorMap: text('visitor_map'),
   /**
+   * When it was first listed: the day Visit Jersey first published it on
+   * jersey.com, or, for one we added ourselves, the day we did. What makes
+   * a venue new (lib/domain/new-venue.ts). Null for the printed guide's own
+   * entries from before we kept it.
+   */
+  firstListedAt: timestamp('first_listed_at', { withTimezone: true }).defaultNow(),
+  /**
    * The space each edition of the printed guide gives it, as the bookings
    * for that edition earn it: { "Autumn 2026": "full", "Winter 2026": "listing" }.
    * listingSize is the edition in hand; this keeps the ones before. Ours.

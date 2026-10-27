@@ -155,6 +155,13 @@
       "when": 1793117267070,
       "tag": "0021_venue_space_on_grid_of_eight",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793117912809,
+      "tag": "0022_place_first_listed",
+      "breakpoints": true
     }
   ]
 }

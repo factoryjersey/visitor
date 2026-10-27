@@ -217,7 +217,10 @@ function VenueFullBody({ v }: { v: GuideVenue }) {
         {v.preview && <img src={v.preview} alt="" />}
         {v.label && <span className="gp-venue-label">{v.label}</span>}
       </div>
-      <h3 className="gp-venue-name gp-venue-name-big">{v.name}</h3>
+      <h3 className="gp-venue-name gp-venue-name-big">
+        {v.name}
+        {v.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
+      </h3>
       <div className="gp-venue-copy">{paras.map((p, i) => <p key={i} className={i === 0 && paras.length > 1 ? 'gp-standfirst' : undefined}>{p}</p>)}</div>
       <VenueFoot v={v} />
     </div>
@@ -237,6 +240,7 @@ function VenueBox({ c }: { c: VenueCell }) {
     <>
       <p className="gp-venue-head">
         <span className="gp-venue-name">{c.name}</span>
+        {c.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
       </p>
       <p className="gp-event-copy">{copy}</p>
@@ -262,6 +266,7 @@ function DirectoryLine({ v }: { v: GuideVenue }) {
   return (
     <p className="gp-directory">
       <b>{v.name}</b>
+      {v.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
       {v.label && <span className="gp-venue-tag">{v.label}</span>}
       <span>{[v.address, v.phone].filter(Boolean).join(' · ')}</span>
     </p>

@@ -1,4 +1,5 @@
 import type { Event, Experience, ListingSize, Place, Provider } from '@/lib/db/schema';
+import { isNewVenue } from './new-venue';
 import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
@@ -329,6 +330,8 @@ export type GuideVenue = {
   name: string;
   label: string;
   size: ListingSize;
+  /** First listed in the last six months: printed NEW beside its name. */
+  isNew: boolean;
   copy: string;
   address: string;
   phone: string;
@@ -353,6 +356,7 @@ export function guideVenue(p: Place): GuideVenue {
     name: p.name,
     label: (p.guideLabel ?? '').toUpperCase(),
     size: p.listingSize,
+    isNew: isNewVenue(p.firstListedAt),
     // A directory line has no copy; the bigger entries do.
     copy: p.listingSize === 'directory' ? '' : p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
