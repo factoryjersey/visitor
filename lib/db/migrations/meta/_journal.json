@@ -176,6 +176,13 @@
       "when": 1793128565881,
       "tag": "0024_do_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793140749880,
+      "tag": "0025_merge_duplicates",
+      "breakpoints": true
     }
   ]
 }
