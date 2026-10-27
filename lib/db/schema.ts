@@ -190,6 +190,14 @@ export const places = pgTable('places', {
    * in none. Ours.
    */
   recommendedIn: text('recommended_in'),
+  /** The edition of the Visitor Map it is on ("2026"), from its booking; shown on its page. Null when it is on none. Ours. */
+  visitorMap: text('visitor_map'),
+  /**
+   * The space each edition of the printed guide gives it, as the bookings
+   * for that edition earn it: { "Autumn 2026": "full", "Winter 2026": "listing" }.
+   * listingSize is the edition in hand; this keeps the ones before. Ours.
+   */
+  spaceByEdition: jsonb('space_by_edition').$type<Record<string, ListingSize>>().notNull().default({}),
   /** Has worked with us. Internal: the admin only, never the public site. Ours. */
   client: boolean('client').notNull().default(false),
   clientNote: text('client_note'),
@@ -348,6 +356,8 @@ export const providers = pgTable('providers', {
   placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
   /** Other names the source gives the same business, merged into this one by staff: the import finds this provider by any of them, so a merge stays merged. */
   aliases: text('aliases').array().notNull().default([]),
+  /** The edition of the Visitor Map it is on ("2026"), from its booking; shown on its tours. Null when it is on none. Ours. */
+  visitorMap: text('visitor_map'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

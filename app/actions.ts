@@ -164,6 +164,7 @@ export async function saveVenueGuide(form: FormData) {
 const venueTagsSchema = z.object({
   id: z.string().uuid(),
   recommendedIn: z.string().trim().max(60),
+  visitorMap: z.string().trim().max(20).optional(),
   client: z.literal('on').optional(),
   clientNote: z.string().trim().max(1000),
 });
@@ -192,14 +193,14 @@ export async function setGooglePlace(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
-/** Visitor guide featured (public) and client (ours only). */
+/** Visitor guide featured and the Visitor Map (public), and client (ours only). */
 export async function saveVenueTags(form: FormData) {
   const user = await requireStaff();
   const v = venueTagsSchema.parse(Object.fromEntries(form));
   const now = new Date();
   await db
     .update(places)
-    .set({ recommendedIn: v.recommendedIn || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
+    .set({ recommendedIn: v.recommendedIn || null, visitorMap: v.visitorMap || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(places.id, v.id));
   revalidatePath('/', 'layout');
 }

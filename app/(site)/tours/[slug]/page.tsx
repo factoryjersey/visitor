@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ClaimLink, Copy, DateList, DetailLayout, Facts, Gallery, Hero, ListingHeader, SideSection, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { StaffEdit } from '@/components/site/staff-edit';
+import { OnVisitorMap } from '@/components/site/visitor-map';
 import { staffViewer } from '@/lib/auth/session';
 import { publicTour, publicVenueNamed, todayIso } from '@/lib/db/public';
 import { GENRES } from '@/lib/domain/genre';
@@ -62,6 +63,7 @@ export default async function TourPage({ params }: Props) {
               where={host ? { name: host.name, href: `/venues/${host.slug}` } : runBy || null}
               by={host && runBy ? runBy : null}
             />
+            {provider?.visitorMap && <OnVisitorMap edition={provider.visitorMap} className="-mt-2 mb-5" />}
             <Hero image={t.headerImage} title={t.title} />
             <div className="mt-8 space-y-6">
               <Copy lead={t.guideCopy ?? t.summary} body={t.description} />
