@@ -3,7 +3,7 @@ import type { ListingSize } from '@/lib/db/schema';
 
 // The guide's own sections, areas and labels, from the 2026 editions. Free text, so a new one is just typed.
 const SECTIONS = ['Eat', 'Eat & Drink: Pubs', 'See', 'Do', 'Buy', 'Visit', 'Stay'];
-const AREAS = ['St. Helier', 'West', 'East', 'North', 'South', 'St. Aubin', 'Gorey'];
+const AREAS = ['St. Helier', 'West', 'East', 'North', 'South', 'St. Aubin', 'Gorey', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'];
 const LABELS = ['CASUAL', 'CLASSIC', 'SPECIAL', 'NEW', 'GASTROPUB', 'SMALL PLATES', 'SEA VIEWS', 'BEACHSIDE', 'COFFEE', 'ITALIAN', 'SPANISH', 'ASIAN', 'TAPAS', 'PIZZA', 'CAFE'];
 const SIZES: { value: ListingSize; label: string }[] = [
   { value: 'directory', label: 'Directory line' },

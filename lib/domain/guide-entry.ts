@@ -411,11 +411,12 @@ export function guideVenue(p: Place): GuideVenue {
 /**
  * The venue sections in the order the 2026 editions print them (Visit,
  * See, Do, Buy, Eat), then any other section a venue is set to; areas
- * in the order the guide reads the island, then any other, then those
- * with no area.
+ * in the order the guide reads the island (Do's by activity), then any
+ * other, then those with no area.
  */
 export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
-export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South'] as const;
+// Do is set by activity rather than by place, in the order the 2026 editions run them.
+export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
 const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
 const ranked = (order: readonly string[], v: string) => {
   const i = order.indexOf(v);
