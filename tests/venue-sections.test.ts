@@ -116,9 +116,11 @@ describe('the template in the address', () => {
     expect(read(layoutsQuery({ ...l, venues: { ...l.venues }, budgets: { ...l.budgets } }))).toEqual(l);
   });
 
-  it('rations Eat to two pages of listings unless chosen otherwise', () => {
+  it('rations Eat, Buy and Visit unless chosen otherwise', () => {
     expect(budgetFor(read(''), 'Eat')).toBe(2);
     expect(budgetFor(read('budget=Eat:all'), 'Eat')).toBeNull();
-    expect(budgetFor(read(''), 'Buy')).toBeNull();
+    expect(budgetFor(read(''), 'Buy')).toBe(1);
+    expect(budgetFor(read(''), 'Visit')).toBe(0);
+    expect(budgetFor(read(''), 'See')).toBeNull();
   });
 });

@@ -242,8 +242,11 @@ export type VenueGrid = (typeof VENUE_GRIDS)[number];
 /** Venue sections' grids, and how many pages each gives listings (those without booked space) before the rest go to its index. */
 export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
 
-/** Eat has more places than pages: two pages of listings, then its index, unless chosen otherwise. Null is no limit. */
-export const DEFAULT_BUDGETS: Record<string, number> = { Eat: 2 };
+/**
+ * Pages for listings beyond the rows booked entries leave, then the section's index, unless chosen
+ * otherwise: Eat two, Buy one, Visit none (its booked pages leave room for six). Null is no limit.
+ */
+export const DEFAULT_BUDGETS: Record<string, number> = { Eat: 2, Buy: 1, Visit: 0 };
 export const budgetFor = (l: GuideLayouts, section: string): number | null => (section in l.budgets ? l.budgets[section]! : DEFAULT_BUDGETS[section] ?? null);
 
 /**
