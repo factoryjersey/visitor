@@ -219,12 +219,51 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
 
 /**
  * How What's On is laid out. 'top': six to a page, a pictured pair across
- * the top. 'grid6' and 'grid8': six or eight equal boxes, two across,
- * every listing without a picture and one box a picture beside the listing it belongs to.
+ * the top. 'grid6', 'grid8' and 'grid16': six, eight or sixteen equal
+ * boxes, two across, every listing without a picture and one box a
+ * picture beside the listing it belongs to.
  */
-export const LAYOUTS = ['top', 'grid6', 'grid8'] as const;
+export const LAYOUTS = ['top', 'grid6', 'grid8', 'grid16'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
+
+/** Tours: in ruled columns, or on a grid of eight or sixteen with a picture a page. */
+export const TOUR_LAYOUTS = ['columns', 'grid8', 'grid16'] as const;
+export type TourLayout = (typeof TOUR_LAYOUTS)[number];
+/** A venue section: on the grid of eight (a listing a box, an eighth) or of sixteen (a listing a sixteenth). */
+export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
+export type VenueGrid = (typeof VENUE_GRIDS)[number];
+
+/** Each part of the guide's template, chosen on the production page and carried in its address. */
+export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid> };
+
+/**
+ * The template from the address: ?grid= for What's On (as it always was),
+ * ?tours= for tours, ?venues=Eat:grid16,Buy:grid16 for the venue sections
+ * not on the grid of eight. Tours follow What's On onto the grid of eight
+ * unless chosen, as they did.
+ */
+export function layoutsFrom(get: (key: string) => string | null | undefined): GuideLayouts {
+  const events = layoutFrom(get('grid'));
+  const asked = get('tours');
+  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : events === 'top' ? 'columns' : 'grid8';
+  const venues: Record<string, VenueGrid> = {};
+  for (const part of (get('venues') ?? '').split(',')) {
+    const [section, grid] = part.split(':');
+    if (section && (VENUE_GRIDS as readonly string[]).includes(grid ?? '')) venues[section] = grid as VenueGrid;
+  }
+  return { events, tours, venues };
+}
+
+/** The template as address parameters, leaving out what is the default. */
+export function layoutsQuery(l: GuideLayouts): string {
+  const q = new URLSearchParams();
+  if (l.events !== 'top') q.set('grid', l.events);
+  if (l.tours !== (l.events === 'top' ? 'columns' : 'grid8')) q.set('tours', l.tours);
+  const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
+  if (venues) q.set('venues', venues);
+  return q.toString();
+}
 
 export const PER_PAGE = 6;
 const PICTURES_PER_PAGE = 2;
@@ -232,7 +271,7 @@ const PICTURES_PER_PAGE = 2;
 const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
 
 /** The grid's boxes: 142.4mm of page, rows 2mm apart. */
-export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 } } as const;
+export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 }, grid16: { cells: 16, height: 16 } } as const;
 
 /**
  * Events onto pages in date order, as the layout asks. Top: six at a
@@ -388,11 +427,10 @@ export type VenueFrame = 'three-quarters' | 'half' | 'quarter' | 'listing';
 export type VenueCell = GuideVenue & { frame: VenueFrame };
 export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
 export type VenueArea = { area: string; pages: VenuePage[]; directory: GuideVenue[] };
-export type VenueSection = { section: string; areas: VenueArea[] };
+export type VenueSection = { section: string; grid: VenueGrid; areas: VenueArea[] };
 
-/** The grid of eight is four rows of two boxes. An entry across both columns takes whole rows; a listing half of one. */
-const ROWS = GRID.grid8.cells / 2;
-const ROWS_OF: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3, half: 2, quarter: 1 };
+/** A page's share each size takes: on the grid of eight, three rows, two and one of four; on sixteen, six, four and two of eight. */
+const SHARE: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3 / 4, half: 1 / 2, quarter: 1 / 4 };
 
 /**
  * Venues onto pages, section by section and area by area, on the grid the
@@ -403,20 +441,24 @@ const ROWS_OF: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarter
  * Directory lines follow the area's pages as a ruled list. Within a size,
  * by name.
  */
-export function venueSections(venues: GuideVenue[]): VenueSection[] {
+export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8'): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
   return sections.map((section) => {
     const inSection = venues.filter((v) => v.section === section);
+    const grid = gridFor(section);
+    // Rows of two boxes; an entry across both columns takes whole rows, a listing half of one.
+    const ROWS = GRID[grid].cells / 2;
     const areas = [...new Set(inSection.map((v) => v.area))].sort((a, b) => ranked(VENUE_AREA_ORDER, a) - ranked(VENUE_AREA_ORDER, b) || a.localeCompare(b));
     return {
       section,
+      grid,
       areas: areas.map((area) => {
         const here = inSection.filter((v) => v.area === area).sort((a, b) => SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
         const fulls: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
         const grids: { cells: VenueCell[]; free: number }[] = [];
         for (const v of here) {
           if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
-          const rows = ROWS_OF[v.size];
+          const rows = SHARE[v.size] * ROWS;
           let page = grids.find((g) => g.free >= rows);
           if (!page) grids.push((page = { cells: [], free: ROWS }));
           page.cells.push({ ...v, frame: v.size });
@@ -427,7 +469,7 @@ export function venueSections(venues: GuideVenue[]): VenueSection[] {
           g.cells.push(...listings.splice(0, g.free * 2));
           g.free = 0;
         }
-        while (listings.length) grids.push({ cells: listings.splice(0, GRID.grid8.cells), free: 0 });
+        while (listings.length) grids.push({ cells: listings.splice(0, GRID[grid].cells), free: 0 });
         return { area, pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))], directory: here.filter((v) => v.size === 'directory') };
       }),
     };
@@ -499,14 +541,14 @@ export function guideTour(
 }
 
 /** A tour's box on the grid: when (or, on the on-demand pages, its genre), its title, the copy, then the provider's code and the duration. The code points to the key. */
-const TOUR_BOX = { height: GRID.grid8.height, picture: false };
+const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
 
 /** Walks and tours on the grid of eight, in the order they print: seven listings and a picture a page. */
-export function gridTours(tours: GuideTour[]): GuideTour[][] {
-  return gridPages(tours, GRID.grid8.cells, {
+export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
+  return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {
-      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, TOUR_BOX);
+      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
       return { ...t, frame: 'listing', copy: t.options.find((c) => c.length <= room) ?? '' };
     },
     image: (t) => ({ ...t, frame: 'image', copy: '' }),

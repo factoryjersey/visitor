@@ -11,6 +11,7 @@ import {
   venueSections,
   type GuideEvent,
   type Layout,
+  type GuideLayouts,
   type GuideTour,
   type GuideVenue,
   type VenueSection,
@@ -55,10 +56,12 @@ export type Guide = {
   events: GuideEvent[];
   pages: GuideEvent[][];
   layout: Layout;
+  /** The whole template: What's On, tours, and each venue section's grid. */
+  layouts: GuideLayouts;
   /** Titles of events left out of print as not aimed at visitors. */
   leftOut: string[];
   tours: GuideTour[];
-  /** On a grid layout, the tours on the grid of eight, a picture a page; none when they flow in ruled columns. */
+  /** On a grid, the tours a page at a time, a picture a page; none when they flow in ruled columns. */
   tourPages: GuideTour[][] | null;
   providers: GuideProvider[];
   venues: GuideVenue[];
@@ -77,8 +80,9 @@ const genreOrder = (g: string) => {
  * on-demand ones by genre; the provider key only for providers with a
  * tour in this edition.
  */
-export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout } = {}): Promise<Guide> {
-  const layout = opts.layout ?? 'top';
+export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout; layouts?: GuideLayouts } = {}): Promise<Guide> {
+  const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8', venues: {} };
+  const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
   // What is not aimed at visitors is left out of print: training and work, business, health and wellbeing. The event's own words count too, unless staff have set its types by hand.
@@ -116,14 +120,15 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' }))
     .sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
 
-  const sections = venueSections(selection.venues.map(guideVenue));
+  const sections = venueSections(selection.venues.map(guideVenue), (s) => layouts.venues[s] ?? 'grid8');
   // In page order, as the sections print them.
   const venues = sections.flatMap((s) => s.areas.flatMap((a) => [...a.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...a.directory]));
 
   // On the grid, dated tours and on-demand ones each start a page of their own, under their own page marker.
-  const tourPages = layout === 'top' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated')), ...gridTours(tours.filter((t) => t.kind === 'on demand'))];
+  const tg = layouts.tours;
+  const tourPages = tg === 'columns' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated'), tg), ...gridTours(tours.filter((t) => t.kind === 'on demand'), tg)];
 
-  return { highlights, events, pages, layout, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections };
+  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */

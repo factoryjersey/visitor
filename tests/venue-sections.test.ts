@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
+import { layoutsFrom, layoutsQuery, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
   section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], ...o,
@@ -44,5 +44,38 @@ describe('venueSections', () => {
     const [area] = venueSections([v('Bar', { size: 'directory' }), v('Cafe')])[0]!.areas;
     expect(area!.directory.map((d) => d.name)).toEqual(['Bar']);
     expect(area!.pages).toHaveLength(1);
+  });
+
+  it('on the grid of sixteen gives booked space the same share of a page, and listings a sixteenth', () => {
+    const listings = Array.from({ length: 21 }, (_, i) => v(`L${String(i).padStart(2, '0')}`));
+    const [section] = venueSections([...listings, v('Gems', { size: 'three-quarters' }), v('Drew', { size: 'quarter' })], () => 'grid16');
+    expect(section!.grid).toBe('grid16');
+    const grids = section!.areas[0]!.pages.map((p) => (p.kind === 'grid' ? p.cells.map((c) => c.frame) : []));
+    // Three-quarters (six rows) and a quarter (two) fill a page; then sixteen listings, then five.
+    expect(grids[0]).toEqual(['three-quarters', 'quarter']);
+    expect(grids[1]).toHaveLength(16);
+    expect(grids[2]).toHaveLength(5);
+  });
+
+  it('fills what three-quarters leaves on the grid of sixteen with four listings', () => {
+    const listings = Array.from({ length: 4 }, (_, i) => v(`L${i}`));
+    const [section] = venueSections([...listings, v('Gems', { size: 'three-quarters' })], () => 'grid16');
+    const grids = section!.areas[0]!.pages.map((p) => (p.kind === 'grid' ? p.cells.map((c) => c.frame) : []));
+    expect(grids).toEqual([['three-quarters', 'listing', 'listing', 'listing', 'listing']]);
+  });
+});
+
+describe('the template in the address', () => {
+  const read = (q: string) => layoutsFrom((k) => new URLSearchParams(q).get(k));
+
+  it('chooses each part, defaulting as before', () => {
+    expect(read('')).toEqual({ events: 'top', tours: 'columns', venues: {} });
+    expect(read('grid=grid8')).toEqual({ events: 'grid8', tours: 'grid8', venues: {} });
+    expect(read('grid=grid16&tours=columns&venues=Eat:grid16,Buy:grid8,Nope:grid99')).toEqual({ events: 'grid16', tours: 'columns', venues: { Eat: 'grid16', Buy: 'grid8' } });
+  });
+
+  it('writes back only what is not the default', () => {
+    expect(layoutsQuery({ events: 'top', tours: 'columns', venues: { Buy: 'grid8' } })).toBe('');
+    expect(read(layoutsQuery({ events: 'grid8', tours: 'grid16', venues: { Eat: 'grid16' } }))).toEqual({ events: 'grid8', tours: 'grid16', venues: { Eat: 'grid16' } });
   });
 });

@@ -80,6 +80,24 @@ body { @apply bg-white text-stone-900 antialiased; }
 /* The grid layouts: equal boxes, two across, one of them a picture filling its box. */
 .gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
 .gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
+.gp-grid.gp-grid16 { grid-template-rows: repeat(8, 16mm); }
+/*
+ * The grid of sixteen's boxes are 16mm tall: smaller type, and only what
+ * a reader needs there. An event keeps its dates, title, copy if it fits,
+ * price and venue; a venue its name, line, phone and website. Addresses
+ * are on the venue's own entry, and its area on the page edge.
+ */
+.gp-grid16 .gp-event { font-size: 7pt; line-height: 1.04; }
+.gp-grid16 .gp-event-when, .gp-grid16 .gp-event-when em { font-size: 6.5pt; }
+.gp-grid16 .gp-event-title { font-size: 7.5pt; margin: 0; }
+.gp-grid16 .gp-event-venue { margin-top: 0.4mm; font-size: 6.5pt; }
+.gp-grid16 .gp-event-web { margin-top: 0.3mm; font-size: 6pt; }
+.gp-grid16 .gp-event-address, .gp-grid16 .gp-event-contact { font-size: 6.5pt; }
+.gp-grid16:not(.gp-venue-grid) .gp-event-address, .gp-grid16:not(.gp-venue-grid) .gp-event-contact, .gp-grid16:not(.gp-venue-grid) .gp-listing .gp-event-web { display: none; }
+.gp-grid16 .gp-venue-listing .gp-venue-where-line { display: none; }
+.gp-grid16 .gp-venue-listing .gp-venue-name { font-size: 7.5pt; }
+.gp-grid16.gp-venue-grid .gp-venue { padding-top: 0.8mm; }
+.gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
 .gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
 .gp-tour-grid .gp-event-title { color: var(--gp-green); }
@@ -116,6 +134,10 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-venue-grid .gp-venue-three-quarters { grid-column: 1 / -1; grid-row: span 3; }
 .gp-venue-grid .gp-venue-half { grid-column: 1 / -1; grid-row: span 2; }
 .gp-venue-grid .gp-venue-quarter { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+/* On the grid of sixteen a row is half as tall: the same share of the page takes twice the rows. */
+.gp-grid16.gp-venue-grid .gp-venue-three-quarters { grid-row: span 6; }
+.gp-grid16.gp-venue-grid .gp-venue-half { grid-row: span 4; }
+.gp-grid16.gp-venue-grid .gp-venue-quarter { grid-row: span 2; }
 .gp-venue-three-quarters .gp-venue-picture { height: 62mm; margin-bottom: 2mm; }
 .gp-venue-half .gp-venue-picture { height: 38mm; margin-bottom: 2mm; }
 .gp-venue-quarter .gp-venue-picture { height: 100%; }

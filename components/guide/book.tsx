@@ -2,7 +2,7 @@
 
 import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
+import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
 import type { GuideProvider } from '@/lib/guide';
 import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
@@ -235,6 +235,8 @@ function VenueFullBody({ v }: { v: GuideVenue }) {
  */
 function VenueBox({ c }: { c: VenueCell }) {
   const contact = [c.address, c.phone].filter(Boolean).join(' · ');
+  // Where it is, apart, so the grid of sixteen's small boxes can leave it to the area marker.
+  const where = c.address && c.phone ? <span className="gp-venue-where-line">{c.address} · </span> : c.address;
   const { ref, copy, keep, overset } = useFit(c.options.length ? c.options : [c.copy], !!contact);
   const text = (
     <>
@@ -244,7 +246,7 @@ function VenueBox({ c }: { c: VenueCell }) {
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
       </p>
       <p className="gp-event-copy">{copy}</p>
-      {contact && keep && <p className="gp-event-address">{contact}</p>}
+      {contact && keep && <p className="gp-event-address">{where}{c.phone}</p>}
       {c.website && <p className="gp-event-web">{c.website}</p>}
     </>
   );
@@ -334,8 +336,10 @@ export function GuideBook(props: {
   pages: GuideEvent[][];
   layout: Layout;
   tours: GuideTour[];
-  /** On a grid layout, the tours a page at a time after the key; otherwise they flow. */
+  /** On a grid, the tours a page at a time after the key; otherwise they flow. */
   tourGrid: GuideTour[][] | null;
+  /** Which grid the tours are on, when they are. */
+  tourLayout: TourLayout;
   providers: GuideProvider[];
   venues: GuideVenue[];
   /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
@@ -410,7 +414,7 @@ export function GuideBook(props: {
         key: cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)),
         body: (
           <>
-            <div className="gp-content gp-grid gp-grid8 gp-tour-grid">
+            <div className={`gp-content gp-grid gp-${props.tourLayout} gp-tour-grid`}>
               {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
             </div>
             {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate guide on index page {keyPage}</p>}
@@ -430,7 +434,7 @@ export function GuideBook(props: {
         pages.push(
           p.kind === 'full'
             ? { section, marker, body: <VenueFullBody v={p.venue} /> }
-            : { section, marker, body: <div className="gp-content gp-grid gp-grid8 gp-venue-grid">{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div> },
+            : { section, marker, body: <div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div> },
         );
       }
       for (const items of (dirPages ?? []).filter((pg) => pg[0]?.group === `${vs.section}|${a.area}`)) {

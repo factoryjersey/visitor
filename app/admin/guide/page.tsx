@@ -6,7 +6,7 @@ import '@fontsource/barlow-semi-condensed/600-italic.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
 import { GuideBook } from '@/components/guide/book';
-import { layoutFrom } from '@/lib/domain/guide-entry';
+import { layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
@@ -23,22 +23,30 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   const window = windowFrom({ from: one(sp.from), to: one(sp.to) });
   // A draft lays out everything eligible; with nothing chosen yet, it is where the page starts.
   const asked = one(sp.draft);
-  const layout = layoutFrom(one(sp.grid));
+  const layouts = layoutsFrom((k) => one(sp[k]));
+  const layout = layouts.events;
   let draft = isDraft(asked);
-  let guide = await buildGuide(window, { draft, layout });
+  let guide = await buildGuide(window, { draft, layouts });
   if (asked === undefined && !draft && !guide.events.length && !guide.tours.length && !guide.highlights.length) {
     draft = true;
-    guide = await buildGuide(window, { draft, layout });
+    guide = await buildGuide(window, { draft, layouts });
   }
   const { highlights, events, pages, tours, tourPages, providers, venues, sections, leftOut } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
-  const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${layout === 'top' ? '' : `&grid=${layout}`}`;
+  const tq = layoutsQuery(layouts);
+  const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}`;
   const year = Number(window.from.slice(0, 4));
   // Where What's On starts in the printed guide; the 2026 editions open it on page 36.
   const firstPage = Math.max(1, Math.min(400, Number(one(sp.page)) || 36));
   const presets = [...editions(year - 1).slice(3), ...editions(year), ...editions(year + 1).slice(0, 2)];
-  const href = (w: { from: string; to: string }, d = draft, g = layout) => `/admin/guide?from=${w.from}&to=${w.to}&draft=${d ? 1 : 0}${g === 'top' ? '' : `&grid=${g}`}`;
-  const layouts = [['top', 'Pictures on top'], ['grid6', 'Grid of 6'], ['grid8', 'Grid of 8']] as const;
+  const href = (w: { from: string; to: string }, d = draft, l: GuideLayouts = layouts) => {
+    const t = layoutsQuery(l);
+    return `/admin/guide?from=${w.from}&to=${w.to}&draft=${d ? 1 : 0}${t ? `&${t}` : ''}`;
+  };
+  const with_ = (patch: Partial<GuideLayouts>) => href(window, draft, { ...layouts, ...patch });
+  const eventLayouts = [['top', 'Pictures on top'], ['grid6', 'Grid of 6'], ['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
+  const tourLayouts = [['columns', 'Ruled columns'], ['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
+  const venueGrids = [['grid8', 'Grid of 8'], ['grid16', 'Grid of 16']] as const;
   const pill = (active: boolean) => `rounded-full border px-3 py-1 ${active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 hover:bg-stone-100'}`;
 
   return (
@@ -52,7 +60,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         </div>
         <form action="/admin/guide" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="draft" value={draft ? '1' : '0'} />
-          {layout !== 'top' && <input type="hidden" name="grid" value={layout} />}
+          {[...new URLSearchParams(tq)].map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
           <label className="flex flex-col">
             <span className="text-xs text-stone-500">From</span>
             <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
@@ -71,10 +79,22 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
             <Link href={href(window, true)} className={pill(draft)}>Draft: everything eligible</Link>
           </span>
         </form>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-stone-500">Events layout</span>
-          {layouts.map(([g, label]) => <Link key={g} href={href(window, draft, g)} className={pill(layout === g)}>{label}</Link>)}
-          {layout !== 'top' && <span className="text-xs text-stone-500">Walks and tours go on the grid of eight too. Each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph.</span>}
+        <div className="space-y-1.5">
+          <p className="text-xs text-stone-500">Template, section by section. On a grid each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph. A venue&apos;s booked space is the same share of a page on either grid; the grid sets the size of the listings around it.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-24 text-xs text-stone-500">What&apos;s On</span>
+            {eventLayouts.map(([g, label]) => <Link key={g} href={with_({ events: g })} className={pill(layouts.events === g)}>{label}</Link>)}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-24 text-xs text-stone-500">Tours</span>
+            {tourLayouts.map(([g, label]) => <Link key={g} href={with_({ tours: g })} className={pill(layouts.tours === g)}>{label}</Link>)}
+          </div>
+          {sections.map((s) => (
+            <div key={s.section} className="flex flex-wrap items-center gap-2">
+              <span className="w-24 text-xs text-stone-500">{s.section}</span>
+              {venueGrids.map(([g, label]) => <Link key={g} href={with_({ venues: { ...layouts.venues, [s.section]: g } })} className={pill(s.grid === g)}>{label}</Link>)}
+            </div>
+          ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-stone-600">{highlights.length} highlights · {listed} events · {pages.length} event pages{tourPages ? ` · ${tourPages.length} tour pages` : ''} · {tours.filter((t) => t.frame !== 'image').length} tours · {venues.length} venues</span>
@@ -113,7 +133,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${layout}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} providers={providers} venues={venues} venueSections={sections} firstPage={firstPage} />
+      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} layout={layout} tours={tours} tourGrid={tourPages} tourLayout={layouts.tours} providers={providers} venues={venues} venueSections={sections} firstPage={firstPage} />
 
     </>
   );
