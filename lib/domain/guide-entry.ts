@@ -11,6 +11,7 @@ import {
   printTourDates,
   printTitle,
   printWebsite,
+  socialSite,
 } from './house-style';
 
 /**
@@ -175,6 +176,9 @@ const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsour
  * and remember.
  */
 export function guideWebsite(eventSite: string | null, venueSite: string | null): string | null {
+  // A social page is not a website: the guide never prints one, so the other link stands in.
+  if (venueSite && socialSite(venueSite)) venueSite = null;
+  if (eventSite && socialSite(eventSite)) return venueSite ?? eventSite;
   if (!eventSite) return venueSite;
   let host = '';
   try {

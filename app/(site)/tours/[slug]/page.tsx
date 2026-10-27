@@ -9,7 +9,7 @@ import { OnVisitorMap } from '@/components/site/visitor-map';
 import { staffViewer } from '@/lib/auth/session';
 import { publicTour, publicVenueNamed, todayIso } from '@/lib/db/public';
 import { GENRES } from '@/lib/domain/genre';
-import { printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
+import { printPrice, printTimes, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { headerWhen, webWhen } from '@/lib/domain/web-dates';
@@ -88,7 +88,7 @@ export default async function TourPage({ params }: Props) {
                 {book && (
                   <>
                     <a href={book} target="_blank" rel="noopener" className={primaryButton}>Book with {provider?.name ?? 'the provider'} ↗</a>
-                    <p className="text-center text-xs text-harbour/50">on {printWebsite(book)?.toLowerCase()}</p>
+                    <p className="text-center text-xs text-harbour/50">on {siteLabel(book)}</p>
                   </>
                 )}
               </div>

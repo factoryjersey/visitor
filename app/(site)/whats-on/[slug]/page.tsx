@@ -9,7 +9,7 @@ import { StaffEdit } from '@/components/site/staff-edit';
 import { staffViewer } from '@/lib/auth/session';
 import { EVENT_TYPES } from '@/lib/domain/categorise';
 import { publicEvent, publicRelatedEvents, publicVenueEvents, todayIso } from '@/lib/db/public';
-import { printAddress, printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
+import { printAddress, printPrice, printTimes, printWebsite, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { slugify } from '@/lib/domain/slug';
 import { cardWhen, headerWhen, upcomingDates, webWhen } from '@/lib/domain/web-dates';
@@ -98,7 +98,7 @@ export default async function EventPage({ params }: Props) {
                 {tickets && (
                   <>
                     <a href={tickets} target="_blank" rel="noopener" className={primaryButton}>{e.free ? 'Details & booking' : 'Tickets & information'} ↗</a>
-                    <p className="text-center text-xs text-harbour/50">on {printWebsite(tickets)?.toLowerCase()}</p>
+                    <p className="text-center text-xs text-harbour/50">on {siteLabel(tickets)}</p>
                   </>
                 )}
               </div>
@@ -121,7 +121,7 @@ export default async function EventPage({ params }: Props) {
                 {(venue?.guideCopy ?? venue?.summary) && <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-harbour/80">{venue?.guideCopy ?? venue?.summary}</p>}
                 <ul className="mt-3 space-y-1 text-sm">
                   {venue?.phone && <li><a href={`tel:${venue.phone.replace(/[^\d+]/g, '')}`} className="hover:text-brand">{venue.phone}</a></li>}
-                  {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venueSite)?.toLowerCase()} ↗</a></li>}
+                  {venueSite && <li><a href={venueSite} target="_blank" rel="noopener" className="text-sea hover:text-brand">{siteLabel(venueSite)} ↗</a></li>}
                 </ul>
                 {directions && <a href={directions} target="_blank" rel="noopener" className={`${secondaryButton} mt-4 block`}>Directions</a>}
                 {venue && !venue.businessId && <ClaimLink href={`/claim/venues/${venue.slug}`}>Is this your venue? Claim it</ClaimLink>}

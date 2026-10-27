@@ -14,7 +14,7 @@ import { isNewVenue } from '@/lib/domain/new-venue';
 import { GoogleReviews } from '@/components/site/google-reviews';
 import { googleConfigured } from '@/lib/integrations/google/places';
 import { staffViewer } from '@/lib/auth/session';
-import { printAddress, printPrice, printWebsite } from '@/lib/domain/house-style';
+import { printAddress, printPrice, siteLabel, socialSite } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
@@ -116,12 +116,12 @@ export default async function VenuePage({ params }: Props) {
                 ['Address', address],
                 ['Phone', phone],
                 ['Email', venue.email && <a href={`mailto:${venue.email}`} className="hover:text-brand">{venue.email}</a>],
-                ['Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{printWebsite(venue.website)?.toLowerCase()} ↗</a>],
+                [socialSite(venue.website) ?? 'Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{siteLabel(venue.website)} ↗</a>],
                 ['Coming up', rows.length ? `${rows.length} event${rows.length === 1 ? '' : 's'}` : null],
               ]}
             />
             <div className="mt-4 flex flex-col gap-2">
-              {venue.website && <a href={venue.website} target="_blank" rel="noopener" className={primaryButton}>Visit their website ↗</a>}
+              {venue.website && <a href={venue.website} target="_blank" rel="noopener" className={primaryButton}>{socialSite(venue.website) ? `Their ${socialSite(venue.website)} page` : 'Visit their website'} ↗</a>}
               {directions && <a href={directions} target="_blank" rel="noopener" className={secondaryButton}>Directions</a>}
             </div>
             {!venue.businessId && <ClaimLink href={`/claim/venues/${venue.slug}`}>Is this your venue? Claim it</ClaimLink>}

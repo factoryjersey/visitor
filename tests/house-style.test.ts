@@ -130,3 +130,21 @@ describe('suggestGenre', () => {
     expect(suggestGenre('Moonlight Walk to Seymour Tower', ['Active & adrenaline', 'water-sports', 'outdoors'])).toBe('On foot');
   });
 });
+
+describe('social pages are not websites', () => {
+  it('prints nothing for a Facebook or Instagram page, and names it on the site', async () => {
+    const { printWebsite, siteLabel, socialSite } = await import('@/lib/domain/house-style');
+    expect(printWebsite('https://www.facebook.com/lockes.stories')).toBeNull();
+    expect(printWebsite('https://www.instagram.com/thekingsbar')).toBeNull();
+    expect(socialSite('https://m.facebook.com/x')).toBe('Facebook');
+    expect(siteLabel('https://www.facebook.com/x')).toBe('Facebook');
+    expect(siteLabel('https://www.locke.je/menu')).toBe('locke.je');
+    expect(printWebsite('notfacebook.com')).toBe('NOTFACEBOOK.COM');
+  });
+
+  it('lets the other link stand in for a social page in the guide', async () => {
+    const { guideWebsite } = await import('@/lib/domain/guide-entry');
+    expect(guideWebsite('https://www.eventbrite.co.uk/e/1', 'https://facebook.com/venue')).toBe('https://www.eventbrite.co.uk/e/1');
+    expect(guideWebsite('https://facebook.com/events/1', 'https://venue.je')).toBe('https://venue.je');
+  });
+});

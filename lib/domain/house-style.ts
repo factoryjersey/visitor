@@ -127,15 +127,37 @@ export function printPrice(from: number | null, to: number | null, opts: { free?
   return opts.free ? 'Free entry' : null;
 }
 
-/** "https://www.jerseyheritage.org/whats-on/x" to "JERSEYHERITAGE.ORG". */
-export function printWebsite(url: string | null): string | null {
-  if (!url) return null;
+const hostOf = (url: string): string | null => {
   try {
-    const host = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname;
-    return host.replace(/^www\./i, '').toUpperCase();
+    return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(/^www\./i, '').toLowerCase();
   } catch {
     return null;
   }
+};
+
+const SOCIAL: [RegExp, string][] = [
+  [/(^|\.)(facebook|fb)\.(com|me)$/, 'Facebook'],
+  [/(^|\.)instagram\.com$/, 'Instagram'],
+  [/(^|\.)(twitter|x)\.com$/, 'X'],
+  [/(^|\.)tiktok\.com$/, 'TikTok'],
+  [/(^|\.)linktr\.ee$/, 'Linktree'],
+];
+
+/** "Facebook" for a Facebook page, and so on: a social page is not a website. */
+export function socialSite(url: string | null): string | null {
+  const host = url ? hostOf(url) : null;
+  return host ? SOCIAL.find(([re]) => re.test(host))?.[1] ?? null : null;
+}
+
+/** "https://www.jerseyheritage.org/whats-on/x" to "JERSEYHERITAGE.ORG". A social page prints as nothing: the guide prints websites only. */
+export function printWebsite(url: string | null): string | null {
+  if (!url || socialSite(url)) return null;
+  return hostOf(url)?.toUpperCase() ?? null;
+}
+
+/** How a link reads on the site: the website's address, or the social page's name. */
+export function siteLabel(url: string | null): string | null {
+  return socialSite(url) ?? printWebsite(url)?.toLowerCase() ?? null;
 }
 
 /** A phone number if there is one, otherwise the email: the guide prints one or the other. */
