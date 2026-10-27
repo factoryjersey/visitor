@@ -333,14 +333,16 @@ function areaMarker(areas: string[]): string | undefined {
   return `${named[0]} – ${named.at(-1)}`;
 }
 
+/** A line in a section's index: where (by its area's marker), the name, what kind of place, and the phone. */
 function DirectoryLine({ v }: { v: GuideVenue }) {
   return (
     <p className="gp-directory">
-      <AreaCode code={v.areaCode} />
-      <b>{v.name}</b>
-      {v.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
-      {v.label && <span className="gp-venue-tag">{v.label}</span>}
-      <span>{[v.address, v.phone].filter(Boolean).join(' · ')}</span>
+      <span className="gp-directory-head">
+        <AreaCode code={v.areaCode} />
+        <b>{v.name}</b>
+        {v.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
+      </span>
+      <span className="gp-directory-more">{[v.label && v.label.charAt(0) + v.label.slice(1).toLowerCase(), v.phone || v.website].filter(Boolean).join(' · ')}</span>
     </p>
   );
 }
@@ -361,7 +363,7 @@ type Flow = { key: string; node: ReactNode; heading?: boolean; group?: string; s
  * Pours flowing items into pages of FLOW_MM: each is measured at the
  * page's width, and a heading is never left at the foot of a page.
  */
-function usePoured(items: Flow[]): [Flow[][] | null, ReactNode] {
+function usePoured(items: Flow[], narrow = false): [Flow[][] | null, ReactNode] {
   const ref = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<Flow[][] | null>(null);
   useLayoutEffect(() => {
@@ -370,7 +372,8 @@ function usePoured(items: Flow[]): [Flow[][] | null, ReactNode] {
       const el = ref.current;
       if (!el || cancelled) return;
       const heights = [...el.children].map((c) => (c as HTMLElement).offsetHeight);
-      const max = FLOW_MM * MM;
+      // An index column stops short of the key at the page's foot.
+      const max = (narrow ? FLOW_MM - 9 : FLOW_MM) * MM;
       const out: Flow[][] = [[]];
       let used = 0;
       items.forEach((item, i) => {
@@ -393,7 +396,7 @@ function usePoured(items: Flow[]): [Flow[][] | null, ReactNode] {
     };
   }, [items]);
   const measure = (
-    <div ref={ref} className="gp-measure" aria-hidden="true">
+    <div ref={ref} className={`gp-measure${narrow ? ' gp-measure-narrow' : ''}`} aria-hidden="true">
       {items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}
     </div>
   );
@@ -448,12 +451,19 @@ export function GuideBook(props: {
     props.venueSections.filter((s) => s.directory.length).flatMap((s) => {
       const group = s.section;
       return [
-        { key: `dh-${group}`, group, startsGroup: true, heading: true, node: <h3 className="gp-directory-heading">{s.section}: more places</h3> },
+        { key: `dh-${group}`, group, startsGroup: true, heading: true, node: <h3 className="gp-directory-heading">{s.section}: index</h3> },
         ...s.directory.map((v, i) => ({ key: `dl-${group}-${i}-${v.name}`, group, venue: v, node: <DirectoryLine v={v} /> })),
       ];
     }),
   );
-  const [dirPages, measuringDir] = usePoured(dirFlow);
+  // Poured a column at a time; two columns to a page, each section's index from a fresh page.
+  const [dirColumns, measuringDir] = usePoured(dirFlow, true);
+  const dirPages: Flow[][][] = [];
+  for (const col of dirColumns ?? []) {
+    const last = dirPages.at(-1);
+    if (!last || last.length === 2 || col[0]?.startsGroup || last[0]?.[0]?.group !== col[0]?.group) dirPages.push([col]);
+    else last.push(col);
+  }
 
   // The opener's picture: the first highlight's, else the first event with its own picture.
   const lead = highlights.find((e) => e.preview) ?? events.find((e) => e.preview);
@@ -511,9 +521,20 @@ export function GuideBook(props: {
           : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
       );
     }
-    for (const items of (dirPages ?? []).filter((pg) => pg[0]?.group === vs.section)) {
-      const { marker, foot } = keyed(vs, items.flatMap((i) => (i.venue ? [i.venue] : [])));
-      pages.push({ section, marker, body: <><div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div>{foot}</> });
+    for (const cols of dirPages.filter((pg) => pg[0]?.[0]?.group === vs.section)) {
+      const { marker, foot } = keyed(vs, cols.flat().flatMap((i) => (i.venue ? [i.venue] : [])));
+      pages.push({
+        section,
+        marker,
+        body: (
+          <>
+            <div className="gp-content gp-index">
+              {cols.map((items, c) => <div key={c} className="gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div>)}
+            </div>
+            {foot}
+          </>
+        ),
+      });
     }
     // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
     const ds = props.doSection;

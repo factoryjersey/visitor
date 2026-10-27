@@ -13,6 +13,7 @@ import {
   gridTours,
   layoutEvents,
   printable,
+  budgetFor,
   venueSections,
   VENUE_SECTION_ORDER,
   type GuideEvent,
@@ -89,7 +90,7 @@ const genreOrder = (g: string) => {
  * tour in this edition.
  */
 export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout; layouts?: GuideLayouts } = {}): Promise<Guide> {
-  const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8', venues: {} };
+  const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: (opts.layout ?? 'top') === 'top' ? 'columns' : 'grid8', venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
 
@@ -144,7 +145,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
         doGrid,
       )
     : null;
-  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue), (s) => layouts.venues[s] ?? 'grid8');
+  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue), (s) => layouts.venues[s] ?? 'grid8', (s) => budgetFor(layouts, s));
   // Do prints even when every provider is in its index and no venue has a page of its own.
   if (doSet && !sections.some((s) => s.section === 'Do')) {
     const at = sections.findIndex((s) => VENUE_SECTION_ORDER.indexOf(s.section as never) > VENUE_SECTION_ORDER.indexOf('Do'));

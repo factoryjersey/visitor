@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { areaKey, layoutsFrom, layoutsQuery, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
+import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
-  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], ...o,
+  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, ...o,
 });
 
 describe('venueSections', () => {
@@ -79,17 +79,46 @@ describe('venueSections', () => {
   });
 });
 
+describe('a section rationed to so many pages of listings', () => {
+  it('keeps boxes for those featured, printed before, new, then pictured, and indexes the rest by area', () => {
+    const listings = Array.from({ length: 12 }, (_, i) => v(`L${String(i).padStart(2, '0')}`, { area: i % 2 ? 'Gorey' : 'St. Helier' }));
+    const special = [v('Feat', { featured: true, area: 'Gorey' }), v('Old', { printed: true }), v('Pic', { imageUrl: 'x' }), v('Neu', { isNew: true })];
+    const [s] = venueSections([...listings, ...special, v('Big', { size: 'three-quarters' }), v('Line', { size: 'directory' })], () => 'grid8', () => 1);
+    const boxed = s!.pages.flatMap((p) => (p.kind === 'grid' ? p.cells.map((c) => c.name) : []));
+    // The three-quarters page leaves a row (two listings), and one page more holds eight.
+    expect(boxed).toHaveLength(11);
+    expect(boxed).toEqual(expect.arrayContaining(['Feat', 'Old', 'Neu', 'Pic']));
+    expect(s!.pages).toHaveLength(2);
+    expect(s!.directory).toHaveLength(17 - 10 + 0);
+    expect(s!.directory.map((d) => d.area)).toEqual([...s!.directory.map((d) => d.area)].sort((a, b) => (a === 'St. Helier' ? -1 : 0) - (b === 'St. Helier' ? -1 : 0)));
+    expect(s!.directory.map((d) => d.name)).toContain('Line');
+  });
+
+  it('with no pages, puts every listing in the index', () => {
+    const [s] = venueSections([v('A'), v('B')], () => 'grid8', () => 0);
+    expect(s!.pages).toHaveLength(0);
+    expect(s!.directory.map((d) => d.name)).toEqual(['A', 'B']);
+  });
+});
+
 describe('the template in the address', () => {
   const read = (q: string) => layoutsFrom((k) => new URLSearchParams(q).get(k));
 
   it('chooses each part, defaulting as before', () => {
-    expect(read('')).toEqual({ events: 'top', tours: 'columns', venues: {} });
-    expect(read('grid=grid8')).toEqual({ events: 'grid8', tours: 'grid8', venues: {} });
-    expect(read('grid=grid16&tours=columns&venues=Eat:grid16,Buy:grid8,Nope:grid99')).toEqual({ events: 'grid16', tours: 'columns', venues: { Eat: 'grid16', Buy: 'grid8' } });
+    expect(read('')).toEqual({ events: 'top', tours: 'columns', venues: {}, budgets: {} });
+    expect(read('grid=grid8')).toEqual({ events: 'grid8', tours: 'grid8', venues: {}, budgets: {} });
+    expect(read('grid=grid16&tours=columns&venues=Eat:grid16,Buy:grid8,Nope:grid99&budget=Eat:all,Buy:1,See:x')).toEqual({ events: 'grid16', tours: 'columns', venues: { Eat: 'grid16', Buy: 'grid8' }, budgets: { Eat: null, Buy: 1 } });
   });
 
   it('writes back only what is not the default', () => {
-    expect(layoutsQuery({ events: 'top', tours: 'columns', venues: { Buy: 'grid8' } })).toBe('');
-    expect(read(layoutsQuery({ events: 'grid8', tours: 'grid16', venues: { Eat: 'grid16' } }))).toEqual({ events: 'grid8', tours: 'grid16', venues: { Eat: 'grid16' } });
+    expect(layoutsQuery({ events: 'top', tours: 'columns', venues: { Buy: 'grid8' }, budgets: { Eat: 2 } })).toBe('');
+    const l = { events: 'grid8', tours: 'grid16', venues: { Eat: 'grid16' }, budgets: { Eat: null, Buy: 3 } } as const;
+    expect(read(layoutsQuery({ ...l, venues: { ...l.venues }, budgets: { ...l.budgets } }))).toEqual(l);
+  });
+
+  it('rations Eat to two pages of listings unless chosen otherwise', () => {
+    expect(budgetFor(read(''), 'Eat')).toBe(2);
+    expect(budgetFor(read('budget=Eat:all'), 'Eat')).toBeNull();
+    expect(budgetFor(read(''), 'Buy')).toBeNull();
   });
 });

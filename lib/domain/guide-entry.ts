@@ -239,7 +239,12 @@ export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
 export type VenueGrid = (typeof VENUE_GRIDS)[number];
 
 /** Each part of the guide's template, chosen on the production page and carried in its address. */
-export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid> };
+/** Venue sections' grids, and how many pages each gives listings (those without booked space) before the rest go to its index. */
+export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
+
+/** Eat has more places than pages: two pages of listings, then its index, unless chosen otherwise. Null is no limit. */
+export const DEFAULT_BUDGETS: Record<string, number> = { Eat: 2 };
+export const budgetFor = (l: GuideLayouts, section: string): number | null => (section in l.budgets ? l.budgets[section]! : DEFAULT_BUDGETS[section] ?? null);
 
 /**
  * The template from the address: ?grid= for What's On (as it always was),
@@ -256,7 +261,13 @@ export function layoutsFrom(get: (key: string) => string | null | undefined): Gu
     const [section, grid] = part.split(':');
     if (section && (VENUE_GRIDS as readonly string[]).includes(grid ?? '')) venues[section] = grid as VenueGrid;
   }
-  return { events, tours, venues };
+  const budgets: Record<string, number | null> = {};
+  for (const part of (get('budget') ?? '').split(',')) {
+    const [section, n] = part.split(':');
+    if (section && n === 'all') budgets[section] = null;
+    else if (section && /^\d{1,2}$/.test(n ?? '')) budgets[section] = Number(n);
+  }
+  return { events, tours, venues, budgets };
 }
 
 /** The template as address parameters, leaving out what is the default. */
@@ -266,6 +277,11 @@ export function layoutsQuery(l: GuideLayouts): string {
   if (l.tours !== (l.events === 'top' ? 'columns' : 'grid8')) q.set('tours', l.tours);
   const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
   if (venues) q.set('venues', venues);
+  const budgets = Object.entries(l.budgets ?? {})
+    .filter(([s, n]) => n !== (DEFAULT_BUDGETS[s] ?? null))
+    .map(([s, n]) => `${s}:${n ?? 'all'}`)
+    .join(',');
+  if (budgets) q.set('budget', budgets);
   return q.toString();
 }
 
@@ -387,6 +403,9 @@ export type GuideVenue = {
   options: string[];
   /** Its area's marker in the section's key, once the section is laid out. */
   areaCode?: string;
+  /** Featured in a past guide, or has its own guide copy: first for a box when the section's pages for listings are rationed. */
+  featured: boolean;
+  printed: boolean;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -411,6 +430,8 @@ export function guideVenue(p: Place): GuideVenue {
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
     options: p.listingSize === 'directory' ? [] : p.listingSize === 'listing' && p.guideLine ? [p.guideLine] : options,
+    featured: !!p.recommendedIn,
+    printed: !!p.guideCopy,
   };
 }
 
@@ -467,11 +488,13 @@ export function areaKey(areas: string[]): AreaKey[] {
  * which is which. A full-page entry is a page of its own, first. The bigger
  * grid entries go next, by area, each onto the first page with rows enough
  * for it (three-quarters and a quarter share a page; so do two halves).
- * Listings then fill the rows left, two to a row, and further grids. The
- * directory lines follow as one ruled list, by area. Within an area and
- * size, by name.
+ * Listings then fill the rows left, two to a row, and further grids. When
+ * the section's listings are rationed to so many pages, those featured in
+ * a past guide or with their own guide copy, then new ones, then those
+ * with a picture, keep their boxes; the others join the directory lines
+ * in the index that follows, by area. Within an area and size, by name.
  */
-export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8'): VenueSection[] {
+export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8', budget: (section: string) => number | null = () => null): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
   return sections.map((section) => {
     const grid = gridFor(section);
@@ -492,7 +515,17 @@ export function venueSections(venues: GuideVenue[], gridFor: (section: string) =
       page.cells.push({ ...v, frame: v.size });
       page.free -= rows;
     }
-    const listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+    let listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+    // Rationed: the rows booked entries leave, and so many pages more; the rest go to the index.
+    const pages = budget(section);
+    const toIndex: GuideVenue[] = [];
+    if (pages !== null) {
+      const room = grids.reduce((n, g) => n + g.free * 2, 0) + pages * GRID[grid].cells;
+      const first = [...listings].sort((a, b) => Number(b.featured) - Number(a.featured) || Number(b.printed) - Number(a.printed) || Number(b.isNew) - Number(a.isNew) || Number(!!b.imageUrl) - Number(!!a.imageUrl) || a.name.localeCompare(b.name));
+      const boxed = new Set(first.slice(0, room));
+      toIndex.push(...listings.filter((v) => !boxed.has(v)).map(({ frame: _f, ...v }) => v));
+      listings = listings.filter((v) => boxed.has(v));
+    }
     for (const g of grids) {
       g.cells.push(...listings.splice(0, g.free * 2));
       g.free = 0;
@@ -502,7 +535,7 @@ export function venueSections(venues: GuideVenue[], gridFor: (section: string) =
       section,
       grid,
       pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))],
-      directory: keyed.filter((v) => v.size === 'directory'),
+      directory: [...keyed.filter((v) => v.size === 'directory'), ...toIndex].sort((a, b) => inArea(a, b) || a.name.localeCompare(b.name)),
       key,
     };
   });

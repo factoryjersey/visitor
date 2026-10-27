@@ -6,7 +6,7 @@ import '@fontsource/barlow-semi-condensed/600-italic.css';
 import '@fontsource/barlow-semi-condensed/700.css';
 import Link from 'next/link';
 import { GuideBook } from '@/components/guide/book';
-import { layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
+import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
@@ -80,7 +80,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           </span>
         </form>
         <div className="space-y-1.5">
-          <p className="text-xs text-stone-500">Template, section by section. On a grid each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph. A venue&apos;s booked space is the same share of a page on either grid; the grid sets the size of the listings around it.</p>
+          <p className="text-xs text-stone-500">Template, section by section. On a grid each page&apos;s picture box shows the event or tour ticked &lsquo;Use its picture in the guide grid&rsquo;, else the first with its own photograph. A venue&apos;s booked space is the same share of a page on either grid; the grid sets the size of the listings around it. Pages for listings rations the places without booked space: those featured or printed before keep a box, the rest go to the section&apos;s index.</p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-24 text-xs text-stone-500">What&apos;s On</span>
             {eventLayouts.map(([g, label]) => <Link key={g} href={with_({ events: g })} className={pill(layouts.events === g)}>{label}</Link>)}
@@ -93,6 +93,13 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
             <div key={s.section} className="flex flex-wrap items-center gap-2">
               <span className="w-24 text-xs text-stone-500">{s.section}</span>
               {venueGrids.map(([g, label]) => <Link key={g} href={with_({ venues: { ...layouts.venues, [s.section]: g } })} className={pill(s.grid === g)}>{label}</Link>)}
+              <span className="ml-3 text-xs text-stone-500">Pages for listings</span>
+              {([null, 0, 1, 2, 3, 4, 6] as const).map((n) => (
+                <Link key={String(n)} href={with_({ budgets: { ...layouts.budgets, [s.section]: n } })} className={pill(budgetFor(layouts, s.section) === n)}>{n === null ? 'All' : n}</Link>
+              ))}
+              <span className="text-xs text-stone-500">
+                {s.pages.flatMap((p) => (p.kind === 'grid' ? p.cells : [])).filter((c) => c.frame === 'listing').length} in boxes · {s.directory.length} in the index
+              </span>
             </div>
           ))}
         </div>

@@ -177,9 +177,13 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-do-index td.gp-do-who span { display: block; color: var(--gp-ink80); font-style: italic; font-size: 6.5pt; }
 .gp-do-index td.gp-do-tick { text-align: center; color: var(--gp-accent); font-size: 6pt; width: 3.6mm; }
 .gp-directory-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 11pt; color: var(--gp-accent); margin-bottom: 1.5mm; }
-.gp-directory { display: flex; align-items: baseline; gap: 1.5mm; font-size: 8pt; line-height: 1.25; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.5mm 0; }
+.gp-directory { display: flex; flex-direction: column; font-size: 7.5pt; line-height: 1.2; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.6mm 0; }
+.gp-directory-head { display: flex; align-items: baseline; gap: 1mm; }
 .gp-directory b { font-weight: 700; color: var(--gp-accent); }
-.gp-directory span:last-child { color: var(--gp-ink80); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-directory-more { color: var(--gp-ink80); font-style: italic; padding-left: 4mm; }
+/* A section's index: two columns, each poured to the page's depth. */
+.gp-index { display: grid; grid-template-columns: 1fr 1fr; column-gap: 4mm; align-items: start; }
+.gp-measure.gp-measure-narrow { width: 45.45mm; }
 .gp-page:has(.gp-venue-grid) .gp-tab.gp-marker, .gp-page:has(.gp-venue-full) .gp-tab.gp-marker, .gp-page:has(.gp-directory) .gp-tab.gp-marker { background: var(--gp-tint60); }
 
 /* The section opener: a picture to the edges and the section's name. */
