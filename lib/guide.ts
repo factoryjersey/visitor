@@ -125,9 +125,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
 
   const byId = new Map<string, Provider>();
   for (const { provider } of printed) if (provider) byId.set(provider.id, provider);
-  const providers = [...byId.values()]
-    .map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' }))
-    .sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
+  const tourProviders = [...byId.values()];
 
   // Do's activity providers go in its index rather than a box each; one that booked more space keeps its entry too.
   const activityRows = await db.select().from(doActivities).where(eq(doActivities.included, true)).orderBy(asc(doActivities.position), asc(doActivities.name));
@@ -141,10 +139,18 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
           const image = a.image ?? [...indexed].sort((x, y) => x.activityCode!.localeCompare(y.activityCode!)).find((p) => p.activities.includes(a.slug) && printable(p.headerImage))?.headerImage ?? null;
           return { slug: a.slug, name: a.name, side: a.side, blurb: a.blurb ?? '', imageUrl: image?.url ?? '', preview: image ? webImage(image, 520, 360) : '', guidePicture: !!a.image };
         }),
-        indexed.map((p) => ({ code: p.activityCode!, name: p.name, phone: p.phone ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '', activities: p.activities })),
+        // A provider who also runs tours keeps its tour guide marker: one provider, one marker, one line in the key.
+        indexed.map((p) => ({ code: tourProviders.find((t) => t.placeId === p.id && t.code)?.code ?? p.activityCode!, name: p.name, phone: p.phone ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '', activities: p.activities })),
         doGrid,
       )
     : null;
+  // One key for tours and Do: the tour guides, then Do's providers not already among them.
+  const providers = [
+    ...tourProviders.map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' })),
+    ...(doSet?.providers ?? [])
+      .filter((d) => !tourProviders.some((t) => t.code && t.code.toUpperCase() === d.code.toUpperCase()))
+      .map((d) => ({ code: d.code, name: d.name, contact: d.phone, website: d.website })),
+  ].sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
   const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue), (s) => layouts.venues[s] ?? 'grid8', (s) => budgetFor(layouts, s));
   // Do prints even when every provider is in its index and no venue has a page of its own.
   if (doSet && !sections.some((s) => s.section === 'Do')) {

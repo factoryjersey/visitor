@@ -399,7 +399,7 @@ export function GuideBook(props: {
   const [flow] = useState<Flow[]>(() => {
     const items: Flow[] = [];
     if (providers.length) {
-      items.push({ key: 'key-h', heading: true, node: <h3 className="gp-key-heading">Tour Guides &amp; Providers</h3> });
+      items.push({ key: 'key-h', heading: true, node: <h3 className="gp-key-heading">Tour Guides &amp; Activity Providers</h3> });
       providers.forEach((p) => items.push({ key: `p-${p.code}-${p.name}`, node: <ProviderRow p={p} /> }));
       items.push({ key: 'key-end', node: <div className="gp-break" /> });
     }
@@ -463,12 +463,15 @@ export function GuideBook(props: {
       ),
     });
   }
+  // The key to every provider's marker, tours' and Do's, where the tours open; Do keeps a key of its own only when no tours print.
+  let sharedKey: number | null = null;
   // Tours start on a left-hand page, as a section does in the guide.
   if (tourPages && (tourPages.length || tourGrid?.length)) {
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: EVENTS, body: <div className="gp-content" /> });
     for (const items of tourPages) pages.push({ section: TOURS, body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
     // The key opens the section: every tour page sends the reader back to it.
     const keyPage = props.firstPage + pages.length - tourPages.length;
+    if (providers.length && tourPages.length) sharedKey = keyPage;
     for (const cells of tourGrid ?? []) {
       pages.push({
         section: TOURS,
@@ -521,8 +524,8 @@ export function GuideBook(props: {
     // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
     const ds = props.doSection;
     if (vs.section === 'Do' && ds) {
-      // Every activity page sends the reader on to the key that follows them.
-      const keyPage = props.firstPage + pages.length + ds.pages.length;
+      // Every activity page sends the reader to the key: the tours', else Do's own after the activities.
+      const keyPage = sharedKey ?? props.firstPage + pages.length + ds.pages.length;
       for (const pg of ds.pages) {
         pages.push({
           section,
@@ -535,7 +538,7 @@ export function GuideBook(props: {
           ),
         });
       }
-      for (const items of doKeyPages ?? []) {
+      for (const items of sharedKey ? [] : doKeyPages ?? []) {
         pages.push({ section, marker: 'Providers', body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
       }
     }
