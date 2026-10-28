@@ -40,6 +40,18 @@ function forAgents(request: NextRequest) {
   return response;
 }
 
+/** A crawler, by its own say-so: search engines, AI agents, link previewers. */
+const CRAWLER = /bot|crawl|spider|slurp|externalagent|externalhit|facebookcatalog|preview|scrape/i;
+
+/**
+ * Search is for people. Each query trawls the database afresh and the
+ * result pages never end, so a crawler working through them can swamp
+ * the site; robots.txt asks them not to, and this answers those that
+ * ask anyway at once, without touching the database.
+ */
+const crawlingSearch = (request: NextRequest) =>
+  /^\/search(\/|$)/.test(request.nextUrl.pathname) && CRAWLER.test(request.headers.get('user-agent') ?? '');
+
 /**
  * Refreshes the Supabase session and sends anyone under /admin or
  * /account who is not signed in to /login. The public site needs no
@@ -47,6 +59,12 @@ function forAgents(request: NextRequest) {
  * checked by the pages: this runs at the edge, without the database.
  */
 export async function middleware(request: NextRequest) {
+  if (crawlingSearch(request)) {
+    return new NextResponse('Search is for people: see /sitemap.xml for every page.', {
+      status: 403,
+      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=86400', 'x-robots-tag': 'noindex' },
+    });
+  }
   if (!SESSION_PATHS.test(request.nextUrl.pathname)) return forAgents(request);
   let response = NextResponse.next({ request });
 
