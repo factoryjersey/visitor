@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ClaimLink, Copy, DateList, DetailLayout, Facts, Gallery, Hero, ListingHeader, SideSection, directionsUrl, primaryButton, secondaryButton, timesSummary } from '@/components/site/detail';
 import { StaffEdit } from '@/components/site/staff-edit';
+import { OnVisitorMap } from '@/components/site/visitor-map';
 import { staffViewer } from '@/lib/auth/session';
 import { publicTour, publicVenueNamed, todayIso } from '@/lib/db/public';
 import { GENRES } from '@/lib/domain/genre';
-import { printPrice, printTimes, printWebsite } from '@/lib/domain/house-style';
+import { printPrice, printTimes, siteLabel } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { headerWhen, webWhen } from '@/lib/domain/web-dates';
@@ -62,6 +63,7 @@ export default async function TourPage({ params }: Props) {
               where={host ? { name: host.name, href: `/venues/${host.slug}` } : runBy || null}
               by={host && runBy ? runBy : null}
             />
+            {provider?.visitorMap && <OnVisitorMap edition={provider.visitorMap} className="-mt-2 mb-5" />}
             <Hero image={t.headerImage} title={t.title} />
             <div className="mt-8 space-y-6">
               <Copy lead={t.guideCopy ?? t.summary} body={t.description} />
@@ -86,7 +88,7 @@ export default async function TourPage({ params }: Props) {
                 {book && (
                   <>
                     <a href={book} target="_blank" rel="noopener" className={primaryButton}>Book with {provider?.name ?? 'the provider'} ↗</a>
-                    <p className="text-center text-xs text-harbour/50">on {printWebsite(book)?.toLowerCase()}</p>
+                    <p className="text-center text-xs text-harbour/50">on {siteLabel(book)}</p>
                   </>
                 )}
               </div>

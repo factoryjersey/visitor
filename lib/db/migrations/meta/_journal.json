@@ -141,6 +141,48 @@
       "when": 1793006967306,
       "tag": "0019_subscribers",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793111096737,
+      "tag": "0020_visitor_map_and_space",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793117267070,
+      "tag": "0021_venue_space_on_grid_of_eight",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793117912809,
+      "tag": "0022_place_first_listed",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793122518544,
+      "tag": "0023_place_guide_line",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793128565881,
+      "tag": "0024_do_activities",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793140749880,
+      "tag": "0025_merge_duplicates",
+      "breakpoints": true
     }
   ]
 }

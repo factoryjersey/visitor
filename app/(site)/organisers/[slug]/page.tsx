@@ -6,7 +6,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { organiserFallback, publicOrganiser, todayIso } from '@/lib/db/public';
 import { StaffFallback } from '@/components/site/staff-fallback';
 import { staffViewer } from '@/lib/auth/session';
-import { printPrice, printWebsite } from '@/lib/domain/house-style';
+import { printPrice, siteLabel } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 import { JsonLd } from '@/components/site/json-ld';
@@ -45,7 +45,7 @@ export default async function OrganiserPage({ params }: Props) {
         <h1 className="font-display text-3xl font-bold leading-tight text-ink md:text-4xl">{o.name}</h1>
         {o.website && (
           <a href={o.website} target="_blank" rel="noopener" className="mt-2 inline-block text-sea hover:text-brand">
-            {printWebsite(o.website)?.toLowerCase()} ↗
+            {siteLabel(o.website)} ↗
           </a>
         )}
       </header>

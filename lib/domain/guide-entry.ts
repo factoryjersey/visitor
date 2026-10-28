@@ -1,4 +1,5 @@
 import type { Event, Experience, ListingSize, Place, Provider } from '@/lib/db/schema';
+import { isNewVenue } from './new-venue';
 import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
@@ -10,6 +11,7 @@ import {
   printTourDates,
   printTitle,
   printWebsite,
+  socialSite,
 } from './house-style';
 
 /**
@@ -163,7 +165,7 @@ function sentences(t: string): string[] {
  * A picture the guide prints: the listing's own (not stock or a club's
  * photograph we credit), and not a poster or flyer, which crops badly.
  */
-const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
+export const printable = (image: Event['headerImage']) => !!image && !image.credit && !(image.text && image.text.url === image.url && image.text.found);
 
 /** Sites that sell for everyone: in print they say nothing about the event. */
 const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsource\.co\.uk|islandtickethut\.com|jersey\.com|skiddle\.com|ticketmaster\.[a-z.]+|seetickets\.com|bulls\.je\/event)$/i;
@@ -174,6 +176,9 @@ const TICKET_PLATFORMS = /(^|\.)(eventbrite\.[a-z.]+|ticketsolve\.com|ticketsour
  * and remember.
  */
 export function guideWebsite(eventSite: string | null, venueSite: string | null): string | null {
+  // A social page is not a website: the guide never prints one, so the other link stands in.
+  if (venueSite && socialSite(venueSite)) venueSite = null;
+  if (eventSite && socialSite(eventSite)) return venueSite ?? eventSite;
   if (!eventSite) return venueSite;
   let host = '';
   try {
@@ -218,12 +223,70 @@ export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' 
 
 /**
  * How What's On is laid out. 'top': six to a page, a pictured pair across
- * the top. 'grid6' and 'grid8': six or eight equal boxes, two across,
- * every listing without a picture and one box a picture beside the listing it belongs to.
+ * the top. 'grid6', 'grid8' and 'grid16': six, eight or sixteen equal
+ * boxes, two across, every listing without a picture and one box a
+ * picture beside the listing it belongs to.
  */
-export const LAYOUTS = ['top', 'grid6', 'grid8'] as const;
+export const LAYOUTS = ['top', 'grid6', 'grid8', 'grid16'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
+
+/** Tours: in ruled columns, or on a grid of eight or sixteen with a picture a page. */
+export const TOUR_LAYOUTS = ['columns', 'grid8', 'grid16'] as const;
+export type TourLayout = (typeof TOUR_LAYOUTS)[number];
+/** A venue section: on the grid of eight (a listing a box, an eighth) or of sixteen (a listing a sixteenth). */
+export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
+export type VenueGrid = (typeof VENUE_GRIDS)[number];
+
+/** Each part of the guide's template, chosen on the production page and carried in its address. */
+/** Venue sections' grids, and how many pages each gives listings (those without booked space) before the rest go to its index. */
+export type GuideLayouts = { events: Layout; tours: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
+
+/**
+ * Pages for listings beyond the rows booked entries leave, then the section's index, unless chosen
+ * otherwise: Eat two, Buy one, Visit none (its booked pages leave room for six). Null is no limit.
+ */
+export const DEFAULT_BUDGETS: Record<string, number> = { Eat: 2, Buy: 1, Visit: 0 };
+export const budgetFor = (l: GuideLayouts, section: string): number | null => (section in l.budgets ? l.budgets[section]! : DEFAULT_BUDGETS[section] ?? null);
+
+/**
+ * The template from the address: ?grid= for What's On (as it always was),
+ * ?tours= for tours, ?venues=Eat:grid16,Buy:grid16 for the venue sections
+ * not on the grid of eight. Tours follow What's On onto the grid of eight
+ * unless chosen, as they did.
+ */
+export function layoutsFrom(get: (key: string) => string | null | undefined): GuideLayouts {
+  const events = layoutFrom(get('grid'));
+  const asked = get('tours');
+  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : events === 'top' ? 'columns' : 'grid8';
+  const venues: Record<string, VenueGrid> = {};
+  for (const part of (get('venues') ?? '').split(',')) {
+    const [section, grid] = part.split(':');
+    if (section && (VENUE_GRIDS as readonly string[]).includes(grid ?? '')) venues[section] = grid as VenueGrid;
+  }
+  const budgets: Record<string, number | null> = {};
+  for (const part of (get('budget') ?? '').split(',')) {
+    const [section, n] = part.split(':');
+    if (section && n === 'all') budgets[section] = null;
+    else if (section && /^\d{1,2}$/.test(n ?? '')) budgets[section] = Number(n);
+  }
+  return { events, tours, venues, budgets };
+}
+
+/** The template as address parameters, leaving out what is the default. */
+export function layoutsQuery(l: GuideLayouts): string {
+  const q = new URLSearchParams();
+  if (l.events !== 'top') q.set('grid', l.events);
+  if (l.tours !== (l.events === 'top' ? 'columns' : 'grid8')) q.set('tours', l.tours);
+  const venues = Object.entries(l.venues).filter(([, g]) => g !== 'grid8').map(([s, g]) => `${s}:${g}`).join(',');
+  if (venues) q.set('venues', venues);
+  const budgets = Object.entries(l.budgets ?? {})
+    .filter(([s, n]) => n !== (DEFAULT_BUDGETS[s] ?? null))
+    .map(([s, n]) => `${s}:${n ?? 'all'}`)
+    .join(',');
+  if (budgets) q.set('budget', budgets);
+  return q.toString();
+}
 
 export const PER_PAGE = 6;
 const PICTURES_PER_PAGE = 2;
@@ -231,7 +294,7 @@ const PICTURES_PER_PAGE = 2;
 const cut = (e: GuideEvent) => !e.fits.picture || e.fits.picture.endsWith('…');
 
 /** The grid's boxes: 142.4mm of page, rows 2mm apart. */
-export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 } } as const;
+export const GRID = { grid6: { cells: 6, height: 46 }, grid8: { cells: 8, height: 34 }, grid16: { cells: 16, height: 16 } } as const;
 
 /**
  * Events onto pages in date order, as the layout asks. Top: six at a
@@ -329,6 +392,8 @@ export type GuideVenue = {
   name: string;
   label: string;
   size: ListingSize;
+  /** First listed in the last six months: printed NEW beside its name. */
+  isNew: boolean;
   copy: string;
   address: string;
   phone: string;
@@ -339,6 +404,11 @@ export type GuideVenue = {
   preview: string;
   /** Every whole-sentence version of the copy, fullest first, for a box to fit. Not printed. */
   options: string[];
+  /** Its area's marker in the section's key, once the section is laid out. */
+  areaCode?: string;
+  /** Featured in a past guide, or has its own guide copy: first for a box when the section's pages for listings are rationed. */
+  featured: boolean;
+  printed: boolean;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -353,65 +423,123 @@ export function guideVenue(p: Place): GuideVenue {
     name: p.name,
     label: (p.guideLabel ?? '').toUpperCase(),
     size: p.listingSize,
-    // A directory line has no copy; the bigger entries do.
-    copy: p.listingSize === 'directory' ? '' : p.guideCopy ?? p.summary ?? '',
+    isNew: isNewVenue(p.firstListedAt),
+    // A directory line has no copy; a listing box its one line, when it has one; the bigger entries their copy.
+    copy: p.listingSize === 'directory' ? '' : p.listingSize === 'listing' && p.guideLine ? p.guideLine : p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
     phone: p.phone ?? '',
     email: p.email ?? '',
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : options,
+    options: p.listingSize === 'directory' ? [] : p.listingSize === 'listing' && p.guideLine ? [p.guideLine] : options,
+    featured: !!p.recommendedIn,
+    printed: !!p.guideCopy,
   };
 }
 
 /**
  * The venue sections in the order the 2026 editions print them (Visit,
  * See, Do, Buy, Eat), then any other section a venue is set to; areas
- * in the order the guide reads the island, then any other, then those
- * with no area.
+ * in the order the guide reads the island (Do's by activity), then any
+ * other, then those with no area.
  */
 export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat'] as const;
-export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South'] as const;
-const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'two-thirds': 1, listing: 2, directory: 3 };
+// Do is set by activity rather than by place, in the order the 2026 editions run them.
+export const VENUE_AREA_ORDER = ['St. Helier', 'St. Aubin', 'West', 'North', 'East', 'Gorey', 'South', 'Surf & kite', 'On the water', 'Adventure', 'Golf', 'Swim & sport', 'Riding', 'Yoga'] as const;
+const SIZE_ORDER: Record<ListingSize, number> = { full: 0, 'three-quarters': 1, half: 2, quarter: 3, listing: 4, directory: 5 };
 const ranked = (order: readonly string[], v: string) => {
   const i = order.indexOf(v);
   return i < 0 ? order.length + (v ? 0 : 1) : i;
 };
 
-/** A box on a venue grid page: the two-thirds feature (half the grid, across the top) or a listing (one box). */
-export type VenueCell = GuideVenue & { frame: 'feature' | 'listing' };
+/** A box on a venue grid page: an entry across both columns for so many rows, or a listing in one box. */
+export type VenueFrame = 'three-quarters' | 'half' | 'quarter' | 'listing';
+export type VenueCell = GuideVenue & { frame: VenueFrame };
 export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
-export type VenueArea = { area: string; pages: VenuePage[]; directory: GuideVenue[] };
-export type VenueSection = { section: string; areas: VenueArea[] };
+/** An area's short marker, printed on its boxes as the tour guides' are, and the area it stands for. */
+export type AreaKey = { code: string; area: string };
+export type VenueSection = { section: string; grid: VenueGrid; pages: VenuePage[]; directory: GuideVenue[]; key: AreaKey[] };
 
-/** The grid of eight: a feature takes the top four boxes, a listing one. */
-const FEATURE_CELLS = 4;
+/** A page's share each size takes: on the grid of eight, three rows, two and one of four; on sixteen, six, four and two of eight. */
+const SHARE: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3 / 4, half: 1 / 2, quarter: 1 / 4 };
+
+// The areas' markers, where initials alone would clash or mislead.
+const AREA_CODES: Record<string, string> = {
+  'St. Helier': 'SH', 'St. Aubin': 'SA', West: 'W', North: 'N', East: 'E', Gorey: 'GY', South: 'S',
+  'Surf & kite': 'SK', 'On the water': 'OW', Adventure: 'AD', Golf: 'GF', 'Swim & sport': 'SS', Riding: 'R', Yoga: 'Y',
+};
+
+/** A marker for each area, in order: its own, else its initials, lengthened until it is unlike the others. */
+export function areaKey(areas: string[]): AreaKey[] {
+  const taken = new Set<string>();
+  return areas.filter(Boolean).map((area) => {
+    const words = area.replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter((w) => w && !['the', 'and', 'of'].includes(w.toLowerCase()));
+    let code = AREA_CODES[area] ?? words.map((w) => w[0]!.toUpperCase()).join('');
+    const last = words.at(-1) ?? area;
+    for (let i = 1; taken.has(code) && i < last.length; i++) code = code.slice(0, -1) + last.slice(0, i + 1).toUpperCase();
+    while (taken.has(code)) code += '+';
+    taken.add(code);
+    return { code, area };
+  });
+}
 
 /**
- * Venues onto pages, section by section and area by area, on the grid the
- * events and tours use. A full-page entry is a page of its own; each
- * two-thirds entry opens a grid page across its top half, with listings
- * under it; listings then fill grids of eight; directory lines follow the
- * area's pages as a ruled list. Within a size, by name.
+ * Venues onto pages, a section at a time, on the grid the events and tours
+ * use. A section runs on without a break between its areas, so no page is
+ * left part empty; each box carries its area's marker, and the key says
+ * which is which. A full-page entry is a page of its own, first. The bigger
+ * grid entries go next, by area, each onto the first page with rows enough
+ * for it (three-quarters and a quarter share a page; so do two halves).
+ * Listings then fill the rows left, two to a row, and further grids. When
+ * the section's listings are rationed to so many pages, those featured in
+ * a past guide or with their own guide copy, then new ones, then those
+ * with a picture, keep their boxes; the others join the directory lines
+ * in the index that follows, by area. Within an area and size, by name.
  */
-export function venueSections(venues: GuideVenue[]): VenueSection[] {
+export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8', budget: (section: string) => number | null = () => null): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
   return sections.map((section) => {
-    const inSection = venues.filter((v) => v.section === section);
-    const areas = [...new Set(inSection.map((v) => v.area))].sort((a, b) => ranked(VENUE_AREA_ORDER, a) - ranked(VENUE_AREA_ORDER, b) || a.localeCompare(b));
+    const grid = gridFor(section);
+    // Rows of two boxes; an entry across both columns takes whole rows, a listing half of one.
+    const ROWS = GRID[grid].cells / 2;
+    const inArea = (a: GuideVenue, b: GuideVenue) => ranked(VENUE_AREA_ORDER, a.area) - ranked(VENUE_AREA_ORDER, b.area) || a.area.localeCompare(b.area);
+    const here = venues.filter((v) => v.section === section).sort((a, b) => inArea(a, b) || SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
+    const key = areaKey([...new Set(here.map((v) => v.area))]);
+    const code = new Map(key.map((k) => [k.area, k.code]));
+    const keyed = here.map((v) => ({ ...v, areaCode: code.get(v.area) ?? '' }));
+    const fulls: VenuePage[] = keyed.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
+    const grids: { cells: VenueCell[]; free: number }[] = [];
+    for (const v of keyed) {
+      if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
+      const rows = SHARE[v.size] * ROWS;
+      let page = grids.find((g) => g.free >= rows);
+      if (!page) grids.push((page = { cells: [], free: ROWS }));
+      page.cells.push({ ...v, frame: v.size });
+      page.free -= rows;
+    }
+    let listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+    // Rationed: the rows booked entries leave, and so many pages more; the rest go to the index.
+    const pages = budget(section);
+    const toIndex: GuideVenue[] = [];
+    if (pages !== null) {
+      const room = grids.reduce((n, g) => n + g.free * 2, 0) + pages * GRID[grid].cells;
+      const first = [...listings].sort((a, b) => Number(b.featured) - Number(a.featured) || Number(b.printed) - Number(a.printed) || Number(b.isNew) - Number(a.isNew) || Number(!!b.imageUrl) - Number(!!a.imageUrl) || a.name.localeCompare(b.name));
+      const boxed = new Set(first.slice(0, room));
+      toIndex.push(...listings.filter((v) => !boxed.has(v)).map(({ frame: _f, ...v }) => v));
+      listings = listings.filter((v) => boxed.has(v));
+    }
+    for (const g of grids) {
+      g.cells.push(...listings.splice(0, g.free * 2));
+      g.free = 0;
+    }
+    while (listings.length) grids.push({ cells: listings.splice(0, GRID[grid].cells), free: 0 });
     return {
       section,
-      areas: areas.map((area) => {
-        const here = inSection.filter((v) => v.area === area).sort((a, b) => SIZE_ORDER[a.size] - SIZE_ORDER[b.size] || a.name.localeCompare(b.name));
-        const pages: VenuePage[] = here.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
-        const listings: VenueCell[] = here.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
-        for (const v of here.filter((x) => x.size === 'two-thirds')) {
-          pages.push({ kind: 'grid', cells: [{ ...v, frame: 'feature' }, ...listings.splice(0, GRID.grid8.cells - FEATURE_CELLS)] });
-        }
-        while (listings.length) pages.push({ kind: 'grid', cells: listings.splice(0, GRID.grid8.cells) });
-        return { area, pages, directory: here.filter((v) => v.size === 'directory') };
-      }),
+      grid,
+      pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))],
+      directory: [...keyed.filter((v) => v.size === 'directory'), ...toIndex].sort((a, b) => inArea(a, b) || a.name.localeCompare(b.name)),
+      key,
     };
   });
 }
@@ -481,14 +609,14 @@ export function guideTour(
 }
 
 /** A tour's box on the grid: when (or, on the on-demand pages, its genre), its title, the copy, then the provider's code and the duration. The code points to the key. */
-const TOUR_BOX = { height: GRID.grid8.height, picture: false };
+const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : t.genre || 'On demand');
 
 /** Walks and tours on the grid of eight, in the order they print: seven listings and a picture a page. */
-export function gridTours(tours: GuideTour[]): GuideTour[][] {
-  return gridPages(tours, GRID.grid8.cells, {
+export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
+  return gridPages(tours, GRID[grid].cells, {
     listing: (t) => {
-      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, TOUR_BOX);
+      const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
       return { ...t, frame: 'listing', copy: t.options.find((c) => c.length <= room) ?? '' };
     },
     image: (t) => ({ ...t, frame: 'image', copy: '' }),

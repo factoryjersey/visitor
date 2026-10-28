@@ -5,8 +5,8 @@ const v = (name: string, o: Partial<Editorial> = {}): Editorial => ({ name, list
 
 describe('a guide section as a magazine spread', () => {
   it('ranks by the space the printed guide gave', () => {
-    expect(promotion(v('a', { listingSize: 'full' }))).toBeGreaterThan(promotion(v('b', { listingSize: 'two-thirds' })));
-    expect(promotion(v('b', { listingSize: 'two-thirds' }))).toBeGreaterThan(promotion(v('c', { recommendedIn: 'Autumn 2026' })));
+    expect(promotion(v('a', { listingSize: 'full' }))).toBeGreaterThan(promotion(v('b', { listingSize: 'half' })));
+    expect(promotion(v('b', { listingSize: 'half' }))).toBeGreaterThan(promotion(v('c', { recommendedIn: 'Autumn 2026' })));
     expect(promotion(v('c', { recommendedIn: 'Autumn 2026' }))).toBeGreaterThan(promotion(v('d', { guideCopy: 'Ours.' })));
     expect(promotion(v('e'))).toBe(0);
   });

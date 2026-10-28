@@ -1,5 +1,5 @@
 /**
- * The visitor.je logo, its "Jersey’s What’s On Guide" line included:
+ * The guide.je logo, its "Jersey’s What’s On Guide" line included:
  * charcoal in the header, a lighter grey in the footer.
  */
 const SIZE = { header: 'h-12 md:h-14', footer: 'h-11' } as const;
@@ -8,9 +8,9 @@ export function Wordmark({ tone = 'dark', size = 'header' }: { tone?: 'dark' | '
   return (
     <img
       src={tone === 'grey' ? '/visitor-logo-grey.svg' : '/visitor-logo.svg'}
-      alt="Visitor.je, Jersey’s What’s On Guide"
-      width={274}
-      height={73}
+      alt="Guide.je, Jersey’s What’s On Guide"
+      width={284}
+      height={113}
       className={`block w-auto ${SIZE[size]}`}
     />
   );

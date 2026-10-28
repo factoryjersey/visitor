@@ -55,7 +55,15 @@ export const INCLUSIONS = ['candidate', 'included', 'excluded'] as const;
  * area directory, a listing with its category label, or a 2/3 or full
  * entry with copy and a photo.
  */
-export const LISTING_SIZES = ['directory', 'listing', 'two-thirds', 'full'] as const;
+/**
+ * The space a venue has in the printed guide, on the grid of eight (two
+ * boxes across, four down): a directory line; a listing, one box (an
+ * eighth); a quarter, a row across both columns; a half; three-quarters;
+ * or a page of its own. Earned by the edition's booking: a DPS a page, a
+ * full page three-quarters, a half page a half, a quarter page a quarter,
+ * a banner or square a box.
+ */
+export const LISTING_SIZES = ['directory', 'listing', 'quarter', 'half', 'three-quarters', 'full'] as const;
 export type ListingSize = (typeof LISTING_SIZES)[number];
 export type Inclusion = (typeof INCLUSIONS)[number];
 
@@ -152,6 +160,22 @@ export const places = pgTable('places', {
   description: text('description'),
   /** Our copy. Never touched by an import. */
   guideCopy: text('guide_copy'),
+  /**
+   * One sentence in the guide's voice, what a listing box on the grid of
+   * eight prints: Claude writes it from our copy or the source's, and
+   * again when those words change (guideLineKey); one a person writes is
+   * locked ('guideLine').
+   */
+  guideLine: text('guide_line'),
+  guideLineKey: text('guide_line_key'),
+  /**
+   * For an activity provider in the guide's Do section: its short marker
+   * (SSC, JSS, BBDC), printed in each activity's box and against its
+   * line in the providers' index, and the activities it offers (slugs of
+   * do_activities). Ours.
+   */
+  activityCode: text('activity_code'),
+  activities: text('activities').array().notNull().default([]),
   /** Where it sits in the guide: section "Eat", area "West", label "CASUAL". Ours. */
   guideSection: text('guide_section'),
   guideArea: text('guide_area'),
@@ -190,6 +214,21 @@ export const places = pgTable('places', {
    * in none. Ours.
    */
   recommendedIn: text('recommended_in'),
+  /** The edition of the Visitor Map it is on ("2026"), from its booking; shown on its page. Null when it is on none. Ours. */
+  visitorMap: text('visitor_map'),
+  /**
+   * When it was first listed: the day Visit Jersey first published it on
+   * jersey.com, or, for one we added ourselves, the day we did. What makes
+   * a venue new (lib/domain/new-venue.ts). Null for the printed guide's own
+   * entries from before we kept it.
+   */
+  firstListedAt: timestamp('first_listed_at', { withTimezone: true }).defaultNow(),
+  /**
+   * The space each edition of the printed guide gives it, as the bookings
+   * for that edition earn it: { "Autumn 2026": "full", "Winter 2026": "listing" }.
+   * listingSize is the edition in hand; this keeps the ones before. Ours.
+   */
+  spaceByEdition: jsonb('space_by_edition').$type<Record<string, ListingSize>>().notNull().default({}),
   /** Has worked with us. Internal: the admin only, never the public site. Ours. */
   client: boolean('client').notNull().default(false),
   clientNote: text('client_note'),
@@ -348,6 +387,8 @@ export const providers = pgTable('providers', {
   placeId: uuid('place_id').references(() => places.id, { onDelete: 'set null' }),
   /** Other names the source gives the same business, merged into this one by staff: the import finds this provider by any of them, so a merge stays merged. */
   aliases: text('aliases').array().notNull().default([]),
+  /** The edition of the Visitor Map it is on ("2026"), from its booking; shown on its tours. Null when it is on none. Ours. */
+  visitorMap: text('visitor_map'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -454,6 +495,28 @@ export type Provider = typeof providers.$inferSelect;
  * (events.organiser), matched loosely (lib/domain/organiser.ts), so this
  * is keyed by that match, not by an id an event points to.
  */
+/**
+ * The guide's Do section is set by activity: a box for each (Surf, SUP,
+ * Golf), its short piece, and the markers of the providers who offer it,
+ * on the water first, then on land, a picture a page; then the
+ * providers' index. Staff choose which activities an edition carries, to
+ * fill its pages. Ours: no import touches them.
+ */
+export const DO_SIDES = ['water', 'land'] as const;
+export type DoSide = (typeof DO_SIDES)[number];
+export const doActivities = pgTable('do_activities', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  side: text('side').$type<DoSide>().notNull(),
+  blurb: text('blurb'),
+  image: jsonb('image').$type<Image | null>(),
+  position: integer('position').notNull().default(0),
+  included: boolean('included').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+export type DoActivity = typeof doActivities.$inferSelect;
+
 export const organiserProfiles = pgTable('organiser_profiles', {
   key: text('key').primaryKey(),
   name: text('name').notNull(),

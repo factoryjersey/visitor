@@ -80,6 +80,24 @@ body { @apply bg-white text-stone-900 antialiased; }
 /* The grid layouts: equal boxes, two across, one of them a picture filling its box. */
 .gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
 .gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
+.gp-grid.gp-grid16 { grid-template-rows: repeat(8, 16mm); }
+/*
+ * The grid of sixteen's boxes are 16mm tall: smaller type, and only what
+ * a reader needs there. An event keeps its dates, title, copy if it fits,
+ * price and venue; a venue its name, line, phone and website. Addresses
+ * are on the venue's own entry, and its area on the page edge.
+ */
+.gp-grid16 .gp-event { font-size: 7pt; line-height: 1.04; }
+.gp-grid16 .gp-event-when, .gp-grid16 .gp-event-when em { font-size: 6.5pt; }
+.gp-grid16 .gp-event-title { font-size: 7.5pt; margin: 0; }
+.gp-grid16 .gp-event-venue { margin-top: 0.4mm; font-size: 6.5pt; }
+.gp-grid16 .gp-event-web { margin-top: 0.3mm; font-size: 6pt; }
+.gp-grid16 .gp-event-address, .gp-grid16 .gp-event-contact { font-size: 6.5pt; }
+.gp-grid16:not(.gp-venue-grid) .gp-event-address, .gp-grid16:not(.gp-venue-grid) .gp-event-contact, .gp-grid16:not(.gp-venue-grid) .gp-listing .gp-event-web { display: none; }
+.gp-grid16 .gp-venue-listing .gp-venue-where-line { display: none; }
+.gp-grid16 .gp-venue-listing .gp-venue-name { font-size: 7.5pt; }
+.gp-grid16.gp-venue-grid .gp-venue { padding-top: 0.8mm; }
+.gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
 .gp-tour-grid .gp-listing { border-top-color: var(--gp-green); }
 .gp-tour-grid .gp-event-title { color: var(--gp-green); }
@@ -113,15 +131,27 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-overset { outline: 0.6mm solid #dc2626; outline-offset: 0.6mm; }
 /* Venue sections, on the events' grid for now, in the section's colour (--gp-accent, set on each page). */
 .gp-venue-grid .gp-venue { border-top: 0.6pt solid var(--gp-accent); padding-top: 1.6mm; }
-.gp-venue-grid .gp-venue-feature { grid-column: 1 / -1; grid-row: span 2; }
-.gp-venue-feature .gp-venue-picture { height: 38mm; margin-bottom: 2mm; }
+.gp-venue-grid .gp-venue-three-quarters { grid-column: 1 / -1; grid-row: span 3; }
+.gp-venue-grid .gp-venue-half { grid-column: 1 / -1; grid-row: span 2; }
+.gp-venue-grid .gp-venue-quarter { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+/* On the grid of sixteen a row is half as tall: the same share of the page takes twice the rows. */
+.gp-grid16.gp-venue-grid .gp-venue-three-quarters { grid-row: span 6; }
+.gp-grid16.gp-venue-grid .gp-venue-half { grid-row: span 4; }
+.gp-grid16.gp-venue-grid .gp-venue-quarter { grid-row: span 2; }
+.gp-venue-three-quarters .gp-venue-picture { height: 62mm; margin-bottom: 2mm; }
+.gp-venue-half .gp-venue-picture { height: 38mm; margin-bottom: 2mm; }
+.gp-venue-quarter .gp-venue-picture { height: 100%; }
+.gp-venue-text { min-width: 0; overflow: hidden; }
 .gp-venue-picture { position: relative; overflow: hidden; background: #e7e5e4; }
 .gp-venue-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .gp-venue-label { position: absolute; left: 0; top: 0; background: var(--gp-tint20); color: var(--gp-accent); font-family: var(--gp-sans); font-weight: 700; font-size: 6pt; letter-spacing: 0.04em; padding: 0.6mm 1.4mm; }
 .gp-venue-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5mm; margin-bottom: 0.4mm; }
 .gp-venue-name { font-weight: 700; font-size: 9pt; color: var(--gp-accent); }
-.gp-venue-feature .gp-venue-name { font-size: 12pt; }
+.gp-venue-three-quarters .gp-venue-name, .gp-venue-half .gp-venue-name { font-size: 12pt; }
+.gp-venue-quarter .gp-venue-name { font-size: 10.5pt; }
 .gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-accent); background: var(--gp-tint20); padding: 0.3mm 1mm; }
+.gp-venue-new { background: var(--gp-accent); color: white; }
+.gp-venue-name-big .gp-venue-new { margin-left: 2mm; vertical-align: middle; font-size: 6.5pt; }
 .gp-venue .gp-event-address { color: var(--gp-ink80); margin-top: 1.2mm; }
 .gp-venue-full .gp-venue-picture { height: 62mm; margin-bottom: 3mm; }
 .gp-venue-name-big { display: block; font-size: 15pt; line-height: 1.05; margin: 0.5mm 0 2mm; }
@@ -135,10 +165,18 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-venue-foot strong { display: inline-flex; align-items: center; gap: 0.8mm; }
 .gp-venue-foot svg { width: 2.6mm; height: 2.6mm; flex: none; }
 .gp-venue-where { font-weight: 600; font-style: italic; color: var(--gp-ink80); }
+.gp-do-name { display: block; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.6mm; }
+.gp-do-codes { margin-top: 1.2mm; display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-weight: 700; font-size: 7pt; color: var(--gp-accent); word-spacing: 0.6mm; }
+.gp-do-codes svg { width: 2.6mm; height: 2.6mm; flex: none; }
+.gp-grid16 .gp-do-name { font-size: 8pt; }
 .gp-directory-heading { font-family: var(--gp-sans); font-weight: 700; font-size: 11pt; color: var(--gp-accent); margin-bottom: 1.5mm; }
-.gp-directory { display: flex; align-items: baseline; gap: 1.5mm; font-size: 8pt; line-height: 1.25; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.5mm 0; }
+.gp-directory { display: flex; flex-direction: column; font-size: 7.5pt; line-height: 1.2; border-bottom: 0.5pt solid var(--gp-accent); padding: 0.6mm 0; }
+.gp-directory-head { display: flex; align-items: baseline; gap: 1mm; }
 .gp-directory b { font-weight: 700; color: var(--gp-accent); }
-.gp-directory span:last-child { color: var(--gp-ink80); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-directory-more { color: var(--gp-ink80); font-style: italic; padding-left: 4mm; }
+/* A section's index: two columns, each poured to the page's depth. */
+.gp-index { display: grid; grid-template-columns: 1fr 1fr; column-gap: 4mm; align-items: start; }
+.gp-measure.gp-measure-narrow { width: 45.45mm; }
 .gp-page:has(.gp-venue-grid) .gp-tab.gp-marker, .gp-page:has(.gp-venue-full) .gp-tab.gp-marker, .gp-page:has(.gp-directory) .gp-tab.gp-marker { background: var(--gp-tint60); }
 
 /* The section opener: a picture to the edges and the section's name. */
@@ -183,3 +221,10 @@ body { @apply bg-white text-stone-900 antialiased; }
   .gp-page.gp-left { border-right: 0; }
   .gp-overset { outline: none; }
 }
+/* The area markers, keyed at the foot of the page, as the tours' guides are. */
+.gp-area-code { margin-left: auto; font-size: 6.5pt; }
+.gp-directory .gp-area-code { margin: 0 1mm 0 0; }
+.gp-area-key { flex-wrap: wrap; gap: 0.6mm 3mm; max-width: 120mm; }
+.gp-area-key span { display: inline-flex; align-items: center; gap: 0.6mm; }
+.gp-area-key b { font-weight: 800; }
+.gp-do-side { font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-teal); margin: 0 0 0.4mm; }

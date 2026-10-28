@@ -13,7 +13,7 @@
 import '@/lib/load-env';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { and, eq, notInArray } from 'drizzle-orm';
+import { and, eq, notInArray, sql } from 'drizzle-orm';
 import { client, db } from '@/lib/db';
 import { events, experiences, places, providers, sourceRecords, type Event, type Experience, type Place, type Provider } from '@/lib/db/schema';
 import { normaliseName } from '@/lib/domain/same-place';
@@ -312,6 +312,18 @@ for (const type of [...types].sort((a, b) => ORDER(a) - ORDER(b))) {
   if (!fixture) missing += await markMissing(type, raws);
   console.log(`\r${type}: ${raws.length} listings`);
 }
+
+// When each place was first listed: the earliest Visit Jersey published any record of it. A
+// place we added before Visit Jersey listed it keeps our earlier day.
+await db.execute(sql`
+  update places p set first_listed_at = least(coalesce(p.first_listed_at, s.first), s.first)
+  from (
+    select place_id, min((payload->>'date_gmt')::timestamp at time zone 'UTC') as first
+    from source_records
+    where source = 'visit_jersey' and place_id is not null and payload->>'date_gmt' is not null
+    group by place_id
+  ) s
+  where p.id = s.place_id and p.first_listed_at is distinct from least(coalesce(p.first_listed_at, s.first), s.first)`);
 
 console.log(
   `created ${counts.created}, updated ${counts.updated}, unchanged ${counts.unchanged}, ` +

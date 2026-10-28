@@ -4,7 +4,8 @@
  *   pnpm import:events                     every source
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, stock (pictures only),
- *                                          print-lines (the guide's snippets only), pictures (text check only)
+ *                                          print-lines (the guide's snippets only), venue-lines (venues' one-liners only),
+ *                                          pictures (text check only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -47,6 +48,7 @@ import type { VjEvent } from '@/lib/integrations/jersey-com/parse';
 import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { fillPrintLines } from '@/lib/integrations/claude/fill-print-lines';
+import { fillVenueLines } from '@/lib/integrations/claude/fill-venue-lines';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
 import { fillProviderCodes } from '@/lib/db/provider-codes';
 import { matchGooglePlaces } from '@/lib/integrations/google/match';
@@ -463,6 +465,16 @@ if (!values.only || values.only === 'print-lines') {
   } catch (e) {
     failed += 1;
     console.error(`print lines failed: ${(e as Error).message}`);
+  }
+}
+// And each venue's one line for its box in the guide, for whatever is new or has new words.
+if (!values.only || values.only === 'venue-lines') {
+  try {
+    const lines = await fillVenueLines();
+    console.log(`venue lines: ${lines.written} of ${lines.wanted} written`);
+  } catch (e) {
+    failed += 1;
+    console.error(`venue lines failed: ${(e as Error).message}`);
   }
 }
 // And which pictures are posters and flyers, which the guide does not print.

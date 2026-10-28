@@ -139,6 +139,7 @@ const venueGuideSchema = z.object({
   guideArea: z.string().max(60),
   guideLabel: z.string().max(40),
   listingSize: z.enum(LISTING_SIZES),
+  guideLine: z.string().trim().max(160).optional(),
 });
 
 /** Where a venue sits in the guide, under which label, and how much room it gets. */
@@ -146,9 +147,15 @@ export async function saveVenueGuide(form: FormData) {
   const user = await requireStaff();
   const v = venueGuideSchema.parse(Object.fromEntries(form));
   const now = new Date();
+  const [row] = await db.select({ guideLine: places.guideLine, locked: places.lockedFields }).from(places).where(eq(places.id, v.id));
+  // A line a person changes is theirs: locked, so the nightly run leaves it. Cleared, it is Claude's to write again.
+  const line = v.guideLine === undefined ? undefined : v.guideLine || null;
+  const lineChanged = row && line !== undefined && line !== row.guideLine;
+  const lockedFields = row && lineChanged ? (line ? [...new Set([...row.locked, 'guideLine'])] : row.locked.filter((f) => f !== 'guideLine')) : undefined;
   await db
     .update(places)
     .set({
+      ...(lineChanged ? { guideLine: line, guideLineKey: null, lockedFields } : {}),
       guideSection: v.guideSection.trim() || null,
       guideArea: v.guideArea.trim() || null,
       guideLabel: v.guideLabel.trim() || null,
@@ -164,6 +171,7 @@ export async function saveVenueGuide(form: FormData) {
 const venueTagsSchema = z.object({
   id: z.string().uuid(),
   recommendedIn: z.string().trim().max(60),
+  visitorMap: z.string().trim().max(20).optional(),
   client: z.literal('on').optional(),
   clientNote: z.string().trim().max(1000),
 });
@@ -192,14 +200,14 @@ export async function setGooglePlace(form: FormData) {
   revalidatePath('/', 'layout');
 }
 
-/** Visitor guide featured (public) and client (ours only). */
+/** Visitor guide featured and the Visitor Map (public), and client (ours only). */
 export async function saveVenueTags(form: FormData) {
   const user = await requireStaff();
   const v = venueTagsSchema.parse(Object.fromEntries(form));
   const now = new Date();
   await db
     .update(places)
-    .set({ recommendedIn: v.recommendedIn || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
+    .set({ recommendedIn: v.recommendedIn || null, visitorMap: v.visitorMap || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(places.id, v.id));
   revalidatePath('/', 'layout');
 }

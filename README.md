@@ -298,6 +298,15 @@ public listings. Set it on the event or tour page in the admin.
   (--recommended "Autumn 2026" | --client) [--apply]` tags from a list of
   names and reports what it cannot match. Client lists hold contacts and
   billing: keep them out of the repository.
+- **New**: a venue first listed in the last six months (first published on
+  jersey.com, or added by us) is marked NEW on its page and in print, and
+  `/venues?new=1` lists them newest first. The import keeps
+  `places.first_listed_at` to the earliest Visit Jersey publish date.
+- **On the Visitor Map**: `visitor_map` on places and providers, the Map
+  edition booked; shown on venue and tour pages, set on the venue's admin page.
+- **Print space**: `listing_size` on the grid of eight (a page,
+  three-quarters, a half, a quarter, a box), earned by the edition's
+  booking; `space_by_edition` keeps each edition's.
 - `/admin/venues/[slug]` — contact, months open, rates, facilities, events held there
 - `/admin/tours` — tours and experiences: dated ones by default, on-demand behind a tick; genre and provider
 - `/admin/tours/providers` — provider codes for the guide's key
