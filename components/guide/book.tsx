@@ -407,7 +407,7 @@ export function GuideBook(props: {
     if (tourGrid) return items;
     const dated = tours.filter((t) => t.kind === 'dated');
     if (dated.length) {
-      items.push({ key: 'dated-h', heading: true, node: <TourHeading over="Tours & Experiences" title="On" rest="these dates" /> });
+      items.push({ key: 'dated-h', heading: true, node: <TourHeading over="Tours & Experiences" title="On" rest="specific dates" /> });
       dated.forEach((t, i) => items.push({ key: `d-${i}-${t.title}`, node: <TourEntry t={t} /> }));
     }
     const genres = [...new Set(tours.filter((t) => t.kind === 'on demand').map((t) => t.genre || 'Other'))];
@@ -475,7 +475,7 @@ export function GuideBook(props: {
     for (const cells of tourGrid ?? []) {
       pages.push({
         section: TOURS,
-        marker: cells[0]?.kind === 'dated' ? 'On these dates' : 'On demand',
+        marker: cells[0]?.kind === 'dated' ? 'On specific dates' : 'On demand',
         key: cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)),
         body: (
           <>
