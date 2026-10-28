@@ -6,8 +6,8 @@ import { GRID, gridPages, type VenueGrid } from './guide-entry';
  * activity (its name, its short piece, and the markers of the providers
  * who offer it), on the water first and then on land, running on so no
  * page is left part empty, on the section's grid with a picture a page;
- * then the providers' index, each provider's
- * marker, name and contact with a tick under each activity it offers.
+ * then the providers' key, each provider's marker, name and contact,
+ * as the tour guides' is.
  */
 export type DoBox = {
   slug: string;
@@ -29,9 +29,6 @@ export type DoProvider = { code: string; name: string; phone: string; website: s
 /** A page of activities, and which sides they are from: both where the water gives way to land. */
 export type DoPage = { sides: DoSide[]; cells: DoBox[] };
 export type DoSection = { grid: VenueGrid; pages: DoPage[]; activities: { slug: string; name: string; side: DoSide }[]; providers: DoProvider[] };
-
-/** The providers' index rows a page holds. */
-export const DO_INDEX_ROWS = 18;
 
 export const SIDE_TITLE: Record<DoSide, string> = { water: 'On the water', land: 'On land' };
 

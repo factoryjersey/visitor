@@ -6,7 +6,7 @@ import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout
 import type { GuideProvider } from '@/lib/guide';
 import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
-import { DO_INDEX_ROWS, SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
+import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
 /**
  * The guide's pages as the 2026 editions print them, from the InDesign
@@ -282,34 +282,6 @@ function DoBoxCell({ b, mixed }: { b: DoBox; mixed: boolean }) {
   );
 }
 
-/** Do's index: each provider's marker, name and contact, and a tick under each activity it offers. */
-function DoIndex({ s, rows }: { s: DoSection; rows: DoSection['providers'] }) {
-  return (
-    <div className="gp-content gp-do-index">
-      <h3 className="gp-directory-heading">Activity providers</h3>
-      <table>
-        <thead>
-          <tr>
-            <th className="gp-do-who" />
-            {s.activities.map((a) => <th key={a.slug} className="gp-do-col"><span>{a.name}</span></th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((p) => (
-            <tr key={p.code + p.name}>
-              <td className="gp-do-who">
-                <b>{p.code}</b> {p.name}
-                <span>{[p.phone, p.website].filter(Boolean).join(' · ')}</span>
-              </td>
-              {s.activities.map((a) => <td key={a.slug} className="gp-do-tick">{p.activities.includes(a.slug) ? '●' : ''}</td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /** A directory line: the name, and where and how to reach it. */
 /** A venue's area, by its marker in the section's key. */
 function AreaCode({ code }: { code?: string }) {
@@ -417,7 +389,7 @@ export function GuideBook(props: {
   venues: GuideVenue[];
   /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
   venueSections: VenueSection[];
-  /** Do's activities and providers' index, after Do's venue pages. */
+  /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
 }) {
@@ -456,6 +428,16 @@ export function GuideBook(props: {
       ];
     }),
   );
+  // Do's key, as the tour guides' is: each provider's marker, name and contact.
+  const [doFlow] = useState<Flow[]>(() => {
+    const ps = props.doSection?.providers ?? [];
+    if (!ps.length) return [];
+    return [
+      { key: 'do-key-h', heading: true, node: <h3 className="gp-key-heading">Activity Providers</h3> },
+      ...ps.map((p) => ({ key: `do-${p.code}-${p.name}`, node: <ProviderRow p={{ code: p.code, name: p.name, contact: p.phone, website: p.website }} /> })),
+    ];
+  });
+  const [doKeyPages, measuringDo] = usePoured(doFlow);
   // Poured a column at a time; two columns to a page, each section's index from a fresh page.
   const [dirColumns, measuringDir] = usePoured(dirFlow, true);
   const dirPages: Flow[][][] = [];
@@ -539,11 +521,22 @@ export function GuideBook(props: {
     // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
     const ds = props.doSection;
     if (vs.section === 'Do' && ds) {
+      // Every activity page sends the reader on to the key that follows them.
+      const keyPage = props.firstPage + pages.length + ds.pages.length;
       for (const pg of ds.pages) {
-        pages.push({ section, marker: pg.sides.map((side) => SIDE_TITLE[side]).join(' · '), body: <div className={`gp-content gp-grid gp-${ds.grid} gp-venue-grid gp-do-grid`}>{pg.cells.map((b) => <DoBoxCell key={b.frame + b.slug} b={b} mixed={pg.sides.length > 1} />)}</div> });
+        pages.push({
+          section,
+          marker: pg.sides.map((side) => SIDE_TITLE[side]).join(' · '),
+          body: (
+            <>
+              <div className={`gp-content gp-grid gp-${ds.grid} gp-venue-grid gp-do-grid`}>{pg.cells.map((b) => <DoBoxCell key={b.frame + b.slug} b={b} mixed={pg.sides.length > 1} />)}</div>
+              {ds.providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate provider on page {keyPage}</p>}
+            </>
+          ),
+        });
       }
-      for (let i = 0; i < ds.providers.length; i += DO_INDEX_ROWS) {
-        pages.push({ section, marker: 'Providers', body: <DoIndex s={ds} rows={ds.providers.slice(i, i + DO_INDEX_ROWS)} /> });
+      for (const items of doKeyPages ?? []) {
+        pages.push({ section, marker: 'Providers', body: <div className="gp-content gp-flow">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
       }
     }
   }
@@ -559,6 +552,7 @@ export function GuideBook(props: {
     <div className="gp-book">
       {measuring}
       {measuringDir}
+      {measuringDo}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
       {spreads.map((pair, i) => (
         <div key={i} className="gp-spread">

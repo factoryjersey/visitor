@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { and, asc, eq, isNotNull, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { doActivities, places, DO_SIDES } from '@/lib/db/schema';
-import { DO_INDEX_ROWS, SIDE_TITLE, doFill } from '@/lib/domain/do-section';
+import { SIDE_TITLE, doFill } from '@/lib/domain/do-section';
 import { addActivity, saveActivity, saveDoProvider } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const input = 'rounded border border-stone-300 px-2 py-1 text-sm';
 
 /**
- * Do's activity pages and providers' index: the activities this edition
+ * Do's activity pages and providers' key: the activities this edition
  * prints, and each provider's marker and what it offers. The hint says
  * how the activities fill the grid, so the shortlist can be trimmed or
  * added to for whole pages.
@@ -35,7 +35,7 @@ export default async function DoPage() {
 
       <section className="mb-6 rounded border border-stone-200 bg-stone-50 p-3 text-sm">
         <p>
-          <b>{included.length}</b> activities run on together, water then land, a picture a page; <b>{indexed.length}</b> providers in the index ({Math.ceil(indexed.length / DO_INDEX_ROWS)} page{indexed.length > DO_INDEX_ROWS ? 's' : ''}).
+          <b>{included.length}</b> activities run on together, water then land, a picture a page; <b>{indexed.length}</b> providers in the key that follows them.
         </p>
         {(['grid8', 'grid16'] as const).map((g) => {
           const f = doFill(included.length, g);
@@ -93,7 +93,7 @@ export default async function DoPage() {
       <section>
         <h2 className="mb-1 font-display text-xl">Providers</h2>
         <p className="mb-2 text-sm text-stone-500">
-          A marker puts a provider in the index and its letters on each activity it ticks. A provider sized as a listing or directory line goes in the index instead of a box of its own; one with more space keeps its entry too.
+          A marker puts a provider in the key and its letters on each activity it ticks. A provider sized as a listing or directory line goes in the key instead of a box of its own; one with more space keeps its entry too.
         </p>
         <div className="space-y-1">
           {providers.map((p) => (
