@@ -18,8 +18,8 @@ export async function GET() {
     '',
     `## Events (${events.length})`,
     '',
-    ...events.map(({ event, venue }) => {
-      const e = eventOut(event, venue, today);
+    ...events.map(({ event, venue, text }) => {
+      const e = eventOut({ ...event, ...text }, venue, today);
       return block(e.title, e.url, [e.when && `When: ${e.when}`, e.venue && `Where: ${[e.venue, e.parish].filter(Boolean).join(', ')}`, e.price && `Price: ${e.price}`, e.kinds.length ? `Kind: ${e.kinds.join(', ')}` : null, e.organiser && `Organiser: ${e.organiser}`, e.tickets && `Tickets and details: ${e.tickets}`], e.summary);
     }),
     `## Tours & experiences (${tours.length})`,

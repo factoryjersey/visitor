@@ -69,7 +69,7 @@ export default async function VenuePage({ params }: Props) {
     <article>
       <JsonLd
         data={[
-          venueLd({ ...venueOut(venue), image: venue.headerImage ? webImage(venue.headerImage, 1200, 800) : null }, rows.map((r) => eventOut(r.event, r.venue, today))),
+          venueLd({ ...venueOut(venue), image: venue.headerImage ? webImage(venue.headerImage, 1200, 800) : null }, rows.map((r) => eventOut({ ...r.event, ...r.text }, r.venue, today))),
           breadcrumbs([['Venues', '/venues'], [venue.name, `/venues/${venue.slug}`]]),
         ]}
       />

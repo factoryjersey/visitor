@@ -1,5 +1,5 @@
 import { organiserKey } from '@/lib/domain/organiser';
-import { and, asc, eq, ne, or, inArray, notInArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, ne, or, inArray, notInArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { db } from './index';
 import { events, experiences, organiserProfiles, places, providers, type Category, type Event } from './schema';
 import { UNIQUE } from '@/lib/domain/occurrence';
@@ -8,6 +8,8 @@ import type { Genre } from '@/lib/domain/genre';
 import { normaliseName } from '@/lib/domain/same-place';
 import { slugify } from '@/lib/domain/slug';
 import { likeEscape } from '@/lib/domain/search';
+import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
+import { cached, LISTINGS_TTL_MS } from '@/lib/cache';
 
 /**
  * What the public site shows. Everything not left out — the site is the
@@ -29,23 +31,66 @@ const inRange = (col: typeof events.dates | typeof experiences.dates, r: { from:
 /** `range`: only what has a day in it, sorted and grouped by its first day there. */
 export type PublicEventFilter = { showOngoing?: boolean; range?: { from: string; to: string } | null; type?: string; q?: string };
 
-export async function publicEvents(f: PublicEventFilter = {}) {
-  const where: SQL[] = [ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)];
-  if (!f.showOngoing) where.push(or(inArray(events.occurrence, [...UNIQUE]), eq(events.highlight, true))!);
-  if (f.type) where.push(sql`${f.type} = any(${events.eventTypes})`);
-  if (f.q) where.push(sql`(${events.title} ilike ${`%${f.q}%`} or ${events.venueName} ilike ${`%${f.q}%`})`);
-  if (f.range) where.push(inRange(events.dates, f.range));
+/**
+ * What a listing of events shows, and no more: its summary and guide
+ * copy (a card's blurb), but no long description, and none of the bookkeeping (field sources, locks, gallery).
+ * The detail page reads the rest.
+ */
+const LIST_COLUMNS = {
+  id: events.id, slug: events.slug, title: events.title, summary: events.summary, guideCopy: events.guideCopy, venue: events.venue, venueName: events.venueName, addressLine1: events.addressLine1,
+  parish: events.parish, postcode: events.postcode, website: events.website, organiser: events.organiser, sourceLink: events.sourceLink,
+  eventTypes: events.eventTypes, free: events.free, occurrence: events.occurrence, placeId: events.placeId, lat: events.lat, lon: events.lon,
+  dates: events.dates, fromPricePence: events.fromPricePence, toPricePence: events.toPricePence, highlight: events.highlight, headerImage: events.headerImage,
+  updatedAt: events.updatedAt,
+};
+export type ListEvent = Pick<Event, keyof typeof LIST_COLUMNS>;
+type VenueRef = { name: string; slug: string; parish: string | null } | null;
+/** An event as the public listings hold it: `hidden` and `siteTypes` judged once, from its words, when loaded. */
+export type PublicEventRow = { event: ListEvent; venue: VenueRef; hidden: boolean; siteTypes: string[]; text: { description: string | null } };
 
-  const rows = await db
-    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
-    .from(events)
-    .leftJoin(places, eq(places.id, events.placeId))
-    .where(and(...where));
+/**
+ * Every public event still to come, from the cache: one read of the
+ * database every ten minutes, whatever the traffic. The description is
+ * read to judge each event's kinds (and for the agents' feeds), not sent
+ * to the pages that list them.
+ */
+function allPublicEvents(): Promise<PublicEventRow[]> {
+  return cached('public:events', LISTINGS_TTL_MS, async () => {
+    const rows = await db
+      .select({ event: { ...LIST_COLUMNS, description: events.description, lockedFields: events.lockedFields }, venue: { name: places.name, slug: places.slug, parish: places.parish } })
+      .from(events)
+      .leftJoin(places, eq(places.id, events.placeId))
+      .where(and(ne(events.inclusion, 'excluded'), eq(events.review, 'approved'), hasUpcoming(events.dates)));
+    return rows.map(({ event: { description, lockedFields, ...event }, venue }) => {
+      const judged = { ...event, description, lockedFields };
+      return { event, venue: venue?.slug ? (venue as VenueRef) : null, hidden: hiddenByDefault(judged), siteTypes: siteTypes(judged), text: { description } };
+    });
+  });
+}
+
+const upcoming = (dates: Event['dates'], today: string) => dates.some((d) => d.date >= today);
+const lower = (s: string | null | undefined) => (s ?? '').toLowerCase();
+
+export async function publicEvents(f: PublicEventFilter = {}) {
   const today = todayIso();
+  const q = f.q?.trim().toLowerCase();
+  const rows = (await allPublicEvents()).filter(
+    ({ event: e }) =>
+      upcoming(e.dates, today) &&
+      (f.showOngoing || UNIQUE.includes(e.occurrence) || e.highlight) &&
+      (!f.type || e.eventTypes.includes(f.type)) &&
+      (!q || lower(e.title).includes(q) || lower(e.venueName).includes(q)) &&
+      (!f.range || e.dates.some((d) => d.date >= f.range!.from && d.date <= f.range!.to)),
+  );
   const from = f.range && f.range.from > today ? f.range.from : today;
   return rows
     .map((r) => ({ ...r, next: nextDate(r.event.dates, from) ?? '9999' }))
     .sort((a, b) => a.next.localeCompare(b.next) || a.event.title.localeCompare(b.event.title));
+}
+
+/** The same, with each event's description: for the agents' feeds, which print it. */
+export async function publicEventsWithText(f: PublicEventFilter = {}) {
+  return (await publicEvents(f)).map((r) => ({ ...r, event: { ...r.event, ...r.text } }));
 }
 
 export async function publicEvent(slug: string) {
@@ -64,14 +109,17 @@ const byNextDate = <T extends { event: { dates: Event['dates'] } }>(rows: T[]) =
   return rows.map((r) => ({ ...r, next: nextDate(r.event.dates, today) ?? '9999' })).sort((a, b) => a.next.localeCompare(b.next));
 };
 
+/** Every public event still to come, ongoing ones too: what the venue and event pages pick from. */
+const everyUpcoming = async () => {
+  const today = todayIso();
+  return (await allPublicEvents()).filter((r) => upcoming(r.event.dates, today));
+};
+
 /** What else is on at the venue: by its place, or by name when the event has no place. */
 export async function publicVenueEvents(e: Pick<Event, 'id' | 'placeId' | 'venueName'>, limit = 8) {
-  const at = e.placeId ? eq(events.placeId, e.placeId) : e.venueName ? sql`lower(${events.venueName}) = lower(${e.venueName})` : null;
-  if (!at) return [];
-  const rows = await db
-    .select({ event: { id: events.id, slug: events.slug, title: events.title, dates: events.dates, occurrence: events.occurrence } })
-    .from(events)
-    .where(and(...upcomingPublic(), at, ne(events.id, e.id)));
+  const name = lower(e.venueName);
+  if (!e.placeId && !name) return [];
+  const rows = (await everyUpcoming()).filter((r) => r.event.id !== e.id && (e.placeId ? r.event.placeId === e.placeId : lower(r.event.venueName) === name));
   return byNextDate(rows).slice(0, limit);
 }
 
@@ -79,18 +127,7 @@ export async function publicVenueEvents(e: Pick<Event, 'id' | 'placeId' | 'venue
 export async function publicRelatedEvents(e: Pick<Event, 'eventTypes'>, exclude: string[], limit = 4) {
   const types = e.eventTypes.filter((t) => !STAFF_ONLY_TYPES.has(t));
   if (!types.length) return [];
-  const rows = await db
-    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
-    .from(events)
-    .leftJoin(places, eq(places.id, events.placeId))
-    .where(
-      and(
-        ...upcomingPublic(),
-        inArray(events.occurrence, [...UNIQUE]),
-        sql`${events.eventTypes} && ${sql`array[${sql.join(types.map((t) => sql`${t}`), sql`, `)}]::text[]`}`,
-        exclude.length ? notInArray(events.id, exclude) : undefined,
-      ),
-    );
+  const rows = (await everyUpcoming()).filter((r) => UNIQUE.includes(r.event.occurrence) && !exclude.includes(r.event.id) && r.event.eventTypes.some((t) => types.includes(t)));
   const shared = (r: (typeof rows)[number]) => r.event.eventTypes.filter((t) => types.includes(t)).length;
   return byNextDate(rows)
     .sort((a, b) => shared(b) - shared(a) || a.next.localeCompare(b.next))
@@ -102,20 +139,30 @@ const STAFF_ONLY_TYPES = new Set(['Business & networking']);
 
 export type PublicTourFilter = { showOnDemand?: boolean; genre?: Genre; range?: { from: string; to: string } | null; q?: string };
 
-export async function publicTours(f: PublicTourFilter = {}) {
-  const where: SQL[] = [ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)];
-  if (!f.showOnDemand) where.push(or(inArray(experiences.occurrence, [...UNIQUE]), eq(experiences.highlight, true))!);
-  if (f.genre) where.push(eq(experiences.genre, f.genre));
-  if (f.q) where.push(sql`(${experiences.title} ilike ${`%${f.q}%`} or ${providers.name} ilike ${`%${f.q}%`})`);
-  if (f.range) where.push(inRange(experiences.dates, f.range));
+/** Every public tour still to come, from the cache, with its operator: one read every ten minutes. The bookkeeping (field sources, locks) stays behind. */
+function allPublicTours() {
+  return cached('public:tours', LISTINGS_TTL_MS, async () => {
+    const { fieldSources: _f, lockedFields: _l, ...columns } = getTableColumns(experiences);
+    return db
+      .select({ tour: columns, provider: { id: providers.id, name: providers.name, website: providers.website } })
+      .from(experiences)
+      .leftJoin(providers, eq(providers.id, experiences.providerId))
+      .where(and(ne(experiences.inclusion, 'excluded'), eq(experiences.review, 'approved'), hasUpcoming(experiences.dates)))
+      .orderBy(asc(experiences.title));
+  });
+}
 
-  const rows = await db
-    .select({ tour: experiences, provider: { id: providers.id, name: providers.name, website: providers.website } })
-    .from(experiences)
-    .leftJoin(providers, eq(providers.id, experiences.providerId))
-    .where(and(...where))
-    .orderBy(asc(experiences.title));
+export async function publicTours(f: PublicTourFilter = {}) {
   const today = todayIso();
+  const q = f.q?.trim().toLowerCase();
+  const rows = (await allPublicTours()).filter(
+    ({ tour: t, provider }) =>
+      upcoming(t.dates, today) &&
+      (f.showOnDemand || UNIQUE.includes(t.occurrence) || t.highlight) &&
+      (!f.genre || t.genre === f.genre) &&
+      (!q || lower(t.title).includes(q) || lower(provider?.name).includes(q)) &&
+      (!f.range || t.dates.some((d) => d.date >= f.range!.from && d.date <= f.range!.to)),
+  );
   const from = f.range && f.range.from > today ? f.range.from : today;
   return rows
     .map((r) => ({ ...r, next: nextDate(r.tour.dates, from) ?? '9999' }))
@@ -158,12 +205,7 @@ export async function venueFormerlyAt(slug: string) {
 
 /** Everything coming up at a venue, soonest first: ongoing things too, as a venue's page is its whole programme. */
 export async function publicEventsAt(placeId: string) {
-  const rows = await db
-    .select({ event: events, venue: { name: places.name, slug: places.slug, parish: places.parish } })
-    .from(events)
-    .leftJoin(places, eq(places.id, events.placeId))
-    .where(and(...upcomingPublic(), eq(events.placeId, placeId)));
-  return byNextDate(rows);
+  return byNextDate((await everyUpcoming()).filter((r) => r.event.placeId === placeId));
 }
 
 /**

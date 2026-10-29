@@ -74,7 +74,7 @@ export async function markdownFor(segments: string[]): Promise<string | null> {
       SITE_TITLE,
       '/',
       SITE_ABOUT,
-      `\n## Unique events coming soon\n\n${soon.map((r) => eventLine(eventOut(r.event, r.venue, today))).join('\n')}\n\nAll of them: ${md('/whats-on')}`,
+      `\n## Unique events coming soon\n\n${soon.map((r) => eventLine(eventOut({ ...r.event, ...r.text }, r.venue, today))).join('\n')}\n\nAll of them: ${md('/whats-on')}`,
       `\n## Tours & experiences\n\n${tours.slice(0, 6).map((r) => tourLine(tourOut(r.tour, r.provider, today))).join('\n')}\n\nAll of them: ${md('/tours')}`,
       `\n## More\n\n- [Venues](${md('/venues')})\n- [Organisers](${md('/organisers')})\n- [List your venue, event or tour](${md('/list')})\n- [Everything in one file](${SITE}/llms-full.txt)`,
     );
@@ -91,7 +91,7 @@ export async function markdownFor(segments: string[]): Promise<string | null> {
       '/whats-on',
       'One-off and dated events, soonest first. Exhibitions, attractions open daily and weekly sessions are in the full list.',
       '',
-      events.map((r) => eventLine(eventOut(r.event, r.venue, today))).join('\n'),
+      events.map((r) => eventLine(eventOut({ ...r.event, ...r.text }, r.venue, today))).join('\n'),
       `\nEverything, ongoing too: ${SITE}/llms-full.txt`,
     );
   }
@@ -116,7 +116,7 @@ export async function markdownFor(segments: string[]): Promise<string | null> {
         `/venues/${v.slug}`,
         facts([['Where', out.address ?? out.parish], ['Website', out.website], ['Phone', out.phone]]),
         out.summary && `\n${out.summary}`,
-        `\n## Coming up\n\n${on.length ? on.map((r) => eventLine(eventOut(r.event, r.venue, today))).join('\n') : 'Nothing listed just now.'}`,
+        `\n## Coming up\n\n${on.length ? on.map((r) => eventLine(eventOut({ ...r.event, ...r.text }, r.venue, today))).join('\n') : 'Nothing listed just now.'}`,
       );
     }
     const venues = await publicVenuesWithEvents();

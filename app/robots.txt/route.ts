@@ -11,6 +11,10 @@ import { SITE } from '@/lib/agents/data';
 // search: every query is a fresh trawl of the database, and its result pages never end.
 const PRIVATE = ['/search', '/admin', '/account', '/login', '/logout', '/auth/', '/invite/', '/claim/', '/api/google-reviews/', '/subscribe/confirm/', '/subscribe/leave/', '/api/unsubscribe'];
 
+// The listings' filters (dates, kinds, venue, a search) make endless addresses for the same events;
+// each filtered page names the plain one as canonical, and crawlers are asked to keep to that.
+const FILTERED = ['/whats-on?', '/tours?', '/venues?'];
+
 const AI_AGENTS = [
   'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
   'ClaudeBot', 'Claude-SearchBot', 'Claude-User',
@@ -24,6 +28,7 @@ export function GET() {
     'Content-Signal: search=yes, ai-input=yes, ai-train=yes',
     'Allow: /',
     ...PRIVATE.map((p) => `Disallow: ${p}`),
+    ...FILTERED.map((p) => `Disallow: ${p}`),
   ];
   const body = [
     `# ${SITE}: Jersey’s What’s On Guide. For agents: ${SITE}/llms.txt`,

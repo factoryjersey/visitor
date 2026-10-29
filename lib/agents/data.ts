@@ -1,3 +1,4 @@
+import type { ListEvent } from '@/lib/db/public';
 import type { Event, Experience, Place } from '@/lib/db/schema';
 import { printAddress, printParish, printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
@@ -21,7 +22,7 @@ const HIDDEN_TYPES = new Set(['Business & networking']);
 
 type VenueRef = { name: string; slug: string; parish: string | null } | null;
 
-export function eventOut(e: Event, venue: VenueRef | Pick<Place, 'name' | 'slug' | 'parish'>, today: string) {
+export function eventOut(e: ListEvent & { description: string | null }, venue: VenueRef | Pick<Place, 'name' | 'slug' | 'parish'>, today: string) {
   const dates = upcomingDates(e.dates, today);
   const times = e.dates.filter((d) => d.date >= today);
   return {
@@ -53,7 +54,7 @@ export function eventOut(e: Event, venue: VenueRef | Pick<Place, 'name' | 'slug'
 
 export type EventOut = ReturnType<typeof eventOut>;
 
-export function tourOut(t: Experience, provider: { name: string; website?: string | null } | null, today: string) {
+export function tourOut(t: Omit<Experience, "fieldSources" | "lockedFields">, provider: { name: string; website?: string | null } | null, today: string) {
   return {
     slug: t.slug,
     url: `${SITE}/tours/${t.slug}`,

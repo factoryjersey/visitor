@@ -10,7 +10,6 @@ import { jerseyToday, resolveWhen } from '@/lib/domain/when';
 import { FilterBar, monthHeading } from '@/components/site/filter-bar';
 import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import { publicEvents } from '@/lib/db/public';
-import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { printPrice } from '@/lib/domain/house-style';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
@@ -49,7 +48,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
   // from what the search finds, the kinds from what is on at the venue chosen.
   // Health listings are for people who live here: left out of the listing and the search until the visitor picks Health & wellbeing.
-  const found = (await publicEvents({ showOngoing: values.ongoing === '1', range, q: values.q })).map((r) => ({ ...r, hidden: hiddenByDefault(r.event), event: { ...r.event, eventTypes: siteTypes(r.event) } }));
+  const found = (await publicEvents({ showOngoing: values.ongoing === '1', range, q: values.q })).map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
   const venues = new Map<string, { name: string; n: number }>();
   for (const r of found) if (r.venue?.slug && !r.hidden) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
   const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;

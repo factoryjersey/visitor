@@ -11,7 +11,6 @@ import { publicEvents, publicTours, todayIso } from '@/lib/db/public';
 import { HERO_SLIDES, heroPicks, imageKey, isFestival } from '@/lib/domain/hero';
 import { printPrice } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
-import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { pickLead } from '@/lib/domain/lead';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen, webWhen } from '@/lib/domain/web-dates';
@@ -31,8 +30,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   const [found, tours] = await Promise.all([publicEvents(), publicTours()]);
   // Health listings are for people who live here: off the front page, still behind the Health & wellbeing tile.
-  const all = found.map((r) => ({ ...r, event: { ...r.event, eventTypes: siteTypes(r.event) } }));
-  const events = all.filter((r) => !hiddenByDefault(r.event));
+  const all = found.map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
+  const events = all.filter((r) => !r.hidden);
   const today = todayIso();
   // The lead goes first; highlights and festivals follow, never with its photo again.
   const lead = pickLead(events, today);

@@ -2,6 +2,7 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { refreshSite } from '@/lib/refresh';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
@@ -36,7 +37,7 @@ export async function setInclusion(form: FormData) {
     .update(table)
     .set({ inclusion, inclusionSetBy: user.email, inclusionSetAt: now, updatedAt: now })
     .where(and(eq(table.id, id), eq(table.review, 'approved')));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const editorialSchema = z.object({
@@ -62,7 +63,7 @@ export async function saveEditorial(form: FormData) {
       updatedAt: now,
     })
     .where(eq(table.id, id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const venueSchema = z.object({
@@ -89,7 +90,7 @@ export async function setEventVenue(form: FormData) {
       updatedAt: new Date(),
     })
     .where(eq(events.id, id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const eventPrintSchema = z.object({
@@ -130,7 +131,7 @@ export async function saveEventPrint(form: FormData) {
       updatedAt: now,
     })
     .where(eq(events.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const venueGuideSchema = z.object({
@@ -165,7 +166,7 @@ export async function saveVenueGuide(form: FormData) {
       updatedAt: now,
     })
     .where(eq(places.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const venueTagsSchema = z.object({
@@ -197,7 +198,7 @@ export async function setGooglePlace(form: FormData) {
     : v.mode === 'none' ? { googlePlaceId: null, googleLocked: true, googleCheckedAt: now }
     : { googlePlaceId: null, googleLocked: false, googleCheckedAt: null };
   await db.update(places).set({ ...set, editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(places.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 /** Visitor guide featured and the Visitor Map (public), and client (ours only). */
@@ -209,7 +210,7 @@ export async function saveVenueTags(form: FormData) {
     .update(places)
     .set({ recommendedIn: v.recommendedIn || null, visitorMap: v.visitorMap || null, client: v.client === 'on', clientNote: v.clientNote || null, editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(places.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 /** Lock a source-derived field after a person sets it, so the next import keeps their answer. */
@@ -234,7 +235,7 @@ export async function setOccurrence(form: FormData) {
   const user = await requireStaff();
   const { kind, id, occurrence } = occurrenceSchema.parse(Object.fromEntries(form));
   await lockAndSet(kind === 'event' ? events : experiences, id, 'occurrence', { occurrence }, user.email);
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const genreSchema = z.object({ id: z.string().uuid(), genre: z.union([z.enum(GENRES), z.literal('')]) });
@@ -244,7 +245,7 @@ export async function setGenre(form: FormData) {
   const user = await requireStaff();
   const { id, genre } = genreSchema.parse(Object.fromEntries(form));
   await lockAndSet(experiences, id, 'genre', { genre: genre || null }, user.email);
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const tourPrintSchema = z.object({ id: z.string().uuid(), printDates: z.string().max(200), printTimes: z.string().max(200), guidePicture: z.literal('on').optional() });
@@ -257,7 +258,7 @@ export async function saveTourPrint(form: FormData) {
     .update(experiences)
     .set({ printDates: v.printDates.trim() || null, printTimes: v.printTimes.trim() || null, guidePicture: v.guidePicture === 'on', editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(experiences.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const codeSchema = z.object({ id: z.string().uuid(), code: z.string().max(8).regex(/^[A-Za-z]*$/) });
@@ -272,7 +273,7 @@ export async function setProviderCode(form: FormData): Promise<void> {
     if (clash && clash.id !== id) return;
   }
   await db.update(providers).set({ code: clean, updatedAt: new Date() }).where(eq(providers.id, id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const highlightSchema = z.object({ kind: z.enum(['event', 'experience']), id: z.string().uuid(), highlight: z.enum(['true', 'false']) });
@@ -284,7 +285,7 @@ export async function setHighlight(form: FormData) {
   const table = kind === 'event' ? events : experiences;
   const now = new Date();
   await db.update(table).set({ highlight: highlight === 'true', editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(table.id, id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const checked = (form: FormData, name: string) => form.getAll(name).map(String);
@@ -324,7 +325,7 @@ export async function quickEditEvent(form: FormData) {
       updatedAt: now,
     })
     .where(eq(events.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const quickTourSchema = z.object({
@@ -349,7 +350,7 @@ export async function quickEditTour(form: FormData) {
     .update(experiences)
     .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(experiences.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 const quickVenueSchema = z.object({
@@ -373,7 +374,7 @@ export async function quickEditVenue(form: FormData) {
     .update(places)
     .set({ ...next, lockedFields: [...new Set([...row.lockedFields, ...changed])], editedBy: user.email, editedAt: now, updatedAt: now })
     .where(eq(places.id, v.id));
-  revalidatePath('/', 'layout');
+  refreshSite();
 }
 
 /**
@@ -392,7 +393,7 @@ export async function deleteVenue(form: FormData) {
   } else {
     await db.delete(places).where(eq(places.id, id));
   }
-  revalidatePath('/', 'layout');
+  refreshSite();
   redirect('/venues');
 }
 
@@ -427,7 +428,7 @@ export async function setListingImage(form: FormData): Promise<{ ok: true } | { 
     return { ok: false, error: (e as Error).message };
   }
   await lockAndSet(table, v.id, 'headerImage', { headerImage }, user.email);
-  revalidatePath('/', 'layout');
+  refreshSite();
   return { ok: true };
 }
 
@@ -474,7 +475,7 @@ export async function setFallbackImage(form: FormData): Promise<{ ok: true; chan
     await db.update(places).set({ fallbackImage: image, editedBy: user.email, editedAt: now, updatedAt: now }).where(eq(places.id, v.id));
   }
   const changed = await applyFallbacks();
-  revalidatePath('/', 'layout');
+  refreshSite();
   return { ok: true, changed };
 }
 
@@ -495,7 +496,7 @@ export async function takeOffSite(form: FormData) {
     .set({ inclusion: 'excluded', inclusionSetBy: user.email, inclusionSetAt: now, updatedAt: now })
     .where(eq(table.id, id))
     .returning({ slug: table.slug });
-  revalidatePath('/', 'layout');
+  refreshSite();
   redirect(row ? `/admin/${kind === 'event' ? 'whats-on' : 'tours'}/${row.slug}` : '/admin');
 }
 
@@ -556,6 +557,6 @@ export async function setPrintPicture(form: FormData): Promise<{ ok: true } | { 
       updatedAt: now,
     })
     .where(eq(places.id, id.data));
-  revalidatePath('/', 'layout');
+  refreshSite();
   return { ok: true };
 }

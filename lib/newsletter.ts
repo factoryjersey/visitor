@@ -2,7 +2,6 @@ import { and, asc, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { publicEvents } from '@/lib/db/public';
 import { subscribers } from '@/lib/db/schema';
-import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { cardLocation, printPrice, printTitle } from '@/lib/domain/house-style';
 import { webImage } from '@/lib/domain/images';
 import { addDays } from '@/lib/domain/when';
@@ -25,8 +24,8 @@ export async function weeklyContent(from: string): Promise<WeeklyContent> {
   const to = addDays(from, DAYS_COVERED - 1);
   const found = await publicEvents({ range: { from, to } });
   const items: WeeklyItem[] = found
-    .map((r) => ({ ...r, event: { ...r.event, eventTypes: siteTypes(r.event) } }))
-    .filter((r) => !hiddenByDefault(r.event))
+    .filter((r) => !r.hidden)
+    .map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }))
     .map(({ event: e, venue }) => {
       const day = nextDate(e.dates, from)!;
       const img = e.headerImage;

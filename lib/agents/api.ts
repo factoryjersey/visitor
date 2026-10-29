@@ -22,7 +22,7 @@ export async function searchEvents(query: EventQuery) {
   const out = rows
     .filter((r) => r.event.dates.some((d) => d.date >= from && (!to || d.date <= to)))
     .filter((r) => !venue || r.venue?.slug === venue || (r.event.venueName ?? r.venue?.name ?? '').toLowerCase().includes(venue))
-    .map((r) => eventOut(r.event, r.venue, from));
+    .map((r) => eventOut({ ...r.event, ...r.text }, r.venue, from));
   const limit = clampLimit(query.limit);
   return { total: out.length, events: out.slice(0, limit) };
 }
