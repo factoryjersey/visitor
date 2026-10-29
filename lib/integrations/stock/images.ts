@@ -57,7 +57,7 @@ export function stockQuery(l: Listing): string {
 
 export type StockPhoto = { url: string; alt: string | null; credit: { name: string; url: string | null; source: string } };
 
-const UA = 'VisitorGuideJersey/1.0 (+https://visitor.je)';
+const UA = 'VisitorGuideJersey/1.0 (+https://guide.je)';
 
 async function fromPexels(query: string, key: string): Promise<StockPhoto[]> {
   const res = await fetch(`https://api.pexels.com/v1/search?${new URLSearchParams({ query, orientation: 'landscape', per_page: '30' })}`, {

@@ -63,7 +63,7 @@ describe('schema.org', () => {
   });
 
   it('starts breadcrumbs at home', () => {
-    expect(breadcrumbs([['What’s on', '/whats-on']]).itemListElement.map((i) => i.item)).toEqual(['https://visitor.je', 'https://visitor.je/whats-on']);
+    expect(breadcrumbs([['What’s on', '/whats-on']]).itemListElement.map((i) => i.item)).toEqual(['https://guide.je', 'https://guide.je/whats-on']);
   });
 });
 

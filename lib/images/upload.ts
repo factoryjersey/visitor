@@ -46,7 +46,7 @@ export async function storeListingImage(kind: string, id: string, file: File): P
  * does not break when they move or delete theirs.
  */
 export async function copyImageToStorage(kind: string, id: string, url: string): Promise<string> {
-  const res = await fetch(url, { headers: { 'user-agent': 'VisitorGuideJersey/1.0 (+https://visitor.je)' }, signal: AbortSignal.timeout(30_000) });
+  const res = await fetch(url, { headers: { 'user-agent': 'VisitorGuideJersey/1.0 (+https://guide.je)' }, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`${new URL(url).hostname} said ${res.status}`);
   const type = (res.headers.get('content-type') ?? '').split(';')[0]!.trim().toLowerCase().replace('image/jpg', 'image/jpeg');
   return put(kind, id, type, Buffer.from(await res.arrayBuffer()));

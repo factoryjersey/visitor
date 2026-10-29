@@ -11,11 +11,11 @@ import { upcomingDates, webWhen } from '@/lib/domain/web-dates';
  * prices beside the machine-readable ones.
  */
 
-export const SITE = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://visitor.je').replace(/\/$/, '');
+export const SITE = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://guide.je').replace(/\/$/, '');
 export const SITE_NAME = 'Visitor';
 export const SITE_TITLE = 'Visitor: Jersey’s What’s On Guide';
 export const SITE_ABOUT =
-  'Visitor (visitor.je) is the website of the official Visit Jersey Visitor Guide, printed four times a year. It lists what is on in Jersey, Channel Islands: events, tours and experiences, venues and organisers, gathered daily from Visit Jersey, the island’s theatres, Eventbrite, the Jersey Charities diary and the clubs, and checked by the guide’s editors.';
+  'Guide.je is the website of the official Visit Jersey Visitor Guide, printed four times a year. It lists what is on in Jersey, Channel Islands: events, tours and experiences, venues and organisers, gathered daily from Visit Jersey, the island’s theatres, Eventbrite, the Jersey Charities diary and the clubs, and checked by the guide’s editors.';
 
 /** Staff-only kinds: never shown to the public. */
 const HIDDEN_TYPES = new Set(['Business & networking']);
