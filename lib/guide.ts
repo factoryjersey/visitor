@@ -4,6 +4,7 @@ import { guideSelection, includedExperiences } from '@/lib/db/queries';
 import { doActivities, type Provider } from '@/lib/db/schema';
 import { doSection, type DoSection } from '@/lib/domain/do-section';
 import { openingText, reopensIn, windowMonths } from '@/lib/domain/opening';
+import { usableLine } from '@/lib/domain/venue-line';
 import { webImage } from '@/lib/domain/images';
 import { GENRES } from '@/lib/domain/genre';
 import {
@@ -58,7 +59,7 @@ export function windowFrom(params: { from?: string; to?: string }): Window {
 export type GuideProvider = { code: string; name: string; contact: string; website: string };
 
 /** An attraction closed for part of the edition: when it opens again, and how to reach it. */
-export type LookingAhead = { name: string; reopens: number; opening: string; phone: string; website: string };
+export type LookingAhead = { name: string; reopens: number; line: string; thumb: string; opening: string; phone: string; website: string };
 
 export type Guide = {
   /** The attractions closed for part of the edition, in the order they open again; none in summer. */
@@ -179,6 +180,10 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     .map(({ p, month }) => ({
       name: p.name,
       reopens: month,
+      // Its one line, else the first sentence of its copy.
+      line: p.guideLine && usableLine(p.guideLine) ? p.guideLine : (p.guideCopy ?? p.summary ?? '').split(/(?<=[.!?])\s/)[0] ?? '',
+      // A small picture for a client: one marked as such, or that has booked space in an edition.
+      thumb: (p.client || Object.values(p.spaceByEdition ?? {}).some((s) => s !== 'listing' && s !== 'directory')) && printable(p.headerImage) ? webImage(p.headerImage!, 240, 240) : '',
       opening: openingText(p.openingHours, p.openMonths) ?? '',
       phone: p.phone ?? '',
       website: printWebsite(p.website)?.toLowerCase() ?? '',

@@ -268,19 +268,18 @@ function VenueBox({ c }: { c: VenueCell }) {
   );
 }
 
-/** Looking ahead: the attractions closed for part of the edition, in the order they open again. */
-function LookingAheadBody({ rows }: { rows: LookingAhead[] }) {
+/** A line in Looking ahead: the month it opens again, its name, its line, and how and when to visit; a client's picture beside. */
+function AheadRow({ r }: { r: LookingAhead }) {
   return (
-    <div className="gp-content gp-flow gp-ahead">
-      <h3 className="gp-key-heading">Looking ahead</h3>
-      <p className="gp-ahead-intro">Closed for the winter, these attractions open again in the new season.</p>
-      {rows.map((r) => (
-        <p key={r.name} className="gp-ahead-row">
-          <span className="gp-ahead-when">{monthName(r.reopens)}</span>
-          <b>{r.name}</b>
-          <span>{[r.opening, r.phone, r.website].filter(Boolean).join(' · ')}</span>
-        </p>
-      ))}
+    <div className={`gp-ahead-row${r.thumb ? ' gp-ahead-pictured' : ''}`}>
+      <span className="gp-ahead-when">{monthName(r.reopens)}</span>
+      <div>
+        <b>{r.name}</b>
+        {r.line && <p className="gp-ahead-line">{r.line}</p>}
+        <p className="gp-ahead-contact">{[r.opening, r.phone, r.website].filter(Boolean).join(' · ')}</p>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {r.thumb && <img src={r.thumb} alt="" className="gp-ahead-thumb" />}
     </div>
   );
 }
@@ -460,6 +459,16 @@ export function GuideBook(props: {
     ];
   });
   const [doKeyPages, measuringDo] = usePoured(doFlow);
+  // Looking ahead flows like the keys: its heading, a word on what it is, then the attractions.
+  const [aheadFlow] = useState<Flow[]>(() => {
+    const rows = props.lookingAhead ?? [];
+    if (!rows.length) return [];
+    return [
+      { key: 'ahead-h', heading: true, node: <div><h3 className="gp-key-heading">Looking ahead</h3><p className="gp-ahead-intro">Closed for the winter, these attractions open again in the new season.</p></div> },
+      ...rows.map((r) => ({ key: `ahead-${r.name}`, node: <AheadRow r={r} /> })),
+    ];
+  });
+  const [aheadPages, measuringAhead] = usePoured(aheadFlow);
   // Poured a column at a time; two columns to a page, each section's index from a fresh page.
   const [dirColumns, measuringDir] = usePoured(dirFlow, true);
   const dirPages: Flow[][][] = [];
@@ -543,7 +552,9 @@ export function GuideBook(props: {
         ),
       });
     }
-    if (vs.section === 'Visit' && props.lookingAhead?.length) pages.push({ section, marker: 'Looking ahead', body: <LookingAheadBody rows={props.lookingAhead} /> });
+    if (vs.section === 'Visit') {
+      for (const items of aheadPages ?? []) pages.push({ section, marker: 'Looking ahead', body: <div className="gp-content gp-flow gp-ahead">{items.map((i) => <Fragment key={i.key}>{i.node}</Fragment>)}</div> });
+    }
     // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
     const ds = props.doSection;
     if (vs.section === 'Do' && ds) {
@@ -579,6 +590,7 @@ export function GuideBook(props: {
       {measuring}
       {measuringDir}
       {measuringDo}
+      {measuringAhead}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
       {spreads.map((pair, i) => (
         <div key={i} className="gp-spread">

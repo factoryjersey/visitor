@@ -233,7 +233,10 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-venue-open svg { width: 2.4mm; height: 2.4mm; flex: none; }
 .gp-venue-foot .gp-venue-open { font-size: 7.5pt; margin-top: 0.4mm; }
 .gp-ahead-intro { font-size: 9pt; font-style: italic; color: var(--gp-ink80); margin: 0 0 3mm; }
-.gp-ahead-row { display: grid; grid-template-columns: 20mm 1fr; column-gap: 2mm; row-gap: 0.3mm; padding: 1.4mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; }
-.gp-ahead-when { grid-row: span 2; font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-accent); }
+.gp-ahead-row { display: grid; grid-template-columns: 20mm 1fr; column-gap: 2mm; padding: 1.4mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; align-items: start; }
+.gp-ahead-row.gp-ahead-pictured { grid-template-columns: 20mm 1fr 16mm; }
+.gp-ahead-when { font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-accent); }
 .gp-ahead-row b { font-weight: 700; color: var(--gp-accent); }
-.gp-ahead-row span:last-child { color: var(--gp-ink80); font-style: italic; }
+.gp-ahead-line { margin: 0.3mm 0; }
+.gp-ahead-contact { color: var(--gp-ink80); font-style: italic; font-size: 7pt; }
+.gp-ahead-thumb { width: 16mm; height: 16mm; object-fit: cover; }
