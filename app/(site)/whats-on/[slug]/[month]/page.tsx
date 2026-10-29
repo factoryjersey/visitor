@@ -58,7 +58,7 @@ export default async function WhatsOnMonth({ params }: Props) {
           <ViewToggle className="hidden md:inline-flex" />
         </div>
       </div>
-      <MonthNav months={months} current={ym} />
+      <MonthNav months={months} current={ym} weekend />
 
       {highlights.length > 0 && (
         <section className="mb-12">

@@ -90,7 +90,7 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <div className="mb-6 hidden justify-end md:flex">
         <ViewToggle />
       </div>
-      <MonthNav months={months} />
+      <MonthNav months={months} weekend />
 
       {highlights.length > 0 && (
         <section className="mb-12">

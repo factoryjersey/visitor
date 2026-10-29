@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { isProtectedPath } from '@/lib/auth/public-paths';
+import { typeFromSlug } from '@/lib/domain/landing';
 
 const SESSION_PATHS = /^\/(admin|account|login|logout|auth|invite)(\/|$)/;
 
@@ -58,7 +59,26 @@ const crawlingSearch = (request: NextRequest) =>
  * session. Whether the person has an account here, and which role, is
  * checked by the pages: this runs at the edge, without the database.
  */
+/**
+ * A kind of event's page lives at /whats-on/music; it is built at
+ * /whats-on/type/music. The short address is served from there, and the
+ * long one leads to the short, so a page has one address.
+ */
+function kindPage(request: NextRequest) {
+  const m = /^\/whats-on\/(type\/)?([a-z-]+)$/.exec(request.nextUrl.pathname);
+  if (!m || !typeFromSlug(m[2]!)) return null;
+  const url = request.nextUrl.clone();
+  if (m[1]) {
+    url.pathname = `/whats-on/${m[2]}`;
+    return NextResponse.redirect(url, 308);
+  }
+  url.pathname = `/whats-on/type/${m[2]}`;
+  return NextResponse.rewrite(url);
+}
+
 export async function middleware(request: NextRequest) {
+  const kind = kindPage(request);
+  if (kind) return kind;
   if (crawlingSearch(request)) {
     return new NextResponse('Search is for people: see /sitemap.xml for every page.', {
       status: 403,

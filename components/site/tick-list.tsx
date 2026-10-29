@@ -39,7 +39,7 @@ export function TickList(props: {
           const on = chosen.includes(value);
           return (
             <li key={value}>
-              <Link href={toggle(value)} scroll={false} replace role="checkbox" aria-checked={on} className="flex min-h-[3.25rem] items-center gap-3 py-2 text-base text-ink">
+              <Link href={toggle(value)} rel="nofollow" scroll={false} replace role="checkbox" aria-checked={on} className="flex min-h-[3.25rem] items-center gap-3 py-2 text-base text-ink">
                 <Icon aria-hidden="true" className={`h-5 w-5 shrink-0 ${on ? 'text-brand' : 'text-harbour/70'}`} strokeWidth={1.75} />
                 <span className={`flex-1 ${on ? 'font-semibold' : ''}`}>{label}</span>
                 <span className="text-sm tabular-nums text-harbour/50">{props.counts.get(value) ?? 0}</span>

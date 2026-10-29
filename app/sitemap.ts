@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { SITE } from '@/lib/agents/data';
 import { publicEventMonths, publicEvents, publicOrganisers, publicTours, publicVenuesWithEvents } from '@/lib/db/public';
 import { monthPath } from '@/lib/domain/months';
+import { LANDING_TYPES, WEEKEND_PATH, typePath } from '@/lib/domain/landing';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: SITE, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE}/whats-on`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${SITE}${WEEKEND_PATH}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 },
+    ...LANDING_TYPES.map((t) => ({ url: `${SITE}${typePath(t)}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.7 })),
     ...months.map(({ ym }) => ({ url: `${SITE}${monthPath(ym)}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 })),
     { url: `${SITE}/tours`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE}/venues`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },

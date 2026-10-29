@@ -3,6 +3,7 @@ import { ListingCard, cardLocation } from '@/components/site/listing-card';
 import type { PublicEventRow } from '@/lib/db/public';
 import { printPrice } from '@/lib/domain/house-style';
 import { monthPath, monthTitle } from '@/lib/domain/months';
+import { WEEKEND_PATH } from '@/lib/domain/landing';
 import { UNIQUE } from '@/lib/domain/occurrence';
 import { cardWhen } from '@/lib/domain/web-dates';
 
@@ -27,10 +28,15 @@ export function EventCard({ row: { event: e, venue }, shownFrom, highlight = fal
 }
 
 /** The months with something on, each a page of its own, and how many events: the way through What's on a month at a time. */
-export function MonthNav({ months, current }: { months: { ym: string; n: number }[]; current?: string }) {
+export function MonthNav({ months, current, weekend = false }: { months: { ym: string; n: number }[]; current?: string; weekend?: boolean }) {
   if (!months.length) return null;
   return (
     <nav aria-label="Months" className="mb-8 flex gap-2 overflow-x-auto pb-1">
+      {weekend && (
+        <Link href={WEEKEND_PATH} className="shrink-0 rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-brand hover:bg-harbour">
+          This weekend
+        </Link>
+      )}
       {months.map(({ ym, n }) => (
         <Link
           key={ym}

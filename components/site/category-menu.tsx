@@ -2,6 +2,7 @@ import { LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { GENRE_MARKERS, MARKERS } from './category-markers';
 import { Slider } from './slider';
+import { typePath } from '@/lib/domain/landing';
 
 /**
  * The address for a set of kinds, the rest of the search kept: several
@@ -33,7 +34,10 @@ export function CategoryMenu(props: {
 }) {
   const tours = props.of === 'tours';
   const param = tours ? 'genre' : 'type';
-  const href = (type: string | null) => kindsHref(props.action, props.values, param, type ? [type] : []);
+  // On What's on with nothing else chosen, a kind leads to its own page; with other choices, to that combination.
+  const plain = !Object.entries(props.values).some(([k, v]) => v && k !== param);
+  const href = (type: string | null) =>
+    !tours && props.action === '/whats-on' && plain && type ? typePath(type) : kindsHref(props.action, props.values, param, type ? [type] : []);
   const chosenSet = new Set((props.values[param] ?? '').split(',').filter(Boolean));
   const all: [string, typeof LayoutGrid][] = tours ? (Object.entries(GENRE_MARKERS) as [string, typeof LayoutGrid][]) : MARKERS;
   const tiles = all.filter(([t]) => (props.counts.get(t) ?? 0) > 0 || chosenSet.has(t));
@@ -42,6 +46,8 @@ export function CategoryMenu(props: {
     <li key={key} className="shrink-0 snap-start">
       <Link
         href={to}
+        // Combinations are for people: crawlers keep to the pages each kind has.
+        rel={to.includes('?') ? 'nofollow' : undefined}
         scroll={false}
         aria-current={active ? 'true' : undefined}
         className={`group/tile flex w-[5.75rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2.5 text-center transition-colors ${active ? 'bg-brand/10' : 'hover:bg-harbour/5'}`}
