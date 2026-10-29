@@ -1,7 +1,7 @@
 'use client';
 
 import { LayoutGrid, List, Square } from 'lucide-react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { View } from '@/lib/view';
 
 /**
@@ -16,8 +16,18 @@ import type { View } from '@/lib/view';
  */
 const ViewContext = createContext<{ view: View; setView: (v: View) => void }>({ view: 'one', setView: () => {} });
 
-export function ViewFrame({ initial, children, className = '' }: { initial: View; children: React.ReactNode; className?: string }) {
-  const [view, set] = useState<View>(initial);
+/**
+ * A page built ahead of time (a month of What's on) cannot read the
+ * cookie on the server: it leaves `initial` out, draws one column, and
+ * takes up the visitor's choice once it is in the browser.
+ */
+export function ViewFrame({ initial, children, className = '' }: { initial?: View; children: React.ReactNode; className?: string }) {
+  const [view, set] = useState<View>(initial ?? 'one');
+  useEffect(() => {
+    if (initial) return;
+    const saved = /(?:^|;\s*)view=(one|two|list)/.exec(document.cookie)?.[1] as View | undefined;
+    if (saved) set(saved);
+  }, [initial]);
   const setView = (v: View) => {
     set(v);
     document.cookie = `view=${v}; path=/; max-age=31536000; samesite=lax`;

@@ -10,6 +10,7 @@ import { slugify } from '@/lib/domain/slug';
 import { likeEscape } from '@/lib/domain/search';
 import { hiddenByDefault, siteTypes } from '@/lib/domain/categorise';
 import { cached, LISTINGS_TTL_MS } from '@/lib/cache';
+import { addMonths } from '@/lib/domain/months';
 
 /**
  * What the public site shows. Everything not left out — the site is the
@@ -86,6 +87,25 @@ export async function publicEvents(f: PublicEventFilter = {}) {
   return rows
     .map((r) => ({ ...r, next: nextDate(r.event.dates, from) ?? '9999' }))
     .sort((a, b) => a.next.localeCompare(b.next) || a.event.title.localeCompare(b.event.title));
+}
+
+/**
+ * The months with something on, from this one, and how many events in
+ * each as What's on counts them (unique events and highlights, not those
+ * it keeps back for Health & wellbeing): the month pages there are.
+ */
+export async function publicEventMonths(ahead = 12) {
+  const today = todayIso();
+  const first = today.slice(0, 7);
+  const n = new Map<string, number>();
+  for (const r of await publicEvents()) {
+    if (r.hidden) continue;
+    for (const ym of new Set(r.event.dates.filter((d) => d.date >= today).map((d) => d.date.slice(0, 7)))) n.set(ym, (n.get(ym) ?? 0) + 1);
+  }
+  return [...n]
+    .filter(([ym]) => ym >= first && ym <= addMonths(first, ahead - 1))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([ym, count]) => ({ ym, n: count }));
 }
 
 /** The same, with each event's description: for the agents' feeds, which print it. */

@@ -1,21 +1,24 @@
 import type { MetadataRoute } from 'next';
 import { SITE } from '@/lib/agents/data';
-import { publicEvents, publicOrganisers, publicTours, publicVenuesWithEvents } from '@/lib/db/public';
+import { publicEventMonths, publicEvents, publicOrganisers, publicTours, publicVenuesWithEvents } from '@/lib/db/public';
+import { monthPath } from '@/lib/domain/months';
 
 export const dynamic = 'force-dynamic';
 
-/** Every public page: the sections, then each event, tour, venue and organiser still on. */
+/** Every public page: the sections and What's on's month pages, then each event, tour, venue and organiser still on. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [events, tours, venues, organisers] = await Promise.all([
+  const [events, tours, venues, organisers, months] = await Promise.all([
     publicEvents({ showOngoing: true }),
     publicTours({ showOnDemand: true }),
     publicVenuesWithEvents({ withOngoing: true }),
     publicOrganisers(),
+    publicEventMonths(),
   ]);
   const now = new Date();
   return [
     { url: SITE, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE}/whats-on`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    ...months.map(({ ym }) => ({ url: `${SITE}${monthPath(ym)}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 })),
     { url: `${SITE}/tours`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE}/venues`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${SITE}/organisers`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },

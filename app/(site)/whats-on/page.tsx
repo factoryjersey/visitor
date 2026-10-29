@@ -8,11 +8,11 @@ import { CategoryMenu } from '@/components/site/category-menu';
 import { FilterPane } from '@/components/site/filter-pane';
 import { jerseyToday, resolveWhen } from '@/lib/domain/when';
 import { FilterBar, monthHeading } from '@/components/site/filter-bar';
-import { ListingCard, cardLocation } from '@/components/site/listing-card';
-import { publicEvents } from '@/lib/db/public';
-import { printPrice } from '@/lib/domain/house-style';
-import { UNIQUE } from '@/lib/domain/occurrence';
-import { cardWhen } from '@/lib/domain/web-dates';
+import { publicEventMonths, publicEvents } from '@/lib/db/public';
+import { EventCard, MonthNav } from '@/components/site/event-card';
+import { addMonths, monthPath, monthRange, monthTitle } from '@/lib/domain/months';
+import Link from 'next/link';
+import { Fragment } from 'react';
 import { many, one, type SearchParams } from '@/lib/params';
 import { JsonLd } from '@/components/site/json-ld';
 import { SITE } from '@/lib/agents/data';
@@ -48,7 +48,11 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
   // Narrowed a step at a time, each step counted for the choice that narrows it: the venues
   // from what the search finds, the kinds from what is on at the venue chosen.
   // Health listings are for people who live here: left out of the listing and the search until the visitor picks Health & wellbeing.
-  const found = (await publicEvents({ showOngoing: values.ongoing === '1', range, q: values.q })).map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
+  // Unfiltered, What's on is the next two months, with a page for each month after: not every event to come on one page.
+  const plain = !Object.values(sp).some((v) => v !== undefined && v !== '');
+  const soon = { from: today, to: monthRange(addMonths(today.slice(0, 7), 1)).to };
+  const months = await publicEventMonths();
+  const found = (await publicEvents({ showOngoing: values.ongoing === '1', range: range ?? (plain ? soon : null), q: values.q })).map((r) => ({ ...r, event: { ...r.event, eventTypes: r.siteTypes } }));
   const venues = new Map<string, { name: string; n: number }>();
   for (const r of found) if (r.venue?.slug && !r.hidden) venues.set(r.venue.slug, { name: r.venue.name, n: (venues.get(r.venue.slug)?.n ?? 0) + 1 });
   const all = values.venue ? found.filter((r) => r.venue?.slug === values.venue) : found;
@@ -64,24 +68,6 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
     .map(([slug, v]) => ({ value: slug, label: `${v.name} (${v.n})` }));
   const highlights = rows.filter((r) => r.event.highlight);
   const rest = rows.filter((r) => !r.event.highlight);
-
-  const card = ({ event: e, venue }: (typeof rows)[number], highlight = false, wide = false) => (
-    <ListingCard
-      key={e.id}
-      href={`/whats-on/${e.slug}`}
-      title={e.title}
-      when={cardWhen(e.dates, e.occurrence, shownFrom)}
-      location={cardLocation(e.venueName ?? venue?.name ?? e.venue, e.parish ?? venue?.parish)}
-      price={printPrice(e.fromPricePence, e.toPricePence, { free: e.free })}
-      image={e.headerImage}
-      types={e.eventTypes}
-      tag={UNIQUE.includes(e.occurrence) ? null : e.occurrence === 'regular' ? 'Regular' : 'Ongoing'}
-      highlight={highlight}
-      featured={highlight}
-      wide={wide}
-      summary={wide ? (e.guideCopy ?? e.summary) : (e.summary ?? e.guideCopy)}
-    />
-  );
 
   return (
     <ViewFrame initial={view} className="mx-auto max-w-6xl px-4 py-10">
@@ -104,11 +90,12 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
       <div className="mb-6 hidden justify-end md:flex">
         <ViewToggle />
       </div>
+      <MonthNav months={months} />
 
       {highlights.length > 0 && (
         <section className="mb-12">
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Highlights</h2>
-          <div className={`grid gap-6 ${highlights.length > 1 ? 'md:grid-cols-2' : ''}`}>{highlights.map((r) => card(r, true, highlights.length === 1))}</div>
+          <div className={`grid gap-6 ${highlights.length > 1 ? 'md:grid-cols-2' : ''}`}>{highlights.map((r) => <EventCard key={r.event.id} row={r} shownFrom={shownFrom} highlight wide={highlights.length === 1} />)}</div>
         </section>
       )}
 
@@ -118,10 +105,17 @@ export default async function WhatsOn({ searchParams }: { searchParams: SearchPa
 
       {group(rest, (r) => r.next.slice(0, 7)).map(([month, items]) => (
         <section key={month} className="mb-12">
-          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">{monthHeading(month)}</h2>
-          <div className={CARD_GRID}>{items.map((r) => card(r))}</div>
+          <h2 className="mb-4 border-b border-harbour/15 pb-2 font-display text-xl font-semibold text-ink">
+            <Link href={monthPath(month)} className="hover:text-brand">{monthHeading(month)}</Link>
+          </h2>
+          <div className={CARD_GRID}>{items.map((r) => <EventCard key={r.event.id} row={r} shownFrom={shownFrom} />)}</div>
         </section>
       ))}
+      {plain && months.length > 2 && (
+        <p className="text-sm text-harbour/70">
+          Further ahead: {months.slice(2).map(({ ym }, i) => <Fragment key={ym}>{i > 0 && ' · '}<Link href={monthPath(ym)} className="underline hover:text-brand">{monthTitle(ym)}</Link></Fragment>)}
+        </p>
+      )}
     </ViewFrame>
   );
 }
