@@ -228,3 +228,12 @@ body { @apply bg-white text-stone-900 antialiased; }
 .gp-area-key span { display: inline-flex; align-items: center; gap: 0.6mm; }
 .gp-area-key b { font-weight: 800; }
 .gp-do-side { font-family: var(--gp-sans); font-weight: 700; font-size: 5.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gp-teal); margin: 0 0 0.4mm; }
+/* When a venue opens, under how to reach it; and the winter edition's look ahead to the new season. */
+.gp-venue-open { display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-size: 6.5pt; color: var(--gp-ink80); }
+.gp-venue-open svg { width: 2.4mm; height: 2.4mm; flex: none; }
+.gp-venue-foot .gp-venue-open { font-size: 7.5pt; margin-top: 0.4mm; }
+.gp-ahead-intro { font-size: 9pt; font-style: italic; color: var(--gp-ink80); margin: 0 0 3mm; }
+.gp-ahead-row { display: grid; grid-template-columns: 20mm 1fr; column-gap: 2mm; row-gap: 0.3mm; padding: 1.4mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; }
+.gp-ahead-when { grid-row: span 2; font-family: var(--gp-sans); font-weight: 800; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-accent); }
+.gp-ahead-row b { font-weight: 700; color: var(--gp-accent); }
+.gp-ahead-row span:last-child { color: var(--gp-ink80); font-style: italic; }

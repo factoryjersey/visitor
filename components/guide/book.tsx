@@ -3,7 +3,8 @@
 import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
-import type { GuideProvider } from '@/lib/guide';
+import type { GuideProvider, LookingAhead } from '@/lib/guide';
+import { monthName } from '@/lib/domain/opening';
 import { sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
@@ -203,6 +204,7 @@ function VenueFoot({ v }: { v: GuideVenue }) {
         {v.website && <strong><Globe aria-hidden="true" />{v.website}</strong>}
       </p>
       {v.address && <p className="gp-venue-where"><MapPin aria-hidden="true" />{v.address}</p>}
+      {v.opening && <p className="gp-venue-open"><Clock aria-hidden="true" />{v.opening}</p>}
     </div>
   );
 }
@@ -250,6 +252,7 @@ function VenueBox({ c }: { c: VenueCell }) {
       <p className="gp-event-copy">{copy}</p>
       {contact && keep && <p className="gp-event-address">{where}{c.phone}</p>}
       {c.website && <p className="gp-event-web">{c.website}</p>}
+      {c.frame !== 'listing' && c.opening && <p className="gp-venue-open"><Clock aria-hidden="true" />{c.opening}</p>}
     </>
   );
   return (
@@ -262,6 +265,23 @@ function VenueBox({ c }: { c: VenueCell }) {
       )}
       {c.frame === 'quarter' ? <div className="gp-venue-text">{text}</div> : text}
     </article>
+  );
+}
+
+/** Looking ahead: the attractions closed for part of the edition, in the order they open again. */
+function LookingAheadBody({ rows }: { rows: LookingAhead[] }) {
+  return (
+    <div className="gp-content gp-flow gp-ahead">
+      <h3 className="gp-key-heading">Looking ahead</h3>
+      <p className="gp-ahead-intro">Closed for the winter, these attractions open again in the new season.</p>
+      {rows.map((r) => (
+        <p key={r.name} className="gp-ahead-row">
+          <span className="gp-ahead-when">{monthName(r.reopens)}</span>
+          <b>{r.name}</b>
+          <span>{[r.opening, r.phone, r.website].filter(Boolean).join(' · ')}</span>
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -389,6 +409,8 @@ export function GuideBook(props: {
   venues: GuideVenue[];
   /** The venue sections, laid out: pages per area, and the directory lines that follow them. */
   venueSections: VenueSection[];
+  /** The attractions closed for part of the edition, after Visit's pages; none in summer. */
+  lookingAhead?: LookingAhead[];
   /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
@@ -521,6 +543,7 @@ export function GuideBook(props: {
         ),
       });
     }
+    if (vs.section === 'Visit' && props.lookingAhead?.length) pages.push({ section, marker: 'Looking ahead', body: <LookingAheadBody rows={props.lookingAhead} /> });
     // Do by activity: on the water, then on land, running on, a picture a page; then who offers what.
     const ds = props.doSection;
     if (vs.section === 'Do' && ds) {

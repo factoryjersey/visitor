@@ -4,6 +4,7 @@ import { suggestGenre, type Genre } from '@/lib/domain/genre';
 import { classifyOccurrence, type Occurrence } from '@/lib/domain/occurrence';
 import { tidyParish } from '@/lib/domain/parish';
 import { tidyVenue } from '@/lib/domain/venue-match';
+import { weekHours, type WeekHours } from '@/lib/domain/opening';
 
 export { tidyParish };
 
@@ -32,6 +33,7 @@ export type VjPlace = {
   facilities: string[];
   accessibility: string[];
   openMonths: number[];
+  openingHours: WeekHours | null;
   lowRatePence: number | null;
   highRatePence: number | null;
   aaRating: string | null;
@@ -263,6 +265,7 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
     facilities: labels(acf.key_facilities),
     accessibility: labels(acf.accessibility),
     openMonths: months(acf.seasonality),
+    openingHours: weekHours(acf.opening_hours, acf.hide_opening_hours),
     lowRatePence: pence(acf.low_season_rate),
     highRatePence: pence(acf.high_season_rate),
     aaRating: labelOf(acf.aa_rating) ?? labels(acf.aa_rating)[0] ?? null,

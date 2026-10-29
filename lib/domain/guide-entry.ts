@@ -1,5 +1,6 @@
 import type { Event, Experience, ListingSize, Place, Provider } from '@/lib/db/schema';
 import { isNewVenue } from './new-venue';
+import { openingText } from './opening';
 import { webImage } from './images';
 import { UNIQUE } from './occurrence';
 import {
@@ -409,6 +410,8 @@ export type GuideVenue = {
   /** Featured in a past guide, or has its own guide copy: first for a box when the section's pages for listings are rationed. */
   featured: boolean;
   printed: boolean;
+  /** When it opens: the months, unless all year, then the hours. Empty when the source does not say. */
+  opening: string;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -435,6 +438,7 @@ export function guideVenue(p: Place): GuideVenue {
     options: p.listingSize === 'directory' ? [] : p.listingSize === 'listing' && p.guideLine ? [p.guideLine] : options,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
+    opening: openingText(p.openingHours, p.openMonths) ?? '',
   };
 }
 

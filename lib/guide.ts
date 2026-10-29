@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
 import { doActivities, type Provider } from '@/lib/db/schema';
 import { doSection, type DoSection } from '@/lib/domain/do-section';
+import { openingText, reopensIn, windowMonths } from '@/lib/domain/opening';
 import { webImage } from '@/lib/domain/images';
 import { GENRES } from '@/lib/domain/genre';
 import {
@@ -56,7 +57,12 @@ export function windowFrom(params: { from?: string; to?: string }): Window {
 
 export type GuideProvider = { code: string; name: string; contact: string; website: string };
 
+/** An attraction closed for part of the edition: when it opens again, and how to reach it. */
+export type LookingAhead = { name: string; reopens: number; opening: string; phone: string; website: string };
+
 export type Guide = {
+  /** The attractions closed for part of the edition, in the order they open again; none in summer. */
+  lookingAhead: LookingAhead[];
   /** Highlights, each a full page, ahead of the listings and not repeated in them. */
   highlights: GuideEvent[];
   /** In page order, page by page as the layout set them; a grid's picture box is an entry of its own (frame 'image') beside its listing. */
@@ -164,7 +170,23 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const tg = layouts.tours;
   const tourPages = tg === 'columns' ? null : [...gridTours(tours.filter((t) => t.kind === 'dated'), tg), ...gridTours(tours.filter((t) => t.kind === 'on demand'), tg)];
 
-  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet };
+  // Looking ahead: the attractions closed for part of this edition, and the month each opens again.
+  const edition = windowMonths(window.from, window.to);
+  const lookingAhead = selection.venues
+    .filter((p) => (p.guideSection ?? (p.category === 'see' ? 'Visit' : '')) === 'Visit')
+    .map((p) => ({ p, month: reopensIn(p.openMonths, edition) }))
+    .filter((x): x is { p: (typeof x)['p']; month: number } => x.month !== null)
+    .map(({ p, month }) => ({
+      name: p.name,
+      reopens: month,
+      opening: openingText(p.openingHours, p.openMonths) ?? '',
+      phone: p.phone ?? '',
+      website: printWebsite(p.website)?.toLowerCase() ?? '',
+    }))
+    // In the order they open again, counting on from the edition's first month.
+    .sort((a, b) => ((a.reopens - edition[0]! + 12) % 12) - ((b.reopens - edition[0]! + 12) % 12) || a.name.localeCompare(b.name));
+
+  return { highlights, events, pages, layout, layouts, leftOut, tours: tourPages ? tourPages.flat() : tours, tourPages, providers, venues, sections, doSection: doSet, lookingAhead };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */

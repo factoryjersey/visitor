@@ -11,6 +11,7 @@ import { Recommended } from '@/components/site/recommended';
 import { OnVisitorMap } from '@/components/site/visitor-map';
 import { NewBadge } from '@/components/site/new-badge';
 import { isNewVenue } from '@/lib/domain/new-venue';
+import { openingText } from '@/lib/domain/opening';
 import { GoogleReviews } from '@/components/site/google-reviews';
 import { googleConfigured } from '@/lib/integrations/google/places';
 import { staffViewer } from '@/lib/auth/session';
@@ -114,6 +115,7 @@ export default async function VenuePage({ params }: Props) {
             <Facts
               rows={[
                 ['Address', address],
+                ['Open', openingText(venue.openingHours, venue.openMonths)],
                 ['Phone', phone],
                 ['Email', venue.email && <a href={`mailto:${venue.email}`} className="hover:text-brand">{venue.email}</a>],
                 [socialSite(venue.website) ?? 'Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{siteLabel(venue.website)} ↗</a>],

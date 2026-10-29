@@ -1,3 +1,4 @@
+import type { WeekHours } from '@/lib/domain/opening';
 import type { Genre } from '@/lib/domain/genre';
 import type { Occurrence } from '@/lib/domain/occurrence';
 import {
@@ -186,6 +187,8 @@ export const places = pgTable('places', {
   accessibility: text('accessibility').array().notNull().default([]),
   /** Months open, 1–12. Empty means the source did not say. */
   openMonths: integer('open_months').array().notNull().default([]),
+  /** Opening and closing times through the week, as the source lists them. Null when it does not, or hides them. */
+  openingHours: jsonb('opening_hours').$type<WeekHours | null>(),
   lowRatePence: integer('low_rate_pence'),
   highRatePence: integer('high_rate_pence'),
   aaRating: text('aa_rating'),
