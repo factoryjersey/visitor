@@ -138,6 +138,9 @@ export const invites = pgTable('invites', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** A line on a place from another body's website, and the page it comes from. */
+export type SourceNote = { source: string; short: string; url: string; text: string };
+
 export const places = pgTable('places', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
@@ -193,6 +196,8 @@ export const places = pgTable('places', {
   busRoutes: text('bus_routes').array().notNull().default([]),
   /** The source's own words on getting about it: the slipway, the steps, where the beach wheelchairs are kept. */
   accessNote: text('access_note'),
+  /** What others who look after the place say of it, a line each in our words, with where they say it: the Geopark on a beach's rocks, the National Park on its wildlife and walks. */
+  sourceNotes: jsonb('source_notes').$type<SourceNote[]>().notNull().default([]),
   /** Months open, 1–12. Empty means the source did not say. */
   openMonths: integer('open_months').array().notNull().default([]),
   /** Opening and closing times through the week, as the source lists them. Null when it does not, or hides them. */

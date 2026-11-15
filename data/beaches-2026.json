@@ -1,54 +1,140 @@
 {
-  "about": "The guide's Beaches section. Copy marked 'edition' is the Summer 2026 edition's Beach Guide (pp. 98-101), lightly corrected; 'jersey.com' entries are new this edition, written from jersey.com's listings. Bus routes come from jersey.com (places.bus_routes) unless 'bus' is given here, which is then locked. 'facing' is printed beside the name; 'coast' is the area the section is ordered by.",
+  "about": "The guide's Beaches section. Copy marked 'edition' is the Summer 2026 edition's Beach Guide (pp. 98-101), lightly corrected; 'jersey.com' entries are new this edition, written from jersey.com's listings. Bus routes come from jersey.com (places.bus_routes) unless 'bus' is given here, which is then locked. 'facing' is printed beside the name; 'coast' is the area the section is ordered by. 'notes' are a line each, in our words, from the Jersey Island Geopark (its geosite map) and Jersey National Park (its location pages), read November 2026.",
   "beaches": [
     {
       "slug": "anne-port-bay",
       "coast": "East",
       "facing": "NE",
       "from": "edition",
-      "copy": "A quiet and rarely crowded east-facing stretch of sand that catches the morning and midday sun."
+      "copy": "A quiet and rarely crowded east-facing stretch of sand that catches the morning and midday sun.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Jersey’s own Giant’s Causeway: at low tide, the rocks of La Crête Point, left of the slipway, show six-sided columns of rhyolite that cooled from volcanic eruptions 580 million years ago."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/st-catherines-breakwater-to-gorey-pier/",
+          "text": "On the coast walk from St. Catherine’s Breakwater to Gorey Pier, past the secluded bays of Archirondel and Anne Port."
+        }
+      ]
     },
     {
       "slug": "archirondel-bay",
       "coast": "East",
       "facing": "NE",
       "from": "edition",
-      "copy": "This popular beach with an excellent beach café is pebbly at first but sandy at low tide, when the water stays shallow for some way out. East-facing, Archirondel loses the sun in the late afternoon."
+      "copy": "This popular beach with an excellent beach café is pebbly at first but sandy at low tide, when the water stays shallow for some way out. East-facing, Archirondel loses the sun in the late afternoon.",
+      "notes": [
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/kayaking/",
+          "text": "Guided kayak trips set off from here towards Mont Orgueil Castle or St. Catherine’s Breakwater, and the coast walk from the Breakwater to Gorey Pier passes by."
+        }
+      ]
     },
     {
       "slug": "fliquet-bay",
       "coast": "East",
       "facing": "NE",
       "from": "jersey.com",
-      "copy": "On the far north-east corner of the island, a quiet mix of pebbles, sand and rock with views across to France, sheltered from westerly winds. Bathing is safe at all states of the tide, though there are no lifeguards. It’s a ten-minute walk along the trail from the St. Catherine bus stop."
+      "copy": "On the far north-east corner of the island, a quiet mix of pebbles, sand and rock with views across to France, sheltered from westerly winds. Bathing is safe at all states of the tide, though there are no lifeguards. It’s a ten-minute walk along the trail from the St. Catherine bus stop.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "A rare peat bed from the last Ice Age and fine exposures of Rozel Conglomerate, the pebbly rock of the north-east."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/rozel-to-st-catherines/",
+          "text": "On the cliff-path walk from Rozel to St. Catherine’s Breakwater."
+        }
+      ]
     },
     {
       "slug": "rozel-bay",
       "coast": "East",
       "facing": "NE",
       "from": "edition",
-      "copy": "A small fishing village lined with beach huts and harbourside cottages, Rozel is more of a fishing harbour than a place to swim. But at low tide, Rozel’s small stretch of white sand is safe for children to play; just look out for the Rozel geese!"
+      "copy": "A small fishing village lined with beach huts and harbourside cottages, Rozel is more of a fishing harbour than a place to swim. But at low tide, Rozel’s small stretch of white sand is safe for children to play; just look out for the Rozel geese!",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Above the harbour, Le Câtel de Rozel is an earthwork from the Iron Age."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/st-martins-church-to-rozel/",
+          "text": "A stop on the walk down from St. Martin’s Church, and the start of the cliff path on to Fliquet and St. Catherine’s."
+        }
+      ]
     },
     {
       "slug": "st-catherines-bay",
       "coast": "East",
       "facing": "E",
       "from": "jersey.com",
-      "copy": "Home to the island’s sailing and canoe clubs, the bay sits beside the Victorian breakwater, begun in 1847 as a naval harbour and never finished. Walk to the end and back, stop at the Breakwater Café, or take a sea swim and warm up at the Sauna Society."
+      "copy": "Home to the island’s sailing and canoe clubs, the bay sits beside the Victorian breakwater, begun in 1847 as a naval harbour and never finished. Walk to the end and back, stop at the Breakwater Café, or take a sea swim and warm up at the Sauna Society.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "The breakwater, 700 metres long, is built of local stone, quarried at Verclut Point at its root."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/st-catherines-breakwater-to-gorey-pier/",
+          "text": "The end of the cliff walk from Rozel and the start of the coast walk to Gorey Pier, with views across to France."
+        }
+      ]
     },
     {
       "slug": "the-royal-bay-of-grouville",
       "coast": "East",
       "facing": "SE",
       "from": "edition",
-      "copy": "A long stretch of sand that leads to Gorey harbour, with Mont Orgueil Castle as a backdrop. Plenty of parking, beach cafés and kiosks as well as a children’s beachside playground and soft sand make Long Beach a local favourite."
+      "copy": "A long stretch of sand that leads to Gorey harbour, with Mont Orgueil Castle as a backdrop. Plenty of parking, beach cafés and kiosks as well as a children’s beachside playground and soft sand make Long Beach a local favourite.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "At the Gorey end, Petit Portelet and the rocks below Mont Orgueil show volcanic dykes and Ice Age features, where Palaeolithic tools have been found."
+        }
+      ]
     },
     {
       "slug": "bonne-nuit-bay",
       "coast": "North",
       "facing": "N",
       "from": "edition",
-      "copy": "A tiny fishing harbour with space to play on the sand, picnic or catch some sun, but more of a wild swim than some other beaches. Worth visiting for the excellent beach café."
+      "copy": "A tiny fishing harbour with space to play on the sand, picnic or catch some sun, but more of a wild swim than some other beaches. Worth visiting for the excellent beach café.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "From the cliff path past La Crête Fort, Giffard Bay next door shows the best of the Jersey Volcanic Group: rocks around 580 million years old."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/a-circular-walk-from-bouley-bay/",
+          "text": "The circular walk from Bouley Bay takes in the coast to Bonne Nuit and Egypt Woods."
+        }
+      ]
     },
     {
       "slug": "bouley-bay",
@@ -58,84 +144,228 @@
       "bus": [
         "4"
       ],
-      "copy": "A winding hill leads down to this steep pebble beach with deep water for competent swimmers. The bay is home to one of Jersey’s scuba-diving schools."
+      "copy": "A winding hill leads down to this steep pebble beach with deep water for competent swimmers. The bay is home to one of Jersey’s scuba-diving schools.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "L’Islet, the tidal island in the corner of the bay, keeps signs of Ice Age freezing and thawing, and the ridge above the pier, Les Hurets, has rare spherulites: crystals in clusters like bunches of grapes."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/jardin-dolivet-to-bouley-bay/",
+          "text": "Reached on foot from Jardin d’Olivet past L’Etacquerel Fort, or on a circular walk along the coast to Bonne Nuit."
+        }
+      ]
     },
     {
       "slug": "greve-de-lecq-beach",
       "coast": "North",
       "facing": "NW",
       "from": "edition",
-      "copy": "The most popular of the north coast beaches, Grève de Lecq’s sheltered sands and rockpools are ideal for families but lose the sun in the late afternoon. Don’t miss the excellent cafés and local pubs close by. Even in the winter months, some providers offer coasteering trips for guided cold-water dips!"
+      "copy": "The most popular of the north coast beaches, Grève de Lecq’s sheltered sands and rockpools are ideal for families but lose the sun in the late afternoon. Don’t miss the excellent cafés and local pubs close by. Even in the winter months, some providers offer coasteering trips for guided cold-water dips!",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "The beach shows St. Mary’s granite, lamprophyre dykes and the shapes the sea has made of the coast; Le Câtel de Lecq stands above."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/greve-de-lecq-to-plemont/",
+          "text": "The start of the cliff path to Plémont, with views to Guernsey, Sark and France; the barracks above are the last on the north coast."
+        }
+      ]
     },
     {
       "slug": "plemont-bay",
       "coast": "North",
       "facing": "NW",
       "from": "edition",
-      "copy": "A pristine sandy cove reachable by a long flight of steps, where the intrepid are rewarded with a stunning natural playground of rock pools and sea caves. There’s safe swimming when the sea is calm, and surfing when it’s wild. The beach is completely covered at high tide. It’s quite a walk down from the bus stop, so pack sensible footwear!"
+      "copy": "A pristine sandy cove reachable by a long flight of steps, where the intrepid are rewarded with a stunning natural playground of rock pools and sea caves. There’s safe swimming when the sea is calm, and surfing when it’s wild. The beach is completely covered at high tide. It’s quite a walk down from the bus stop, so pack sensible footwear!",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Grève au Lanchon to the Geopark: the sea has worked the weak lines in the granite into caves, stacks and arches."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/plemont-2/",
+          "text": "Caves with their own waterfalls, rock pools and surf; the headland has some of Jersey’s last nesting puffins, in a marine protection zone."
+        }
+      ]
     },
     {
       "slug": "petit-port-beach",
       "coast": "West",
       "facing": "W",
       "from": "jersey.com",
-      "copy": "A small, quiet beach of golden sand below the cliffs near La Corbière, away from the busier bays. There’s little close by, so bring a picnic; coastal paths lead off to lookouts and hidden coves."
+      "copy": "A small, quiet beach of golden sand below the cliffs near La Corbière, away from the busier bays. There’s little close by, so bring a picnic; coastal paths lead off to lookouts and hidden coves.",
+      "notes": [
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/plemont-bay-to-corbiere-lighthouse/",
+          "text": "“Peaceful Petit Port” is on the walk along the whole Atlantic coast, from Grosnez Point to Corbière Lighthouse."
+        }
+      ]
     },
     {
       "slug": "st-ouens-bay",
       "coast": "West",
       "facing": "W",
       "from": "edition",
-      "copy": "A magnificent beach and natural playground for surfers and adrenaline seekers. It’s where one of the oldest surfing clubs in Europe has its home and makes a stunning setting for beach walks. Swimmers should take care in the strong currents and stick to the flagged zones. The beach is patrolled by RNLI lifeguards during the season."
+      "copy": "A magnificent beach and natural playground for surfers and adrenaline seekers. It’s where one of the oldest surfing clubs in Europe has its home and makes a stunning setting for beach walks. Swimmers should take care in the strong currents and stick to the flagged zones. The beach is patrolled by RNLI lifeguards during the season.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "At low tide, when the sand allows, the stumps of a 5,000-year-old forest show in the peat beds; behind the bay, the dunes of Les Blanches Banques hold standing stones."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/st-ouens-bay/",
+          "text": "After a winter storm, comb the bay for driftwood, egg cases, cuttlefish and goose barnacles, or climb the dunes for a view of the whole bay."
+        }
+      ]
     },
     {
       "slug": "beauport-bay",
       "coast": "South",
       "facing": "SW",
       "from": "edition",
-      "copy": "A real suntrap on the south coast. Once you’ve wandered down the steep path from the car park and crossed the pebbles, you’ll reach a sheltered south-facing beach with golden sand and shallow turquoise water, ideal for swimming."
+      "copy": "A real suntrap on the south coast. Once you’ve wandered down the steep path from the car park and crossed the pebbles, you’ll reach a sheltered south-facing beach with golden sand and shallow turquoise water, ideal for swimming.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Pale Beauport granite, worn into caves, stacks and blowholes, with Ice Age deposits."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/beauport-headland/",
+          "text": "The headland’s little wood of evergreen oaks has a taste of the Mediterranean; it was given to the island by Lord Trent, of the Boots family."
+        }
+      ]
     },
     {
       "slug": "belcroute-bay",
       "coast": "South",
       "facing": "E",
       "from": "jersey.com",
-      "copy": "A small, secluded shingle cove on the Noirmont side of St. Aubin’s Bay. Go early: it loses the sun soon after midday. At high tide the sheltered water is good for swimming, snorkelling and paddleboarding; keep away from the rocks to the south, where the currents run strong. There are no lifeguards."
+      "copy": "A small, secluded shingle cove on the Noirmont side of St. Aubin’s Bay. Go early: it loses the sun soon after midday. At high tide the sheltered water is good for swimming, snorkelling and paddleboarding; keep away from the rocks to the south, where the currents run strong. There are no lifeguards.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Layers in the cliffs behind the inlets record the Ice Ages: pollen and insects in the mud date from perhaps 186,000 years ago, when the climate was much colder."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/noirmont-ssi/",
+          "text": "Noirmont headland above is a protected Site of Special Interest, with German bunkers from the Occupation and the island’s war memorial."
+        }
+      ]
     },
     {
       "slug": "green-island",
       "coast": "South",
       "facing": "SE",
       "from": "edition",
-      "copy": "A locals’ favourite, this sheltered south-facing beach is a real sun trap where soft sand, rock climbing and rock pool adventures await. The tide goes out a long way, so take care with the swift incoming tide and pick times close to high water to enjoy swimming or paddling."
+      "copy": "A locals’ favourite, this sheltered south-facing beach is a real sun trap where soft sand, rock climbing and rock pool adventures await. The tide goes out a long way, so take care with the swift incoming tide and pick times close to high water to enjoy swimming or paddling.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "In one of Europe’s largest intertidal Ramsar sites. Eighteen stone graves were found on the island in 1911–14; it was still joined to Jersey in the 17th century. Le Nez, at one end of the beach, is the best place in Jersey to see layering in igneous rock."
+        }
+      ]
     },
     {
       "slug": "havre-des-pas",
       "coast": "South",
       "facing": "S",
       "from": "edition",
-      "copy": "Close to the centre of St. Helier, this sandy beach is worth a visit to see the architecture of the art deco pool, filled by the tide each day. The beach is easy to access, and safe for swimmers."
+      "copy": "Close to the centre of St. Helier, this sandy beach is worth a visit to see the architecture of the art deco pool, filled by the tide each day. The beach is easy to access, and safe for swimmers.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "The best place to see Dicq granite and the Jersey Dyke Swarm. On South Hill above, Jersey’s highest raised beach sits 30 metres above the sea."
+        }
+      ]
     },
     {
       "slug": "la-rocque-harbour",
       "coast": "South",
       "facing": "SE",
       "from": "jersey.com",
-      "copy": "A small fishing harbour on the south-east tip, with a sandy beach and a long breakwater for a stroll. Low tide uncovers miles of sand, gullies and reefs for rock-pooling, but the tide comes back fast, so check the times. Swim at high tide, with care on the rocks. The Hard Rocque Café kiosk on the breakwater serves breakfasts, lunches and ice creams."
+      "copy": "A small fishing harbour on the south-east tip, with a sandy beach and a long breakwater for a stroll. Low tide uncovers miles of sand, gullies and reefs for rock-pooling, but the tide comes back fast, so check the times. Swim at high tide, with care on the rocks. The Hard Rocque Café kiosk on the breakwater serves breakfasts, lunches and ice creams.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "The best place to study La Rocque granite, with Ice Age deposits and landforms."
+        }
+      ]
     },
     {
       "slug": "ouaisne-bay",
       "coast": "South",
       "facing": "SW",
       "from": "edition",
-      "copy": "This south-west facing beach is the wilder contrast to the adjoining St. Brelade’s Bay. The beaches are connected at low tide, or cross the pine-rich headland and walk along the sea wall next to the protected Ouaisné Common towards locals’ favourite, The Smugglers Inn."
+      "copy": "This south-west facing beach is the wilder contrast to the adjoining St. Brelade’s Bay. The beaches are connected at low tide, or cross the pine-rich headland and walk along the sea wall next to the protected Ouaisné Common towards locals’ favourite, The Smugglers Inn.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "In the headland between Ouaisné and St. Brelade’s Bay, La Cotte de St Brelade sheltered Neanderthals: one of Europe’s most important Ice Age sites. Visit only with a guide."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/ouaisne-common/",
+          "text": "Ouaisné Common, behind the beach, is home to the rare Jersey grass snake and the green lizard."
+        }
+      ]
     },
     {
       "slug": "portelet-bay",
       "coast": "South",
       "facing": "SW",
       "from": "edition",
-      "copy": "Climb down the long flight of steps and you’ll be rewarded with a sunny, sheltered and sandy beach circling Janvrin’s Tomb at the centre. Portelet Bay Café serves excellent pizza throughout the season, and the pub at the top of the steps, the Old Portelet Inn, is a family favourite."
+      "copy": "Climb down the long flight of steps and you’ll be rewarded with a sunny, sheltered and sandy beach circling Janvrin’s Tomb at the centre. Portelet Bay Café serves excellent pizza throughout the season, and the pub at the top of the steps, the Old Portelet Inn, is a family favourite.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Between the steps from the pub and the beach café, rounded cobbles up to eight metres above the sea are a raised beach from the last warm period before the Ice Age."
+        },
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/portelet-ssi/",
+          "text": "Portelet’s headland, a Site of Special Interest since 2007, is a stronghold of the south-west’s heathland and its birds."
+        }
+      ]
     },
     {
       "slug": "robin-bay",
@@ -145,6 +375,14 @@
       "copy": "A small, sandy cove next to La Rocque Harbour, up the steps at the corner of the pier. A sun trap with soft sand, rock pools and rocks to clamber on, and easy to keep an eye on little ones. The currents can be strong: swim inside the sheltered cove.",
       "bus": [
         "1"
+      ],
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "Part of the La Rocque geosite: the best place to study La Rocque granite, with Ice Age deposits and landforms."
+        }
       ]
     },
     {
@@ -157,14 +395,30 @@
         "14",
         "15"
       ],
-      "copy": "A crescent of south-facing sand from St. Helier to St. Aubin, the beach is in full sun for most of the day. With several beach cafés along the promenade, look out for the softest sand around the Gunsite Café, with jet ski hire close by."
+      "copy": "A crescent of south-facing sand from St. Helier to St. Aubin, the beach is in full sun for most of the day. With several beach cafés along the promenade, look out for the softest sand around the Gunsite Café, with jet ski hire close by.",
+      "notes": [
+        {
+          "source": "Jersey National Park",
+          "short": "National Park",
+          "url": "https://jerseynationalpark.com/location/st-aubins-to-noirmont/",
+          "text": "From St. Aubin, the walk to Noirmont Point climbs Mont Arthur for some of the best coastal views on the island."
+        }
+      ]
     },
     {
       "slug": "st-brelades-bay",
       "coast": "South",
       "facing": "S",
       "from": "edition",
-      "copy": "The beautiful beach at St. Brelade’s Bay is one of the island’s busiest; a visitor favourite for its soft sand, safe swimming, beach activities and seaside eating. Voted number three in the Tripadvisor Travellers’ Choice awards, this stunning south-facing beach is in the sun for most of the day."
+      "copy": "The beautiful beach at St. Brelade’s Bay is one of the island’s busiest; a visitor favourite for its soft sand, safe swimming, beach activities and seaside eating. Voted number three in the Tripadvisor Travellers’ Choice awards, this stunning south-facing beach is in the sun for most of the day.",
+      "notes": [
+        {
+          "source": "Jersey Island Geopark",
+          "short": "Geopark",
+          "url": "https://www.jerseyislandgeopark.org.je/explore/",
+          "text": "St. Brelade’s Church and the Fishermen’s Chapel, at the western end, are early Norman, noted too for their lichens; La Cotte, the Neanderthal site, is in the headland towards Ouaisné."
+        }
+      ]
     }
   ]
 }

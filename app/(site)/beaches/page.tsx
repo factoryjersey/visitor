@@ -51,7 +51,12 @@ export default async function Beaches() {
                       <div className="p-4">
                         <h3 className="font-display text-lg font-semibold text-ink group-hover:text-brand">{b.name}</h3>
                         {b.facing && <p className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-sea">{facingWords(b.facing)}</p>}
-                        <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-harbour/80">{b.guideCopy ?? b.summary}</p>
+                        <p className="mt-2 text-sm leading-relaxed text-harbour/80">{b.guideCopy ?? b.summary}</p>
+                        {b.sourceNotes.map((n) => (
+                          <p key={n.source} className="mt-2 text-sm leading-relaxed text-harbour/70">
+                            <span className="font-semibold text-ink">{n.short}:</span> {n.text}
+                          </p>
+                        ))}
                         <p className="mt-3 text-xs text-harbour/60">
                           {[b.busRoutes.length ? `Bus ${b.busRoutes.join(', ')}` : null, ...amenities].filter(Boolean).join(' · ')}
                         </p>
@@ -64,6 +69,12 @@ export default async function Beaches() {
           </section>
         );
       })}
+
+      <p className="mt-10 text-sm text-harbour/60">
+        Notes on the rocks and history from the{' '}
+        <a href="https://www.jerseyislandgeopark.org.je/explore/" target="_blank" rel="noopener" className="text-sea hover:text-brand">aspiring Jersey Island Geopark ↗</a>, and on wildlife and walks from{' '}
+        <a href="https://jerseynationalpark.com/" target="_blank" rel="noopener" className="text-sea hover:text-brand">Jersey National Park ↗</a>.
+      </p>
 
       <section className="mt-14 grid gap-6 md:grid-cols-3">
         {BEACH_NOTES.map((n) => (

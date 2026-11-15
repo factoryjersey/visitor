@@ -181,7 +181,7 @@ describe('a beach as the guide prints it', () => {
     const place = {
       name: 'Plémont Bay', category: 'see', guideSection: 'Beaches', guideArea: 'North', guideLabel: 'NW', listingSize: 'listing',
       guideCopy: 'A pristine sandy cove reachable by a long flight of steps. The beach is completely covered at high tide.',
-      guideLine: 'A sandy cove below steps.', summary: null, description: null, busRoutes: ['8'], parish: 'St Ouen', addressLine1: null,
+      guideLine: 'A sandy cove below steps.', sourceNotes: [], summary: null, description: null, busRoutes: ['8'], parish: 'St Ouen', addressLine1: null,
       phone: null, email: null, website: null, headerImage: null, recommendedIn: null, firstListedAt: null, openingHours: null, openMonths: [],
     } as unknown as P;
     const v = guideVenue(place);
@@ -193,5 +193,20 @@ describe('a beach as the guide prints it', () => {
     const eat = guideVenue({ ...place, category: 'eat-drink', guideSection: 'Eat' } as P);
     expect(eat.copy).toBe('A sandy cove below steps.');
     expect(eat.bus).toBe('');
+  });
+});
+
+describe('noted', () => {
+  it('puts the notes after the copy, both, then each, then none, before shorter copy', async () => {
+    const { noted } = await import('@/lib/domain/guide-entry');
+    const out = noted(['Long copy. More.', 'Long copy.'], [{ short: 'Geopark', text: 'Granite.' }, { short: 'National Park', text: 'Puffins.' }]);
+    expect(out.slice(0, 4)).toEqual([
+      'Long copy. More. Geopark: Granite. National Park: Puffins.',
+      'Long copy. More. Geopark: Granite.',
+      'Long copy. More. National Park: Puffins.',
+      'Long copy. More.',
+    ]);
+    expect(out.at(-1)).toBe('Long copy.');
+    expect(noted(['A.'], [])).toEqual(['A.']);
   });
 });

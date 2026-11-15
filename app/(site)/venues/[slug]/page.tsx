@@ -93,6 +93,19 @@ export default async function VenuePage({ params }: Props) {
             <Hero image={venue.headerImage} title={venue.name} />
             <div className="mt-8 space-y-6">
               <Copy lead={venue.guideCopy ?? venue.summary} body={venue.description} />
+              {venue.sourceNotes.length > 0 && (
+                <section className="space-y-3 rounded-lg bg-white p-5 ring-1 ring-harbour/5">
+                  {venue.sourceNotes.map((n) => (
+                    <div key={n.source}>
+                      <h2 className="text-xs font-semibold uppercase tracking-wider text-sea">{n.source}</h2>
+                      <p className="mt-1 text-sm leading-relaxed text-harbour/80">
+                        {n.text}{' '}
+                        <a href={n.url} target="_blank" rel="noopener" className="whitespace-nowrap text-sea hover:text-brand">Read more ↗</a>
+                      </p>
+                    </div>
+                  ))}
+                </section>
+              )}
               <Gallery images={venue.gallery} header={venue.headerImage} title={venue.name} />
             </div>
 

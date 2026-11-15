@@ -439,6 +439,19 @@ const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
 export const PUBS_AND_BARS = 'Pubs & bars';
 /** The beaches: a section of their own after See, as the Beach Guide pages were, by coast. */
 export const BEACHES = 'Beaches';
+/**
+ * Copy with others' notes after it, "Geopark: …", fullest first: each
+ * version of the copy with every note, then each note alone, then none,
+ * before the next shorter version of the copy. The copy is the guide's
+ * own; a note gives way first.
+ */
+export function noted(options: string[], notes: readonly { short: string; text: string }[]): string[] {
+  if (!notes.length) return options;
+  const line = (n: { short: string; text: string }) => `${n.short}: ${n.text}`;
+  const sets = [notes, ...(notes.length > 1 ? notes.map((n) => [n]) : []), []];
+  return [...new Set(options.flatMap((c) => sets.map((set) => [c, ...set.map(line)].join(' '))))];
+}
+
 /** The sections whose boxes print the buses that stop nearby, as the 2026 editions' See and Beach Guide pages did. */
 const BUS_SECTIONS: string[] = ['See', BEACHES];
 /** What staff called Eat's bars and clubs before they had a section: a venue still set to it prints with the pubs and bars. */
@@ -449,6 +462,8 @@ export function guideVenue(p: Place): GuideVenue {
   const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
   const outOut = section === 'Eat' && sameName(p.guideArea ?? '') === sameName(OUT_OUT);
   const oneLine = p.listingSize === 'listing' && !!p.guideLine && section !== BEACHES;
+  // A beach's notes from the Geopark and the National Park follow its copy where the box has room: both, then one, then none.
+  const withNotes = section === BEACHES ? noted(options, p.sourceNotes ?? []) : options;
   return {
     section: outOut ? PUBS_AND_BARS : section,
     area: outOut ? '' : p.guideArea ?? '',
@@ -458,14 +473,14 @@ export function guideVenue(p: Place): GuideVenue {
     isNew: isNewVenue(p.firstListedAt),
     // A directory line has no copy; a listing box its one line, when it has one; the bigger entries their copy.
     // A beach's box keeps the Beach Guide's few sentences, fitted to it, as the events' are: which way it faces, the tide, the steps down.
-    copy: p.listingSize === 'directory' ? '' : oneLine ? p.guideLine! : p.guideCopy ?? p.summary ?? '',
+    copy: p.listingSize === 'directory' ? '' : oneLine ? p.guideLine! : withNotes[0] ?? p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
     phone: p.phone ?? '',
     email: p.email ?? '',
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!] : options,
+    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!] : withNotes,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
     opening: openingText(p.openingHours, p.openMonths) ?? '',
