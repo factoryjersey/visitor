@@ -9,6 +9,7 @@ import { Wordmark } from './wordmark';
 const NAV = [
   { href: '/whats-on', label: 'What’s on' },
   { href: '/tours', label: 'Tours & experiences' },
+  { href: '/beaches', label: 'Beaches' },
   { href: '/venues', label: 'Venues' },
   { href: '/organisers', label: 'Organisers' },
 ];

@@ -96,3 +96,12 @@ describe('field readers', () => {
     expect(utc('2026-01-01T00:00:00+01:00')?.toISOString()).toBe('2025-12-31T23:00:00.000Z');
   });
 });
+
+describe('busRoutes', () => {
+  it('reads the routes by number, the express X a capital, once each', async () => {
+    const { busRoutes } = await import('@/lib/integrations/jersey-com/parse');
+    expect(busRoutes([{ label: 'Route 22<br><i>(Liberation Station - L’Etacq)</i>', value: '22' }, { label: 'Route X22', value: 'x22' }, { value: '12a' }, { value: '22' }])).toEqual(['22', 'X22', '12a']);
+    expect(busRoutes('')).toEqual([]);
+    expect(busRoutes(null)).toEqual([]);
+  });
+});

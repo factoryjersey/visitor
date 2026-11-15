@@ -189,6 +189,10 @@ export const places = pgTable('places', {
 
   facilities: text('facilities').array().notNull().default([]),
   accessibility: text('accessibility').array().notNull().default([]),
+  /** The bus routes that stop near it, as the source numbers them: "12a", "22", "X22". */
+  busRoutes: text('bus_routes').array().notNull().default([]),
+  /** The source's own words on getting about it: the slipway, the steps, where the beach wheelchairs are kept. */
+  accessNote: text('access_note'),
   /** Months open, 1–12. Empty means the source did not say. */
   openMonths: integer('open_months').array().notNull().default([]),
   /** Opening and closing times through the week, as the source lists them. Null when it does not, or hides them. */

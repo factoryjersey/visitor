@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueGridFor, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
-  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', ...o,
+  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', bus: '', ...o,
 });
 
 describe('venueSections', () => {
@@ -142,5 +142,56 @@ describe('Pubs & bars', () => {
     expect(venueGridFor({ venues: {} }, 'Pubs & bars')).toBe('grid16');
     expect(venueGridFor({ venues: { 'Pubs & bars': 'grid8' } }, 'Pubs & bars')).toBe('grid8');
     expect(venueGridFor({ venues: {} }, 'Eat')).toBe('grid8');
+  });
+});
+
+describe('the Beaches section', () => {
+  it('prints after See and before Do, as the Beach Guide pages did', () => {
+    const out = venueSections([v('Do it', { section: 'Do' }), v('Beauport', { section: 'Beaches', area: 'South' }), v('Castle', { section: 'See' })]);
+    expect(out.map((s) => s.section)).toEqual(['See', 'Beaches', 'Do']);
+  });
+
+  it('reads the island by coast: east, north, west, then south', () => {
+    const out = venueSections([
+      v('St. Brelade’s Bay', { section: 'Beaches', area: 'South' }),
+      v('Plémont', { section: 'Beaches', area: 'North' }),
+      v('St. Ouen’s Bay', { section: 'Beaches', area: 'West' }),
+      v('Archirondel', { section: 'Beaches', area: 'East' }),
+    ]);
+    const names = out[0]!.pages.flatMap((p) => (p.kind === 'grid' ? p.cells.map((c) => c.name) : []));
+    expect(names).toEqual(['Archirondel', 'Plémont', 'St. Ouen’s Bay', 'St. Brelade’s Bay']);
+    expect(out[0]!.key.map((k) => k.code)).toEqual(['E', 'N', 'W', 'S']);
+  });
+});
+
+describe('facingWords', () => {
+  it('reads the printed letters as words for the site', async () => {
+    const { facingWords } = await import('@/lib/domain/beaches');
+    expect(facingWords('SW')).toBe('Faces south-west');
+    expect(facingWords('n')).toBe('Faces north');
+    expect(facingWords('NE')).toBe('Faces north-east');
+    expect(facingWords('Sheltered')).toBe('Sheltered');
+  });
+});
+
+describe('a beach as the guide prints it', () => {
+  it('keeps its Beach Guide copy, not the one-liner, and prints its buses', async () => {
+    const { guideVenue } = await import('@/lib/domain/guide-entry');
+    type P = Parameters<typeof guideVenue>[0];
+    const place = {
+      name: 'Plémont Bay', category: 'see', guideSection: 'Beaches', guideArea: 'North', guideLabel: 'NW', listingSize: 'listing',
+      guideCopy: 'A pristine sandy cove reachable by a long flight of steps. The beach is completely covered at high tide.',
+      guideLine: 'A sandy cove below steps.', summary: null, description: null, busRoutes: ['8'], parish: 'St Ouen', addressLine1: null,
+      phone: null, email: null, website: null, headerImage: null, recommendedIn: null, firstListedAt: null, openingHours: null, openMonths: [],
+    } as unknown as P;
+    const v = guideVenue(place);
+    expect(v.copy).toMatch(/^A pristine sandy cove/);
+    expect(v.options[0]).toMatch(/covered at high tide/);
+    expect(v.bus).toBe('8');
+    expect(v.label).toBe('NW');
+    // An Eat venue keeps its one line, and prints no buses.
+    const eat = guideVenue({ ...place, category: 'eat-drink', guideSection: 'Eat' } as P);
+    expect(eat.copy).toBe('A sandy cove below steps.');
+    expect(eat.bus).toBe('');
   });
 });

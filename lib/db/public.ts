@@ -443,3 +443,12 @@ export function publicSourceCounts(): Promise<Map<string, number>> {
     return new Map(rows.map((r) => [r.source, r.n]));
   });
 }
+
+/** The beaches the guide lists, by coast: the venues in its Beaches section. */
+export async function publicBeaches() {
+  return db
+    .select({ id: places.id, slug: places.slug, name: places.name, parish: places.parish, area: places.guideArea, facing: places.guideLabel, headerImage: places.headerImage, guideCopy: places.guideCopy, summary: places.summary, busRoutes: places.busRoutes, facilities: places.facilities })
+    .from(places)
+    .where(and(eq(places.guideSection, 'Beaches'), eq(places.inclusion, 'included'), eq(places.review, 'approved')))
+    .orderBy(asc(places.name));
+}

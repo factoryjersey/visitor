@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...LANDING_TYPES.map((t) => ({ url: `${SITE}${typePath(t)}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.7 })),
     ...months.map(({ ym }) => ({ url: `${SITE}${monthPath(ym)}`, lastModified: now, changeFrequency: 'daily' as const, priority: 0.8 })),
     { url: `${SITE}/tours`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${SITE}/beaches`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${SITE}/venues`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${SITE}/organisers`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
     { url: `${SITE}/list`, changeFrequency: 'monthly', priority: 0.3 },

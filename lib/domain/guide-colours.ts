@@ -29,6 +29,8 @@ export const PALETTE = {
 export const SECTION_SWATCHES = {
   Visit: PALETTE.blue,
   See: PALETTE.maroon,
+  // The sea's colour. Light blue would be the obvious one, but as rules on white paper it barely shows.
+  Beaches: PALETTE.blue,
   Do: PALETTE.deepBlue,
   Buy: PALETTE.maroon,
   Eat: PALETTE.green,

@@ -32,6 +32,10 @@ export type VjPlace = {
   description: string | null;
   facilities: string[];
   accessibility: string[];
+  /** The bus routes that stop near it: "12a", "22", "X22". */
+  busRoutes: string[];
+  /** Their words on getting about it: the slipway, the steps, where the beach wheelchairs are kept. */
+  accessNote: string | null;
   openMonths: number[];
   openingHours: WeekHours | null;
   lowRatePence: number | null;
@@ -145,6 +149,22 @@ export function labels(v: unknown): string[] {
     .map(labelOf)
     .filter((l): l is string => l !== null && !/^(not applicable|n\/a|none)$/i.test(l))
     .map(decodeEntities);
+}
+
+/**
+ * The bus routes by number, as the stops show them: their values are
+ * "12a", "x22", their labels "Route 22<br><i>(Liberation Station -
+ * L'Etacq)</i>". The express routes' X is a capital.
+ */
+export function busRoutes(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const r of v) {
+    const raw = r && typeof r === 'object' ? (r as { value?: unknown }).value : r;
+    const n = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim().replace(/^x/, 'X') : '';
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out;
 }
 
 /** "Gorey, Jersey" is "Gorey": the island is not part of an address on the island. */
@@ -264,6 +284,8 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
     description: htmlToText(acf.long_description),
     facilities: labels(acf.key_facilities),
     accessibility: labels(acf.accessibility),
+    busRoutes: busRoutes(acf.bus_routes),
+    accessNote: htmlToText(acf.accessibility_additional_info),
     openMonths: months(acf.seasonality),
     openingHours: weekHours(acf.opening_hours, acf.hide_opening_hours),
     lowRatePence: pence(acf.low_season_rate),

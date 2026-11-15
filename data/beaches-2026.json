@@ -1,0 +1,170 @@
+{
+  "about": "The guide's Beaches section. Copy marked 'edition' is the Summer 2026 edition's Beach Guide (pp. 98-101), lightly corrected; 'jersey.com' entries are new this edition, written from jersey.com's listings. Bus routes come from jersey.com (places.bus_routes) unless 'bus' is given here, which is then locked. 'facing' is printed beside the name; 'coast' is the area the section is ordered by.",
+  "beaches": [
+    {
+      "slug": "anne-port-bay",
+      "coast": "East",
+      "facing": "NE",
+      "from": "edition",
+      "copy": "A quiet and rarely crowded east-facing stretch of sand that catches the morning and midday sun."
+    },
+    {
+      "slug": "archirondel-bay",
+      "coast": "East",
+      "facing": "NE",
+      "from": "edition",
+      "copy": "This popular beach with an excellent beach café is pebbly at first but sandy at low tide, when the water stays shallow for some way out. East-facing, Archirondel loses the sun in the late afternoon."
+    },
+    {
+      "slug": "fliquet-bay",
+      "coast": "East",
+      "facing": "NE",
+      "from": "jersey.com",
+      "copy": "On the far north-east corner of the island, a quiet mix of pebbles, sand and rock with views across to France, sheltered from westerly winds. Bathing is safe at all states of the tide, though there are no lifeguards. It’s a ten-minute walk along the trail from the St. Catherine bus stop."
+    },
+    {
+      "slug": "rozel-bay",
+      "coast": "East",
+      "facing": "NE",
+      "from": "edition",
+      "copy": "A small fishing village lined with beach huts and harbourside cottages, Rozel is more of a fishing harbour than a place to swim. But at low tide, Rozel’s small stretch of white sand is safe for children to play; just look out for the Rozel geese!"
+    },
+    {
+      "slug": "st-catherines-bay",
+      "coast": "East",
+      "facing": "E",
+      "from": "jersey.com",
+      "copy": "Home to the island’s sailing and canoe clubs, the bay sits beside the Victorian breakwater, begun in 1847 as a naval harbour and never finished. Walk to the end and back, stop at the Breakwater Café, or take a sea swim and warm up at the Sauna Society."
+    },
+    {
+      "slug": "the-royal-bay-of-grouville",
+      "coast": "East",
+      "facing": "SE",
+      "from": "edition",
+      "copy": "A long stretch of sand that leads to Gorey harbour, with Mont Orgueil Castle as a backdrop. Plenty of parking, beach cafés and kiosks as well as a children’s beachside playground and soft sand make Long Beach a local favourite."
+    },
+    {
+      "slug": "bonne-nuit-bay",
+      "coast": "North",
+      "facing": "N",
+      "from": "edition",
+      "copy": "A tiny fishing harbour with space to play on the sand, picnic or catch some sun, but more of a wild swim than some other beaches. Worth visiting for the excellent beach café."
+    },
+    {
+      "slug": "bouley-bay",
+      "coast": "North",
+      "facing": "N",
+      "from": "edition",
+      "bus": [
+        "4"
+      ],
+      "copy": "A winding hill leads down to this steep pebble beach with deep water for competent swimmers. The bay is home to one of Jersey’s scuba-diving schools."
+    },
+    {
+      "slug": "greve-de-lecq-beach",
+      "coast": "North",
+      "facing": "NW",
+      "from": "edition",
+      "copy": "The most popular of the north coast beaches, Grève de Lecq’s sheltered sands and rockpools are ideal for families but lose the sun in the late afternoon. Don’t miss the excellent cafés and local pubs close by. Even in the winter months, some providers offer coasteering trips for guided cold-water dips!"
+    },
+    {
+      "slug": "plemont-bay",
+      "coast": "North",
+      "facing": "NW",
+      "from": "edition",
+      "copy": "A pristine sandy cove reachable by a long flight of steps, where the intrepid are rewarded with a stunning natural playground of rock pools and sea caves. There’s safe swimming when the sea is calm, and surfing when it’s wild. The beach is completely covered at high tide. It’s quite a walk down from the bus stop, so pack sensible footwear!"
+    },
+    {
+      "slug": "petit-port-beach",
+      "coast": "West",
+      "facing": "W",
+      "from": "jersey.com",
+      "copy": "A small, quiet beach of golden sand below the cliffs near La Corbière, away from the busier bays. There’s little close by, so bring a picnic; coastal paths lead off to lookouts and hidden coves."
+    },
+    {
+      "slug": "st-ouens-bay",
+      "coast": "West",
+      "facing": "W",
+      "from": "edition",
+      "copy": "A magnificent beach and natural playground for surfers and adrenaline seekers. It’s where one of the oldest surfing clubs in Europe has its home and makes a stunning setting for beach walks. Swimmers should take care in the strong currents and stick to the flagged zones. The beach is patrolled by RNLI lifeguards during the season."
+    },
+    {
+      "slug": "beauport-bay",
+      "coast": "South",
+      "facing": "SW",
+      "from": "edition",
+      "copy": "A real suntrap on the south coast. Once you’ve wandered down the steep path from the car park and crossed the pebbles, you’ll reach a sheltered south-facing beach with golden sand and shallow turquoise water, ideal for swimming."
+    },
+    {
+      "slug": "belcroute-bay",
+      "coast": "South",
+      "facing": "E",
+      "from": "jersey.com",
+      "copy": "A small, secluded shingle cove on the Noirmont side of St. Aubin’s Bay. Go early: it loses the sun soon after midday. At high tide the sheltered water is good for swimming, snorkelling and paddleboarding; keep away from the rocks to the south, where the currents run strong. There are no lifeguards."
+    },
+    {
+      "slug": "green-island",
+      "coast": "South",
+      "facing": "SE",
+      "from": "edition",
+      "copy": "A locals’ favourite, this sheltered south-facing beach is a real sun trap where soft sand, rock climbing and rock pool adventures await. The tide goes out a long way, so take care with the swift incoming tide and pick times close to high water to enjoy swimming or paddling."
+    },
+    {
+      "slug": "havre-des-pas",
+      "coast": "South",
+      "facing": "S",
+      "from": "edition",
+      "copy": "Close to the centre of St. Helier, this sandy beach is worth a visit to see the architecture of the art deco pool, filled by the tide each day. The beach is easy to access, and safe for swimmers."
+    },
+    {
+      "slug": "la-rocque-harbour",
+      "coast": "South",
+      "facing": "SE",
+      "from": "jersey.com",
+      "copy": "A small fishing harbour on the south-east tip, with a sandy beach and a long breakwater for a stroll. Low tide uncovers miles of sand, gullies and reefs for rock-pooling, but the tide comes back fast, so check the times. Swim at high tide, with care on the rocks. The Hard Rocque Café kiosk on the breakwater serves breakfasts, lunches and ice creams."
+    },
+    {
+      "slug": "ouaisne-bay",
+      "coast": "South",
+      "facing": "SW",
+      "from": "edition",
+      "copy": "This south-west facing beach is the wilder contrast to the adjoining St. Brelade’s Bay. The beaches are connected at low tide, or cross the pine-rich headland and walk along the sea wall next to the protected Ouaisné Common towards locals’ favourite, The Smugglers Inn."
+    },
+    {
+      "slug": "portelet-bay",
+      "coast": "South",
+      "facing": "SW",
+      "from": "edition",
+      "copy": "Climb down the long flight of steps and you’ll be rewarded with a sunny, sheltered and sandy beach circling Janvrin’s Tomb at the centre. Portelet Bay Café serves excellent pizza throughout the season, and the pub at the top of the steps, the Old Portelet Inn, is a family favourite."
+    },
+    {
+      "slug": "robin-bay",
+      "coast": "South",
+      "facing": "SE",
+      "from": "jersey.com",
+      "copy": "A small, sandy cove next to La Rocque Harbour, up the steps at the corner of the pier. A sun trap with soft sand, rock pools and rocks to clamber on, and easy to keep an eye on little ones. The currents can be strong: swim inside the sheltered cove.",
+      "bus": [
+        "1"
+      ]
+    },
+    {
+      "slug": "st-aubins-bay",
+      "coast": "South",
+      "facing": "S",
+      "from": "edition",
+      "bus": [
+        "12a",
+        "14",
+        "15"
+      ],
+      "copy": "A crescent of south-facing sand from St. Helier to St. Aubin, the beach is in full sun for most of the day. With several beach cafés along the promenade, look out for the softest sand around the Gunsite Café, with jet ski hire close by."
+    },
+    {
+      "slug": "st-brelades-bay",
+      "coast": "South",
+      "facing": "S",
+      "from": "edition",
+      "copy": "The beautiful beach at St. Brelade’s Bay is one of the island’s busiest; a visitor favourite for its soft sand, safe swimming, beach activities and seaside eating. Voted number three in the Tripadvisor Travellers’ Choice awards, this stunning south-facing beach is in the sun for most of the day."
+    }
+  ]
+}

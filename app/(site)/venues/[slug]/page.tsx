@@ -116,6 +116,8 @@ export default async function VenuePage({ params }: Props) {
               rows={[
                 ['Address', address],
                 ['Open', openingText(venue.openingHours, venue.openMonths)],
+                ['Bus', venue.busRoutes.length ? `${venue.busRoutes.length === 1 ? 'Route' : 'Routes'} ${venue.busRoutes.join(', ')}` : null],
+                ['Access', venue.accessNote],
                 ['Phone', phone],
                 ['Email', venue.email && <a href={`mailto:${venue.email}`} className="hover:text-brand">{venue.email}</a>],
                 [socialSite(venue.website) ?? 'Website', venue.website && <a href={venue.website} target="_blank" rel="noopener" className="text-sea hover:text-brand">{siteLabel(venue.website)} ↗</a>],

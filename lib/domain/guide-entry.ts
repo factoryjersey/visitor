@@ -427,6 +427,8 @@ export type GuideVenue = {
   printed: boolean;
   /** When it opens: the months, unless all year, then the hours. Empty when the source does not say. */
   opening: string;
+  /** The buses that stop near it, "12a, 14": printed on the places people go out to, the beaches and the sights. */
+  bus: string;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -435,6 +437,10 @@ const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
 
 /** The pubs and bars: a section of their own at the end, as the Nightlife pages were. */
 export const PUBS_AND_BARS = 'Pubs & bars';
+/** The beaches: a section of their own after See, as the Beach Guide pages were, by coast. */
+export const BEACHES = 'Beaches';
+/** The sections whose boxes print the buses that stop nearby, as the 2026 editions' See and Beach Guide pages did. */
+const BUS_SECTIONS: string[] = ['See', BEACHES];
 /** What staff called Eat's bars and clubs before they had a section: a venue still set to it prints with the pubs and bars. */
 const OUT_OUT = 'Out Out';
 
@@ -442,6 +448,7 @@ export function guideVenue(p: Place): GuideVenue {
   const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
   const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
   const outOut = section === 'Eat' && sameName(p.guideArea ?? '') === sameName(OUT_OUT);
+  const oneLine = p.listingSize === 'listing' && !!p.guideLine && section !== BEACHES;
   return {
     section: outOut ? PUBS_AND_BARS : section,
     area: outOut ? '' : p.guideArea ?? '',
@@ -450,28 +457,31 @@ export function guideVenue(p: Place): GuideVenue {
     size: p.listingSize,
     isNew: isNewVenue(p.firstListedAt),
     // A directory line has no copy; a listing box its one line, when it has one; the bigger entries their copy.
-    copy: p.listingSize === 'directory' ? '' : p.listingSize === 'listing' && p.guideLine ? p.guideLine : p.guideCopy ?? p.summary ?? '',
+    // A beach's box keeps the Beach Guide's few sentences, fitted to it, as the events' are: which way it faces, the tide, the steps down.
+    copy: p.listingSize === 'directory' ? '' : oneLine ? p.guideLine! : p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
     phone: p.phone ?? '',
     email: p.email ?? '',
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : p.listingSize === 'listing' && p.guideLine ? [p.guideLine] : options,
+    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!] : options,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
     opening: openingText(p.openingHours, p.openMonths) ?? '',
+    bus: BUS_SECTIONS.includes(section) ? (p.busRoutes ?? []).join(', ') : '',
   };
 }
 
 /**
  * The venue sections in the order the 2026 editions print them (Visit,
- * See, Do, Buy, Eat, then Pubs & bars, as their Nightlife pages), then
+ * See, Beaches as their Beach Guide, Do, Buy, Eat, then Pubs & bars, as
+ * their Nightlife pages), then
  * any other section a venue is set to; areas
  * in the order the guide reads the island (Do's by activity), then any
  * other, then those with no area.
  */
-export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Do', 'Buy', 'Eat', 'Pubs & bars'] as const;
+export const VENUE_SECTION_ORDER = ['Visit', 'See', 'Beaches', 'Do', 'Buy', 'Eat', 'Pubs & bars'] as const;
 /** A section's grid unless chosen: the grid of eight, but sixteen for the pubs and bars, listings all. */
 export const DEFAULT_VENUE_GRIDS: Record<string, VenueGrid> = { [PUBS_AND_BARS]: 'grid16' };
 export const venueGridFor = (l: Pick<GuideLayouts, 'venues'>, section: string): VenueGrid => l.venues[section] ?? DEFAULT_VENUE_GRIDS[section] ?? 'grid8';

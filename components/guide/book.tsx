@@ -1,8 +1,9 @@
 'use client';
 
-import { BadgeCheck, Clock, Globe, MapPin, Phone } from 'lucide-react';
+import { BadgeCheck, Bus, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
+import { BEACHES, tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
+import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
 import { PAGE_SWATCHES, markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
@@ -227,6 +228,7 @@ function VenueFoot({ v }: { v: GuideVenue }) {
       </p>
       {v.address && <p className="gp-venue-where"><MapPin aria-hidden="true" />{v.address}</p>}
       {v.opening && <p className="gp-venue-open"><Clock aria-hidden="true" />{v.opening}</p>}
+      {v.bus && <p className="gp-venue-bus"><Bus aria-hidden="true" />{v.bus}</p>}
     </div>
   );
 }
@@ -276,6 +278,7 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
       {contact && keep && <p className="gp-event-address">{where}{c.phone}</p>}
       {c.website && <p className="gp-event-web">{c.website}</p>}
       {c.frame !== 'listing' && c.opening && <p className="gp-venue-open"><Clock aria-hidden="true" />{c.opening}</p>}
+      {c.bus && <p className="gp-venue-bus"><Bus aria-hidden="true" />{c.bus}</p>}
     </>
   );
   return (
@@ -288,6 +291,23 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
       )}
       {c.frame === 'quarter' ? <div className="gp-venue-text">{text}</div> : text}
     </article>
+  );
+}
+
+/** The Beaches section's first page, as the Beach Guide opened: a word on the beaches, then what to know before going in. */
+function BeachIntro() {
+  return (
+    <div className="gp-content gp-flow gp-beach-intro">
+      <h3 className="gp-key-heading">Beachlife</h3>
+      <p className="gp-standfirst">{BEACH_INTRO}</p>
+      {BEACH_NOTES.map((n) => (
+        <div key={n.title} className="gp-beach-note">
+          <h4>{n.title}</h4>
+          <p>{n.text}</p>
+        </div>
+      ))}
+      <p className="gp-beach-key">{BEACH_KEY}</p>
+    </div>
   );
 }
 
@@ -625,6 +645,8 @@ export function GuideBook(props: {
       const keys = vs.key.filter((k) => here.has(k.area));
       return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} /> };
     };
+    // The beaches open with the Beach Guide's introduction: the tides, safe swimming, the beach wheelchairs.
+    if (vs.section === BEACHES) pages.push({ section, body: <BeachIntro /> });
     for (const p of vs.pages) {
       const { marker, foot } = keyed(vs, p.kind === 'full' ? [p.venue] : p.cells);
       pages.push(
