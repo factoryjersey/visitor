@@ -1,0 +1,1 @@
+ALTER TABLE "places" ADD COLUMN "source_notes" jsonb DEFAULT '[]'::jsonb NOT NULL;
