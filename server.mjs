@@ -10,6 +10,16 @@ import next from 'next';
  * folder then failed to load in the browser. Spell it Next's way first.
  */
 const port = Number(process.env.PORT ?? 3000);
+/**
+ * A second repair. A server action that ends in redirect() has Next fetch
+ * the page it redirects to from this server, at the request's own origin:
+ * https://guide.je behind Railway's edge, where this server speaks plain
+ * HTTP on its port. The fetch failed ("SSL wrong version number"), and the
+ * site's refresh queued by the action went with it: an event taken off the
+ * site stayed in the front page's banner. `next start` tells Next where it
+ * is listening; so do we.
+ */
+process.env.__NEXT_PRIVATE_ORIGIN ??= `http://127.0.0.1:${port}`;
 const app = next({ dev: false, port });
 const handle = app.getRequestHandler();
 
