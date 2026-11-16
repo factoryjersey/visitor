@@ -1,6 +1,7 @@
 import '@fontsource-variable/google-sans-flex/wdth.css';
 import Link from 'next/link';
-import { EVENTS, GuideBook, NEW, TOURS } from '@/components/guide/book';
+import { GuideBook } from '@/components/guide/book';
+import { EVENTS, NEW, TOURS } from '@/lib/domain/guide-sections';
 import { PrintWhenReady } from '@/components/guide/print-when-ready';
 import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';

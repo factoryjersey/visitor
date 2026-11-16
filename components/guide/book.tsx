@@ -6,7 +6,7 @@ import { BEACHES, tourWhen, type GuideEvent, type GuideTour, type GuideVenue, ty
 import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
-import { PAGE_SWATCHES, markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
+import { markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
@@ -26,10 +26,8 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
  * frame is outlined red on screen, as InDesign marks overset text.
  */
 
-export type Section = { name: string; colour: string };
-export const EVENTS: Section = { name: 'Events this season', colour: PAGE_SWATCHES.events.hex };
-export const TOURS: Section = { name: 'Tours and experiences', colour: PAGE_SWATCHES.tours.hex };
-export const NEW: Section = { name: 'New this season', colour: PAGE_SWATCHES.new.hex };
+import { EVENTS, NEW, TOURS, type Section } from '@/lib/domain/guide-sections';
+export { EVENTS, type Section };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
