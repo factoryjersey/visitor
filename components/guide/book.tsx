@@ -56,6 +56,24 @@ export function Frame({ page, n }: { page: Page; n: number }) {
 }
 
 /**
+ * A page as the printer takes it: on a sheet of its own, 133 × 183mm, the
+ * 115 × 165mm trim in the middle, 3mm of bleed all round (what runs to the
+ * edge, the tabs, folios and the opener's picture, runs on into it), and a
+ * 6mm slug outside that with crop marks at the trim lines and a line
+ * naming the job, the section and the page.
+ */
+const CROPS = ['tl-h', 'tl-v', 'tr-h', 'tr-v', 'bl-h', 'bl-v', 'br-h', 'br-v'] as const;
+function Sheet({ page, n, job }: { page: Page; n: number; job: string }) {
+  return (
+    <div className="gp-sheet">
+      {CROPS.map((c) => <span key={c} className={`gp-crop gp-crop-${c}`} />)}
+      <Frame page={page} n={n} />
+      <p className="gp-slug">{job} · {page.section.name}{page.marker ? `: ${page.marker}` : ''} · page {n}</p>
+    </div>
+  );
+}
+
+/**
  * A fixed frame that fits its own copy: it tries the fullest version,
  * measures, and steps to the next shorter until one fits, again once the
  * typeface has loaded. A sentence matters more than the phone number, so
@@ -476,6 +494,8 @@ export function GuideBook(props: {
   firstPage: number;
   /** One section's pages only, by its tab's name, for that section's PDF; numbered as in the whole guide. */
   only?: string | null;
+  /** For the printer: each page on its own sheet, with 3mm bleed, a 6mm slug and crop marks, rather than in spreads. Its words name the job in the slug. */
+  sheets?: string | null;
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
 
@@ -712,11 +732,15 @@ export function GuideBook(props: {
       {measuringNew}
       {measuringOngoing}
       {!tourPages && tours.length > 0 && <p className="no-print text-sm text-stone-500">Laying out the tours…</p>}
-      {spreads.map((pair, i) => (
-        <div key={i} className="gp-spread">
-          {pair.map((x, j) => (x ? <Frame key={x.n} page={x.page} n={x.n} /> : <div key={`blank-${j}`} className="gp-page gp-blank" />))}
-        </div>
-      ))}
+      {props.sheets ? (
+        <div className="gp-sheets">{numbered.map((x) => <Sheet key={x.n} page={x.page} n={x.n} job={props.sheets!} />)}</div>
+      ) : (
+        spreads.map((pair, i) => (
+          <div key={i} className="gp-spread">
+            {pair.map((x, j) => (x ? <Frame key={x.n} page={x.page} n={x.n} /> : <div key={`blank-${j}`} className="gp-page gp-blank" />))}
+          </div>
+        ))
+      )}
     </div>
   );
 }

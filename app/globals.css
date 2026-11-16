@@ -322,3 +322,32 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-tab.gp-right, .gp-folio.gp-right { border-radius: var(--gp-round) 0 0 var(--gp-round); }
 .gp-venue-tag, .gp-venue-label, .gp-caption { border-radius: 0.6mm; }
 .gp-event-image, .gp-venue-picture, .gp-image, .gp-highlight-image, .gp-new-thumb, .gp-ahead-thumb { border-radius: var(--gp-round); overflow: hidden; }
+
+/*
+ * The PDF for the printer: a page a sheet, 133 × 183mm. Trim 115 × 165mm
+ * at 9mm in, 3mm of bleed round it, 6mm of slug outside that. What runs to
+ * the trim edge runs on 3mm into the bleed; the page clips at the bleed.
+ */
+.gp-sheets { display: flex; flex-wrap: wrap; gap: 6mm; }
+.gp-sheet { position: relative; width: 133mm; height: 183mm; background: white; box-shadow: 0 1px 4px rgb(0 0 0 / 0.18); flex: none; }
+.gp-sheet > .gp-page { position: absolute; left: 9mm; top: 9mm; overflow: visible; clip-path: inset(-3mm); border-right: 0; }
+.gp-sheet .gp-tab.gp-left, .gp-sheet .gp-folio.gp-left { left: -3mm; width: 6.9mm; padding-left: 3mm; }
+.gp-sheet .gp-tab.gp-right, .gp-sheet .gp-folio.gp-right { right: -3mm; width: 6.9mm; padding-right: 3mm; }
+/* The opener's picture runs to the bleed: its box grows 3mm each way, its heading and caption keep their places on the page. */
+.gp-sheet .gp-opener { inset: -3mm; }
+.gp-sheet .gp-opener h2 { left: 11.1mm; bottom: 37mm; }
+.gp-sheet .gp-opener .gp-caption { left: 11.1mm; bottom: 13mm; }
+/* Crop marks: hairlines on the trim lines, across the slug, stopping at the bleed. */
+.gp-crop { position: absolute; background: #000; }
+.gp-crop[class*='-h'] { height: 0.1mm; width: 6mm; }
+.gp-crop[class*='-v'] { width: 0.1mm; height: 6mm; }
+.gp-crop-tl-h { left: 0; top: 9mm; } .gp-crop-tl-v { left: 9mm; top: 0; }
+.gp-crop-tr-h { right: 0; top: 9mm; } .gp-crop-tr-v { right: 9mm; top: 0; }
+.gp-crop-bl-h { left: 0; bottom: 9mm; } .gp-crop-bl-v { left: 9mm; bottom: 0; }
+.gp-crop-br-h { right: 0; bottom: 9mm; } .gp-crop-br-v { right: 9mm; bottom: 0; }
+.gp-slug { position: absolute; left: 12mm; right: 12mm; bottom: 1.6mm; margin: 0; font-family: var(--gp-sans); font-size: 5pt; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media print {
+  @page gpsheet { size: 133mm 183mm; margin: 0; }
+  .gp-sheets { display: block; }
+  .gp-sheet { page: gpsheet; box-shadow: none; break-after: page; }
+}

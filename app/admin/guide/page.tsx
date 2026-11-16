@@ -158,7 +158,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
       {pdf && <PrintWhenReady title={`Visitor Guide ${window.from} to ${window.to}: ${pdf === 'all' ? 'whole guide' : pdf}`} />}
-      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
+      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} sheets={pdf ? `Visitor Guide ${window.from} to ${window.to}` : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
 
     </>
   );

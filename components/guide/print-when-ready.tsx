@@ -36,7 +36,7 @@ export function PrintWhenReady({ title }: { title: string }) {
       <p className="mr-auto">
         {state === 'laying out'
           ? 'Laying out the pages for the PDF…'
-          : 'In the print dialog choose Save as PDF (margins: None). The pages come out as 230 × 165mm spreads, numbered as in the guide.'}
+          : 'In the print dialog choose Save as PDF (margins: None). Each page comes out on its own 133 × 183mm sheet: the 115 × 165mm page with 3mm bleed, a 6mm slug and crop marks, numbered as in the guide.'}
       </p>
       {state === 'ready' && <button type="button" onClick={() => window.print()} className="rounded border border-sky-300 bg-white px-3 py-1 hover:bg-sky-100">Print again</button>}
     </div>
