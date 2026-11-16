@@ -251,7 +251,10 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 
 @media print {
   @page gpspread { size: 230mm 165mm; margin: 0; }
-  .gp-book { display: block; }
+  .gp-book { display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* A section's PDF: the spreads alone, edge to edge, nothing of the admin page around them. */
+  main:has(.gp-book) { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  .gp-blank { background: white; }
   .gp-spread { page: gpspread; box-shadow: none; break-after: page; }
   .gp-page.gp-left { border-right: 0; }
   .gp-overset { outline: none; }

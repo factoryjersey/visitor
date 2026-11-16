@@ -1,6 +1,7 @@
 import '@fontsource-variable/google-sans-flex/wdth.css';
 import Link from 'next/link';
-import { GuideBook } from '@/components/guide/book';
+import { EVENTS, GuideBook, NEW, TOURS } from '@/components/guide/book';
+import { PrintWhenReady } from '@/components/guide/print-when-ready';
 import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
@@ -30,6 +31,9 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   const listed = events.filter((e) => e.frame !== 'image').length;
   const tq = layoutsQuery(layouts);
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}`;
+  // A section's PDF: the same pages, that section alone (or the whole guide), and the print dialog once they are laid out.
+  const pdf = one(sp.pdf) ?? null;
+  const pdfHref = (name: string) => `/admin/guide?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}&pdf=${encodeURIComponent(name)}`;
   const year = Number(window.from.slice(0, 4));
   // Where What's On starts in the printed guide; the 2026 editions open it on page 36.
   const firstPage = Math.max(1, Math.min(400, Number(one(sp.page)) || 36));
@@ -112,6 +116,18 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
           <Link href="/admin/guide/maps" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Maps</Link>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="ml-auto self-center text-xs text-stone-500">For print (PDF):</span>
+          {[
+            ...(events.length || highlights.length || guide.ongoingPages.length ? [EVENTS.name] : []),
+            ...(tours.length ? [TOURS.name] : []),
+            ...(guide.newThisSeason.length ? [NEW.name] : []),
+            ...sections.map((s) => s.section),
+          ].map((name) => (
+            <a key={name} href={pdfHref(name)} target="_blank" rel="noopener" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">{name}</a>
+          ))}
+          <a href={pdfHref('all')} target="_blank" rel="noopener" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Whole guide</a>
+        </div>
         {leftOut.length > 0 && (
           <details className="text-xs text-stone-600">
             <summary className="cursor-pointer">{leftOut.length} events left out of print as not aimed at visitors: training and work, business, and health and wellbeing</summary>
@@ -140,7 +156,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
       {events.length === 0 && tours.length === 0 && highlights.length === 0 && (
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
-      <GuideBook key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
+      {pdf && <PrintWhenReady title={`Visitor Guide ${window.from} to ${window.to}: ${pdf === 'all' ? 'whole guide' : pdf}`} />}
+      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
 
     </>
   );

@@ -28,8 +28,8 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
 
 export type Section = { name: string; colour: string };
 export const EVENTS: Section = { name: 'Events this season', colour: PAGE_SWATCHES.events.hex };
-const TOURS: Section = { name: 'Tours and experiences', colour: PAGE_SWATCHES.tours.hex };
-const NEW: Section = { name: 'New this season', colour: PAGE_SWATCHES.new.hex };
+export const TOURS: Section = { name: 'Tours and experiences', colour: PAGE_SWATCHES.tours.hex };
+export const NEW: Section = { name: 'New this season', colour: PAGE_SWATCHES.new.hex };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
@@ -476,6 +476,8 @@ export function GuideBook(props: {
   /** Do's activities and providers' key, after Do's venue pages. */
   doSection?: DoSection | null;
   firstPage: number;
+  /** One section's pages only, by its tab's name, for that section's PDF; numbered as in the whole guide. */
+  only?: string | null;
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
 
@@ -697,7 +699,7 @@ export function GuideBook(props: {
   }
 
   // Into spreads: the first page faces left or right by its number.
-  const numbered = pages.map((p, i) => ({ page: p, n: props.firstPage + i }));
+  const numbered = pages.map((p, i) => ({ page: p, n: props.firstPage + i })).filter((x) => !props.only || x.page.section.name === props.only);
   const spreads: (typeof numbered[number] | null)[][] = [];
   let k = 0;
   if (numbered[0] && numbered[0].n % 2 === 1) spreads.push([null, numbered[k++]!]);
