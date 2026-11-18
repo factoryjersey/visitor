@@ -100,15 +100,15 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-grid { top: 11.6mm; bottom: 11mm; display: grid; grid-template-columns: 45.5mm 45.5mm; column-gap: 3.9mm; grid-template-rows: 52mm 43mm 43mm; row-gap: 2mm; }
 /* The grid layouts: equal boxes, two across, one of them a picture filling its box. */
 .gp-grid.gp-grid6 { grid-template-rows: repeat(3, 46mm); }
-/* What's On on the grid of six, a little compact, so a Visit Jersey short description (up to 350 characters) prints whole: copy at 7pt, the details at 6.5pt, as the tours' grid of twelve sets them. */
-.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event { font-size: 7pt; line-height: 1.06; }
+/* What's On on the grid of six, a little compact, so a Visit Jersey short description (up to 350 characters) prints whole: everything but the date and title at 7pt, set close. */
+.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event { font-size: 7pt; line-height: 1.04; }
 .gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-listing { padding-top: 1.2mm; }
 .gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-when { font-size: 8pt; }
 .gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-title { font-size: 8.5pt; margin: 0.1mm 0 0.2mm; }
-.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-times { font-size: 6.5pt; margin-bottom: 0.2mm; }
-.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-venue { margin-top: 1mm; font-size: 6.5pt; }
-.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-address, .gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-contact { font-size: 6.5pt; }
-.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-web { margin-top: 0.6mm; font-size: 6.5pt; }
+.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-times { font-size: 7pt; margin-bottom: 0.2mm; }
+.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-venue { margin-top: 0.8mm; font-size: 7pt; }
+.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-address, .gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-contact { font-size: 7pt; }
+.gp-grid6:not(.gp-venue-grid):not(.gp-tour-grid) .gp-event-web { margin-top: 0.6mm; font-size: 7pt; }
 .gp-grid.gp-grid8 { grid-template-rows: repeat(4, 34mm); }
 .gp-grid.gp-grid16 { grid-template-rows: repeat(8, 16mm); }
 /* The grid of twelve (tours): six rows of 22mm, type between the eight's and the sixteen's, room for a sentence. */
