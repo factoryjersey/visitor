@@ -17,6 +17,7 @@ import {
   venueGridFor,
   UNPRINTED_SECTIONS,
   defaultOngoing,
+  DEFAULT_TOURS,
   type TourLayout,
   layoutEvents,
   printable,
@@ -127,7 +128,7 @@ async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: st
  * tour in this edition.
  */
 export async function buildGuide(window: Window, opts: { draft?: boolean; layout?: Layout; layouts?: GuideLayouts } = {}): Promise<Guide> {
-  const fallbackTours: TourLayout = 'grid8';
+  const fallbackTours: TourLayout = DEFAULT_TOURS;
   const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: fallbackTours, ongoing: defaultOngoing(fallbackTours), venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);

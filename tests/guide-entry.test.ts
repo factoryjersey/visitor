@@ -269,3 +269,17 @@ describe("a tour's own short description", () => {
     expect(opts).toContain('A kayak trip.');
   });
 });
+
+describe("Visit Jersey's words on the tour grids", () => {
+  const theirs = 'Accessible only on the lowest tides of the year, this is a bucket list walk out to the Karame Beacon.';
+  const t = (o: Partial<GuideTour> = {}): GuideTour => ({
+    kind: 'dated', genre: '', dates: 'Sat 12 Dec', title: 'Intertidal Walk', code: 'IW', provider: 'Intertidal Walks', duration: '3-5 hrs', times: '12pm',
+    copy: theirs, sortKey: '2026-12-12', imageUrl: '', preview: '', guidePicture: false, options: [theirs, 'A low-tide walk.', ''], frame: 'listing', client: false, theirs, ...o,
+  });
+  it('prints them on the grid of six', () => {
+    expect(gridTours([t()], 'grid6')[0]![0]!.copy).toBe(theirs);
+  });
+  it('keeps the short lines on the grid of twelve', () => {
+    expect(gridTours([t()], 'grid12')[0]![0]!.copy).toBe('A low-tide walk.');
+  });
+});

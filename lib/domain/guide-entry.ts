@@ -246,7 +246,9 @@ export type Layout = (typeof LAYOUTS)[number];
 export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
 
 /** Tours: in ruled columns, or on a grid of eight, twelve or sixteen with a picture a page. */
-export const TOUR_LAYOUTS = ['columns', 'grid8', 'grid12', 'grid16'] as const;
+export const TOUR_LAYOUTS = ['columns', 'grid6', 'grid8', 'grid12', 'grid16'] as const;
+/** Dated tours' grid unless chosen: six to a page, set compact, so Visit Jersey's own short descriptions print whole. */
+export const DEFAULT_TOURS: TourLayout = 'grid6';
 export type TourLayout = (typeof TOUR_LAYOUTS)[number];
 /** A venue section: on the grid of eight (a listing a box, an eighth) or of sixteen (a listing a sixteenth). */
 export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
@@ -268,13 +270,13 @@ export const budgetFor = (l: GuideLayouts, section: string): number | null => (s
  * The template from the address: ?grid= for What's On (as it always was),
  * ?tours= for tours on specific dates, ?ongoing= for those on demand,
  * ?venues=Eat:grid16,Buy:grid16 for the venue sections not on the grid of
- * eight. Dated tours are on the grid of eight unless chosen; on-demand
+ * eight. Dated tours are on the grid of six unless chosen; on-demand
  * ones follow them onto a grid, the grid of twelve.
  */
 export function layoutsFrom(get: (key: string) => string | null | undefined): GuideLayouts {
   const events = layoutFrom(get('grid'));
   const asked = get('tours');
-  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : 'grid8';
+  const tours: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as TourLayout) : DEFAULT_TOURS;
   const askedOngoing = get('ongoing');
   const ongoing: TourLayout = (TOUR_LAYOUTS as readonly string[]).includes(askedOngoing ?? '') ? (askedOngoing as TourLayout) : defaultOngoing(tours);
   const venues: Record<string, VenueGrid> = {};
@@ -298,7 +300,7 @@ export const defaultOngoing = (tours: TourLayout): TourLayout => (tours === 'col
 export function layoutsQuery(l: GuideLayouts): string {
   const q = new URLSearchParams();
   if (l.events !== 'top') q.set('grid', l.events);
-  if (l.tours !== 'grid8') q.set('tours', l.tours);
+  if (l.tours !== DEFAULT_TOURS) q.set('tours', l.tours);
   if (l.ongoing !== defaultOngoing(l.tours)) q.set('ongoing', l.ongoing);
   const venues = Object.entries(l.venues).filter(([s, g]) => g !== (DEFAULT_VENUE_GRIDS[s] ?? 'grid8')).map(([s, g]) => `${s}:${g}`).join(',');
   if (venues) q.set('venues', venues);
@@ -642,6 +644,8 @@ export type GuideTour = {
   client: boolean;
   /** The grid its page is on, once laid out. */
   grid?: Exclude<TourLayout, 'columns'>;
+  /** The organiser's own short description (Visit Jersey's, for theirs), when we have it. Not printed as such: it is among the options. */
+  theirs?: string;
 };
 
 export function guideTour(
@@ -671,6 +675,7 @@ export function guideTour(
     times: times.split(/ \| |, /).length > 2 ? '' : times,
     // In columns a tour prints its copy whole: ours, else the organiser's own short description, else the summary.
     copy: x.guideCopy ?? x.sourceWords ?? x.summary ?? '',
+    ...(x.sourceWords ? { theirs: x.sourceWords.replace(/\s+/g, ' ').trim() } : {}),
     sortKey: inside[0]?.date ?? '',
     imageUrl: printable(x.headerImage) ? x.headerImage!.url : '',
     preview: printable(x.headerImage) ? webImage(x.headerImage!, 520, 182) : '',
@@ -694,8 +699,10 @@ export function tourOptions(x: CopySource): string[] {
 }
 
 /** A tour's box on the grid: when (dated tours only: the on-demand pages say so on their marker), its title, the copy, then the provider's code and the duration. The code points to the key. */
-/** The tour grids' type against the standard boxes' 8.5pt: twelve at 7.5pt, sixteen at 7pt (app/globals.css). */
-const TOUR_SCALE: Record<Exclude<TourLayout, 'columns'>, number> = { grid8: 1, grid12: 7.5 / 8.5, grid16: 7 / 8.5 };
+/** The tour grids' type against the standard boxes' 8.5pt: six at 7pt, twelve at 7.5pt, sixteen at 7pt (app/globals.css). */
+const TOUR_SCALE: Record<Exclude<TourLayout, 'columns'>, number> = { grid6: 7 / 8.5, grid8: 1, grid12: 7.5 / 8.5, grid16: 7 / 8.5 };
+/** The grids with room for an organiser's own short description whole; on the smaller ones a tour keeps its short lines. */
+const ROOM_FOR_THEIRS: Exclude<TourLayout, 'columns'>[] = ['grid6', 'grid8'];
 const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false, scale: TOUR_SCALE[grid] });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
@@ -715,7 +722,9 @@ export function tourGroups(tours: GuideTour[], layouts: Pick<GuideLayouts, 'tour
 /** Tours and experiences on a grid (eight, twelve or sixteen), in the order they print: the listings and a picture a page. */
 export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
   return gridPages(tours, GRID[grid].cells, {
-    listing: (t) => {
+    listing: (given) => {
+      // Visit Jersey's own words go on the bigger grids only; on the grid of twelve or sixteen a tour keeps its short lines.
+      const t = given.theirs && !ROOM_FOR_THEIRS.includes(grid) ? { ...given, options: given.options.filter((o) => o !== given.theirs) } : given;
       const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
       // What fits by the estimate; failing that, the shortest sentence it has, so no tour goes without one (the proof measures and flags any overset).
       const shortest = [...t.options].reverse().find(Boolean) ?? '';
