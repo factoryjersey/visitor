@@ -645,7 +645,7 @@ export type GuideTour = {
 };
 
 export function guideTour(
-  x: Experience,
+  x: Experience & { sourceWords?: string | null },
   provider: Pick<Provider, 'name' | 'code'> | null,
   window?: Window,
   client = false,
@@ -669,7 +669,8 @@ export function guideTour(
     duration: x.duration ?? '',
     // Bookable all day at many times reads as noise in print; leave it to the provider.
     times: times.split(/ \| |, /).length > 2 ? '' : times,
-    copy: x.guideCopy ?? x.summary ?? '',
+    // In columns a tour prints its copy whole: ours, else the organiser's own short description, else the summary.
+    copy: x.guideCopy ?? x.sourceWords ?? x.summary ?? '',
     sortKey: inside[0]?.date ?? '',
     imageUrl: printable(x.headerImage) ? x.headerImage!.url : '',
     preview: printable(x.headerImage) ? webImage(x.headerImage!, 520, 182) : '',
@@ -685,7 +686,7 @@ export function guideTour(
  * sentence, and then its snippet (two sentences, or the first alone) for
  * the smallest boxes, so a tour that loses its longer copy keeps a sentence.
  */
-export function tourOptions(x: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
+export function tourOptions(x: CopySource): string[] {
   const long = copyOptions({ ...x, printLine: null });
   const short = x.printLine ? copyOptions({ guideCopy: null, summary: null, description: null, printLine: x.printLine }) : [];
   // Ours stays first, as copyOptions keeps it; the snippet's forms come after the source's, shortest last.

@@ -259,3 +259,13 @@ describe("the organiser's own short description", () => {
     expect(ours.slice(0, 2)).toEqual(['Staff wrote this.', theirs]);
   });
 });
+
+describe("a tour's own short description", () => {
+  it('comes first for its box, whole, and is its copy in columns', async () => {
+    const { tourOptions } = await import('@/lib/domain/guide-entry');
+    const theirs = 'Paddle the north coast with a local guide. Caves, seals and a beach picnic.';
+    const opts = tourOptions({ guideCopy: null, summary: 'Our summary.', description: 'Our description.', printLine: 'A kayak trip.', sourceWords: theirs });
+    expect(opts[0]).toBe(theirs);
+    expect(opts).toContain('A kayak trip.');
+  });
+});

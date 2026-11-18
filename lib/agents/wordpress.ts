@@ -1,4 +1,5 @@
 import type { Event, Experience, Image } from '@/lib/db/schema';
+import { jerseyToday } from '@/lib/domain/when';
 
 /**
  * Our events in the shape Visit Jersey's own site gives its listings: the
@@ -64,8 +65,9 @@ export type WpEventRow = Pick<
 > & { venuePlaceName?: string | null };
 
 /** One event as a jersey.com events post. `sources`: where it came from; `jerseyComId`: their post's id, when it is theirs too. */
-export function wpEvent(e: WpEventRow, { sources = [], jerseyComId = null }: { sources?: string[]; jerseyComId?: string | null } = {}) {
-  const dates = [...e.dates].sort((a, b) => a.date.localeCompare(b.date));
+export function wpEvent(e: WpEventRow, { sources = [], jerseyComId = null, today = jerseyToday() }: { sources?: string[]; jerseyComId?: string | null; today?: string } = {}) {
+  // Its days still to come: what has gone is no use to anyone reading this.
+  const dates = e.dates.filter((d) => d.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const first = dates[0]?.date ?? null;
   const last = dates.at(-1)?.date ?? null;
   const months = [...new Set(dates.map((d) => Number(d.date.slice(5, 7)) - 1))].sort((a, b) => a - b);
@@ -137,8 +139,8 @@ export const durationValue = (d: string) => /^\s*(\d+(?:\s*-\s*\d+)?)\s*(?:hrs?|
  * times, a duration band, price_from and price_to, the operator in
  * display_name), ours under guide_ names as for events.
  */
-export function wpTour(t: WpTourRow, { sources = [], jerseyComId = null }: { sources?: string[]; jerseyComId?: string | null } = {}) {
-  const dates = [...t.dates].sort((a, b) => a.date.localeCompare(b.date));
+export function wpTour(t: WpTourRow, { sources = [], jerseyComId = null, today = jerseyToday() }: { sources?: string[]; jerseyComId?: string | null; today?: string } = {}) {
+  const dates = t.dates.filter((d) => d.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const months = [...new Set(dates.map((d) => Number(d.date.slice(5, 7)) - 1))].sort((a, b) => a - b);
   const link = `${SITE}/tours/${t.slug}`;
   const kinds = [...new Set([...(t.genre ? [t.genre] : []), ...t.tags])];

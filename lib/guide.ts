@@ -105,6 +105,21 @@ const genreOrder = (g: string) => {
   return i < 0 ? GENRES.length : i;
 };
 
+/** Visit Jersey's short descriptions of the events or tours given, by their id here: from the record of their listing, as they wrote it. */
+async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!ids.length) return out;
+  const column = type === 'events' ? sourceRecords.eventId : sourceRecords.experienceId;
+  for (const r of await db
+    .select({ id: column, payload: sourceRecords.payload })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, 'visit_jersey'), eq(sourceRecords.externalType, type), eq(sourceRecords.present, true), inArray(column, ids)))) {
+    const words = htmlToText((r.payload as { acf?: { short_description?: unknown } } | null)?.acf?.short_description);
+    if (r.id && words) out.set(r.id, words);
+  }
+  return out;
+}
+
 /**
  * Everything included, as printed entries, in guide order: events by
  * their first date in the edition; dated tours by date, then
@@ -116,18 +131,11 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: fallbackTours, ongoing: defaultOngoing(fallbackTours), venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
-  // Visit Jersey's own short description of each of their events, as they wrote it: printed whole where it fits.
-  const ids = selection.events.map((r) => r.event.id);
-  const theirWords = new Map<string, string>();
-  if (ids.length) {
-    for (const r of await db
-      .select({ eventId: sourceRecords.eventId, payload: sourceRecords.payload })
-      .from(sourceRecords)
-      .where(and(eq(sourceRecords.source, 'visit_jersey'), eq(sourceRecords.externalType, 'events'), eq(sourceRecords.present, true), inArray(sourceRecords.eventId, ids)))) {
-      const words = htmlToText((r.payload as { acf?: { short_description?: unknown } } | null)?.acf?.short_description);
-      if (r.eventId && words) theirWords.set(r.eventId, words);
-    }
-  }
+  // Visit Jersey's own short description of each of their events and tours, as they wrote it: printed whole where it fits.
+  const [theirWords, theirTourWords] = await Promise.all([
+    visitJerseyWords('events', selection.events.map((r) => r.event.id)),
+    visitJerseyWords('tours-and-activities', tourRows.map((r) => r.experience.id)),
+  ]);
 
   // What is not aimed at visitors is left out of print: training and work, business, health and wellbeing. The event's own words count too, unless staff have set its types by hand.
   const typed = selection.events.map((row) => ({ ...row, types: row.event.lockedFields.includes('eventTypes') ? row.event.eventTypes : withCategories(row.event.eventTypes, row.event) }));
@@ -148,7 +156,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
   for (const { experience, provider: found, client } of tourRows) {
     const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
-    const tour = guideTour(experience, provider, window, !!client);
+    const tour = guideTour({ ...experience, sourceWords: theirTourWords.get(experience.id) ?? null }, provider, window, !!client);
     if (tour) printed.push({ tour, provider });
   }
   const tours = printed

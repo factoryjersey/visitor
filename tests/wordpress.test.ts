@@ -15,7 +15,7 @@ const row: WpEventRow = {
 };
 
 describe('our events as jersey.com WordPress posts', () => {
-  const post = wpEvent(row, { sources: ['visit_jersey', 'eventbrite'], jerseyComId: '13304' });
+  const post = wpEvent(row, { sources: ['visit_jersey', 'eventbrite'], jerseyComId: '13304', today: '2026-11-01' });
 
   it('carries the post fields a WordPress client reads', () => {
     expect(post).toMatchObject({ id: wpId(row.id), slug: 'winter-domes-2026', type: 'events', status: 'publish', lang: 'en', link: 'https://guide.je/whats-on/winter-domes-2026', modified_gmt: '2026-11-10T12:30:00' });
@@ -44,7 +44,7 @@ describe('our events as jersey.com WordPress posts', () => {
   });
 
   it('calls a free event free', () => {
-    const free = wpEvent({ ...row, free: true });
+    const free = wpEvent({ ...row, free: true }, { today: '2026-11-01' });
     expect(free.acf.from_price).toBe('0');
     expect(free.acf.booking_information).toEqual([{ label: 'Free entry', value: 'free-entry' }]);
     expect(free.acf.jersey_com_id).toBeNull();
@@ -64,7 +64,7 @@ describe('our tours as jersey.com tours-and-activities posts', () => {
       duration: '1-2 hrs', tags: ['Walking', 'Outdoor'], genre: 'History & heritage' as never, dates: [{ date: '2026-12-02', start: null, end: null }, { date: '2026-11-28', start: '10:00', end: null }],
       fromPricePence: 2650, toPricePence: 3750, meetingPoint: 'Liberation Square', parish: 'St Helier', phone: null, email: null, website: 'https://example.je',
       lat: 49.18, lon: -2.1, headerImage: null, gallery: [], sourceLink: null, createdAt: new Date('2026-10-01T09:00:00Z'), updatedAt: new Date('2026-11-01T09:00:00Z'), providerName: 'Geotourist',
-    }, { sources: ['visit_jersey'], jerseyComId: '4321' });
+    }, { sources: ['visit_jersey'], jerseyComId: '4321', today: '2026-11-01' });
     expect(post).toMatchObject({ type: 'tours-and-activities', link: 'https://guide.je/tours/liberation-trail', post_type_label: 'Tours & Activity Session' });
     expect(post.acf.type).toEqual({ label: 'Tours', value: 'tours' });
     expect(post.acf.sub_type.map((s) => s.value)).toEqual(['history-heritage', 'walking', 'outdoor']);
@@ -75,5 +75,15 @@ describe('our tours as jersey.com tours-and-activities posts', () => {
     expect(post.acf.display_name).toBe('Geotourist');
     expect(post.acf.jersey_com_id).toBe(4321);
     expect(durationValue('Half day')).toBe('half-day');
+  });
+});
+
+describe('only the days still to come', () => {
+  it('leaves out the dates that have gone, and starts and ends with those left', async () => {
+    const { wpEvent } = await import('@/lib/agents/wordpress');
+    const post = wpEvent(row, { today: '2026-11-30' });
+    expect(post.acf.event_dates).toEqual([{ date: '20261201', start_time: '12:00', end_time: '22:00' }]);
+    expect(post.acf.event_dates_start).toBe('01/12/2026');
+    expect(post.acf.seasonality.map((s) => s.value)).toEqual(['december']);
   });
 });
