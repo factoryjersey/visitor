@@ -1,4 +1,4 @@
-import type { Event, Image } from '@/lib/db/schema';
+import type { Event, Experience, Image } from '@/lib/db/schema';
 
 /**
  * Our events in the shape Visit Jersey's own site gives its listings: the
@@ -45,7 +45,8 @@ const paragraphs = (s: string | null | undefined) =>
 /** "2026-11-27" to "20261127" (event_dates) and "27/11/2026" (event_dates_start and _end). */
 const compact = (iso: string) => iso.replace(/-/g, '');
 const dmy = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
-const pounds = (pence: number | null) => (pence === null ? '' : String(Math.round(pence) / 100));
+/** Pence as their price strings: "100" for whole pounds, "26.50" otherwise. */
+const pounds = (pence: number | null) => (pence === null ? '' : pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2));
 /** "2026-10-21T13:33:27" in their local and GMT fields: no zone, no milliseconds. */
 const wpTime = (d: Date) => d.toISOString().slice(0, 19);
 
@@ -119,3 +120,73 @@ export function wpEvent(e: WpEventRow, { sources = [], jerseyComId = null }: { s
 }
 
 export type WpEvent = ReturnType<typeof wpEvent>;
+
+
+export type WpTourRow = Pick<
+  Experience,
+  | 'id' | 'slug' | 'title' | 'summary' | 'description' | 'guideCopy' | 'duration' | 'tags' | 'genre' | 'dates' | 'fromPricePence' | 'toPricePence'
+  | 'meetingPoint' | 'parish' | 'phone' | 'email' | 'website' | 'lat' | 'lon' | 'headerImage' | 'gallery' | 'sourceLink' | 'createdAt' | 'updatedAt'
+> & { providerName?: string | null };
+
+/** "1-2 hrs" as their duration's value spells it ("1-2"); any other wording, slugged. */
+export const durationValue = (d: string) => /^\s*(\d+(?:\s*-\s*\d+)?)\s*(?:hrs?|hours?)\b/i.exec(d)?.[1]?.replace(/\s+/g, '') ?? wpValue(d);
+
+/**
+ * One tour as a jersey.com tours-and-activities post: their fields where
+ * they differ from events' (one type, its kinds in sub_type, dates with no
+ * times, a duration band, price_from and price_to, the operator in
+ * display_name), ours under guide_ names as for events.
+ */
+export function wpTour(t: WpTourRow, { sources = [], jerseyComId = null }: { sources?: string[]; jerseyComId?: string | null } = {}) {
+  const dates = [...t.dates].sort((a, b) => a.date.localeCompare(b.date));
+  const months = [...new Set(dates.map((d) => Number(d.date.slice(5, 7)) - 1))].sort((a, b) => a - b);
+  const link = `${SITE}/tours/${t.slug}`;
+  const kinds = [...new Set([...(t.genre ? [t.genre] : []), ...t.tags])];
+  return {
+    id: wpId(t.id),
+    date: wpTime(t.createdAt),
+    date_gmt: wpTime(t.createdAt),
+    modified: wpTime(t.updatedAt),
+    modified_gmt: wpTime(t.updatedAt),
+    guid: { rendered: link },
+    lang: 'en',
+    link,
+    slug: t.slug,
+    status: 'publish',
+    type: 'tours-and-activities',
+    title: { rendered: esc(t.title) },
+    post_type_label: 'Tours & Activity Session',
+    acf: {
+      uuid: t.id,
+      title: t.title,
+      type: option('Tours'),
+      sub_type: kinds.map(option),
+      dates: dates.map((d) => ({ date: compact(d.date), ...(d.start ? { start_time: d.start } : {}), ...(d.end ? { end_time: d.end } : {}) })),
+      duration: t.duration ? { label: t.duration, value: durationValue(t.duration) } : '',
+      price_from: pounds(t.fromPricePence),
+      price_to: pounds(t.toPricePence),
+      seasonality: months.map((m) => ({ label: MONTHS[m]!.charAt(0).toUpperCase() + MONTHS[m]!.slice(1), value: MONTHS[m]! })),
+      parish: t.parish ? option(t.parish) : '',
+      address: { place_name: t.meetingPoint ?? '', address_line_1: '', address_line_2: 'Jersey', postcode: '' },
+      map_location: t.lat !== null && t.lon !== null ? { lat: t.lat, lng: t.lon, name: t.meetingPoint ?? '', address: [t.meetingPoint, t.parish, 'Jersey'].filter(Boolean).join(', '), country: 'Jersey', country_short: 'JE' } : '',
+      map_location_lat: t.lat !== null ? String(t.lat) : '',
+      map_location_lng: t.lon !== null ? String(t.lon) : '',
+      website: t.website ?? '',
+      telephone_number: t.phone ? { area_code: '', prefix: '', number: '', formatted: t.phone } : '',
+      email_address: t.email ?? '',
+      display_name: t.providerName ?? '',
+      short_description: paragraphs(t.summary ?? t.guideCopy),
+      long_description: paragraphs(t.description),
+      header_image_data: imageData([t.headerImage]),
+      gallery_images_data: imageData(t.gallery ?? []),
+      booking_information: [],
+      bus_routes: [],
+      guide_url: link,
+      guide_source_link: t.sourceLink ?? '',
+      guide_sources: sources.map((s) => SOURCE_NAME[s] ?? s),
+      jersey_com_id: jerseyComId ? Number(jerseyComId) : null,
+    },
+  };
+}
+
+export type WpTour = ReturnType<typeof wpTour>;

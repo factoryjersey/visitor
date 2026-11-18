@@ -55,3 +55,25 @@ describe('our events as jersey.com WordPress posts', () => {
     expect(wpValue('St. Brelade')).toBe('st-brelade');
   });
 });
+
+describe('our tours as jersey.com tours-and-activities posts', () => {
+  it('fills their tour fields as they spell them', async () => {
+    const { wpTour, durationValue } = await import('@/lib/agents/wordpress');
+    const post = wpTour({
+      id: '6f22473a-5d1e-4f22-8d82-88681fd3fe55', slug: 'liberation-trail', title: 'Liberation Trail', summary: 'A walk through 1945.', description: null, guideCopy: null,
+      duration: '1-2 hrs', tags: ['Walking', 'Outdoor'], genre: 'History & heritage' as never, dates: [{ date: '2026-12-02', start: null, end: null }, { date: '2026-11-28', start: '10:00', end: null }],
+      fromPricePence: 2650, toPricePence: 3750, meetingPoint: 'Liberation Square', parish: 'St Helier', phone: null, email: null, website: 'https://example.je',
+      lat: 49.18, lon: -2.1, headerImage: null, gallery: [], sourceLink: null, createdAt: new Date('2026-10-01T09:00:00Z'), updatedAt: new Date('2026-11-01T09:00:00Z'), providerName: 'Geotourist',
+    }, { sources: ['visit_jersey'], jerseyComId: '4321' });
+    expect(post).toMatchObject({ type: 'tours-and-activities', link: 'https://guide.je/tours/liberation-trail', post_type_label: 'Tours & Activity Session' });
+    expect(post.acf.type).toEqual({ label: 'Tours', value: 'tours' });
+    expect(post.acf.sub_type.map((s) => s.value)).toEqual(['history-heritage', 'walking', 'outdoor']);
+    expect(post.acf.dates).toEqual([{ date: '20261128', start_time: '10:00' }, { date: '20261202' }]);
+    expect(post.acf.duration).toEqual({ label: '1-2 hrs', value: '1-2' });
+    expect(post.acf.price_from).toBe('26.50');
+    expect(post.acf.price_to).toBe('37.50');
+    expect(post.acf.display_name).toBe('Geotourist');
+    expect(post.acf.jersey_com_id).toBe(4321);
+    expect(durationValue('Half day')).toBe('half-day');
+  });
+});

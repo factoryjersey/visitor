@@ -245,7 +245,7 @@ export. If a system is going to pull the whole directory on a schedule, agree th
 schedule with Visit Jersey — we are their partner on the guide, and they may
 prefer a different route to the data than the public API.
 
-## Back the other way: our events in their shape
+## Back the other way: our events and tours in their shape
 
 `GET https://guide.je/wp-json/wp/v2/events` serves the events on guide.je
 (approved, not left out, a day still to come) in the shape jersey.com's own
@@ -263,5 +263,13 @@ Paging as WordPress pages: `per_page` (1–100), `page`, and the totals in
 `x-wp-total` / `x-wp-totalpages`. `modified_after` for what has changed since a
 time; `exclude_jersey_com=1` leaves out what they list themselves. Open, as
 theirs is, and nothing admin-only in it: no client tags or bookings. Stock
-pictures are left out (they are licensed to us, not to pass on). Code:
+pictures are left out (they are licensed to us, not to pass on).
+
+`GET https://guide.je/wp-json/wp/v2/tours-and-activities` does the same for the
+tours on guide.je, in the shape of their tours-and-activities posts, which
+differ from events: `type` is one `{label, value}` (Tours), the kinds are in
+`sub_type`, `dates` are `[{date: "YYYYMMDD"}]` (with `start_time` where we know
+one), `duration` is `{label: "1-2 hrs", value: "1-2"}`, prices are `price_from`
+and `price_to` ("26.50"), the operator is `display_name`, and the meeting point
+is the `address` and `map_location`. Same paging and filters. Code:
 `lib/agents/wordpress.ts`, `app/wp-json/wp/v2/[type]/route.ts`.
