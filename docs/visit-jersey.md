@@ -244,3 +244,24 @@ rows so an address is asked about once ever, and credit the source in anything w
 export. If a system is going to pull the whole directory on a schedule, agree the
 schedule with Visit Jersey — we are their partner on the guide, and they may
 prefer a different route to the data than the public API.
+
+## Back the other way: our events in their shape
+
+`GET https://guide.je/wp-json/wp/v2/events` serves the events on guide.je
+(approved, not left out, a day still to come) in the shape jersey.com's own
+WordPress API gives its events, so the portal can read ours as it reads its
+own: the post fields (`id`, `slug`, `link`, `modified_gmt`, `title.rendered`)
+and an `acf` block with their field names (`event_dates` as `YYYYMMDD` with
+`start_time`/`end_time`, `event_dates_start`/`_end` as `dd/mm/yyyy`, `type`,
+`parish` and `seasonality` as `{label, value}`, `address`, `map_location`,
+`from_price`, `short_description`/`long_description` as HTML,
+`header_image_data`/`gallery_images_data` as JSON strings). Ours are added as
+`uuid`, `guide_url`, `guide_source_link`, `guide_sources` (where each event
+came from) and `jersey_com_id` (their post id, when the event is theirs too).
+
+Paging as WordPress pages: `per_page` (1–100), `page`, and the totals in
+`x-wp-total` / `x-wp-totalpages`. `modified_after` for what has changed since a
+time; `exclude_jersey_com=1` leaves out what they list themselves. Open, as
+theirs is, and nothing admin-only in it: no client tags or bookings. Stock
+pictures are left out (they are licensed to us, not to pass on). Code:
+`lib/agents/wordpress.ts`, `app/wp-json/wp/v2/[type]/route.ts`.
