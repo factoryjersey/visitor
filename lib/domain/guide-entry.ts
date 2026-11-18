@@ -124,20 +124,26 @@ export function fitCopy(text: string, budget: number): string {
  * description cut at a sentence, the card's one-sentence version, or the
  * print line written to fit the smallest frame, whichever says more. Only if neither fits whole is a sentence cut.
  */
-export function printCopy(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }, budget: number): string {
+export function printCopy(e: CopySource, budget: number): string {
   // No room for a line of copy: the dates, title and venue say it.
   if (budget <= 0) return '';
   return copyOptions(e).find((c) => c.length <= budget) ?? '';
 }
 
+/** What a frame's copy can be made from. sourceWords: the organiser's own short description, printed only whole. */
+type CopySource = { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null; sourceWords?: string | null };
+
 /**
  * The copy a frame could print, in order of preference: ours whole, then
+ * the organiser's own short description whole (Visit Jersey's, for theirs), then
  * every whole-sentence version of ours, the description, the card
  * sentence and the print line, fullest first, then none.
  */
-export function copyOptions(e: { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null }): string[] {
+export function copyOptions(e: CopySource): string[] {
   const tidy = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
   const ours = tidy(e.guideCopy);
+  // The organiser's own short description (Visit Jersey's, for their listings): whole, as they wrote it, after any we wrote ourselves and before anything cut down.
+  const theirs = tidy(e.sourceWords);
   const snippet = tidy(e.printLine);
   // The snippet sums the listing up for print: whole, or its first sentence alone.
   const texts = snippet ? [snippet] : [tidy(e.description), tidy(e.summary)];
@@ -150,7 +156,7 @@ export function copyOptions(e: { guideCopy: string | null; summary: string | nul
       if (!trailsOff(out)) prefixes.add(out);
     }
   }
-  return [...new Set([...(ours ? [ours] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
+  return [...new Set([...(ours ? [ours] : []), ...(theirs ? [theirs] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
 }
 
 /** Copy the source cut short ("…", "..."): never printed. */
@@ -196,7 +202,7 @@ export function guideWebsite(eventSite: string | null, venueSite: string | null)
   return TICKET_PLATFORMS.test(host) && venueSite ? venueSite : eventSite;
 }
 
-export function guideEvent(e: Event, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
+export function guideEvent(e: Event & { sourceWords?: string | null }, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
   // Ongoing listings go by their own first and last days, not the edition's, and a placeholder end is left off.
   const dates = e.printDates ?? (e.occurrence === 'ongoing' && window ? printOngoingDates(e.dates, window) : printDates(e.dates, window));

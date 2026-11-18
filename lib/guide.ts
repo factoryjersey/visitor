@@ -1,7 +1,8 @@
-import { and, asc, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne } from 'drizzle-orm';
+import { htmlToText } from '@/lib/integrations/jersey-com/parse';
 import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
-import { doActivities, places, type Provider } from '@/lib/db/schema';
+import { doActivities, places, sourceRecords, type Provider } from '@/lib/db/schema';
 import { doSection, type DoSection } from '@/lib/domain/do-section';
 import { openingText, reopensIn, windowMonths } from '@/lib/domain/opening';
 import { usableLine } from '@/lib/domain/venue-line';
@@ -115,13 +116,25 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const layouts: GuideLayouts = opts.layouts ?? { events: opts.layout ?? 'top', tours: fallbackTours, ongoing: defaultOngoing(fallbackTours), venues: {}, budgets: {} };
   const layout = layouts.events;
   const [selection, tourRows] = await Promise.all([guideSelection(opts), includedExperiences(opts)]);
+  // Visit Jersey's own short description of each of their events, as they wrote it: printed whole where it fits.
+  const ids = selection.events.map((r) => r.event.id);
+  const theirWords = new Map<string, string>();
+  if (ids.length) {
+    for (const r of await db
+      .select({ eventId: sourceRecords.eventId, payload: sourceRecords.payload })
+      .from(sourceRecords)
+      .where(and(eq(sourceRecords.source, 'visit_jersey'), eq(sourceRecords.externalType, 'events'), eq(sourceRecords.present, true), inArray(sourceRecords.eventId, ids)))) {
+      const words = htmlToText((r.payload as { acf?: { short_description?: unknown } } | null)?.acf?.short_description);
+      if (r.eventId && words) theirWords.set(r.eventId, words);
+    }
+  }
 
   // What is not aimed at visitors is left out of print: training and work, business, health and wellbeing. The event's own words count too, unless staff have set its types by hand.
   const typed = selection.events.map((row) => ({ ...row, types: row.event.lockedFields.includes('eventTypes') ? row.event.eventTypes : withCategories(row.event.eventTypes, row.event) }));
   const leftOut = typed.filter((r) => nonCore(r.types)).map((r) => r.event.title);
   const all = typed
     .filter((r) => !nonCore(r.types))
-    .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types }, venue, window))
+    .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types, sourceWords: theirWords.get(event.id) ?? null }, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   // By their first date in the edition, long runs among the rest; onto pages as the layout asks.

@@ -247,3 +247,15 @@ describe('gridTours copy for the export', () => {
     expect(page![0]!.copy).toBe("A clue trail through St Helier's back streets hunting for a missing Millais portrait.");
   });
 });
+
+describe("the organiser's own short description", () => {
+  it('comes whole, as written, before anything cut down, after copy we wrote ourselves', async () => {
+    const { copyOptions } = await import('@/lib/domain/guide-entry');
+    const theirs = 'Get into the festive spirit with a taste of France! Cheese, cider, fruit, jumpers... just in time for Christmas. A bientôt!';
+    const opts = copyOptions({ guideCopy: null, summary: 'Our snippet.', description: 'Our long words. More of them.', printLine: 'A Norman market at the Weighbridge.', sourceWords: theirs });
+    expect(opts[0]).toBe(theirs);
+    expect(opts).toContain('A Norman market at the Weighbridge.');
+    const ours = copyOptions({ guideCopy: 'Staff wrote this.', summary: null, description: null, sourceWords: theirs });
+    expect(ours.slice(0, 2)).toEqual(['Staff wrote this.', theirs]);
+  });
+});
