@@ -290,12 +290,21 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 /* A beach's buses, under its copy; the Beaches section's opening page. */
 .gp-venue-bus { display: flex; align-items: center; gap: 0.8mm; font-family: var(--gp-sans); font-size: 6.5pt; color: var(--gp-ink80); }
 .gp-venue-bus svg { width: 2.4mm; height: 2.4mm; flex: none; color: var(--gp-accent); }
-.gp-beach-intro .gp-key-heading { font-size: 22pt; color: var(--gp-accent); margin-bottom: 3mm; }
-.gp-beach-intro .gp-standfirst { font-size: 10pt; line-height: 1.35; font-weight: 400; margin: 0 0 5mm; }
-.gp-beach-note { margin: 0 0 3.5mm; padding-left: 2.5mm; border-left: 0.5mm solid var(--gp-accent); }
-.gp-beach-note h4 { font-family: var(--gp-sans); font-weight: 500; font-size: 8.5pt; color: var(--gp-accent); margin: 0 0 0.6mm; text-transform: uppercase; letter-spacing: 0.04em; }
-.gp-beach-note p { font-size: 8pt; line-height: 1.3; margin: 0; }
-.gp-beach-key { font-size: 7.5pt; font-style: italic; color: var(--gp-ink80); margin-top: 5mm; }
+/* The Beachlife spread: a beach full bleed under the heading, then the introduction on sand with four beaches pictured. */
+.gp-beach-opener h2 { font-size: 38pt; bottom: 30mm; }
+.gp-sand { position: absolute; inset: 0; background: #f4f2dc; }
+.gp-sheet .gp-sand { inset: -3mm; }
+.gp-beach-intro { display: flex; flex-direction: column; color: var(--gp-ink); }
+.gp-beach-intro .gp-standfirst { font-family: var(--gp-sans); font-stretch: 100%; font-size: 8.5pt; line-height: 1.3; font-weight: 400; margin: 0 0 3.2mm; }
+.gp-beach-pictures { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4mm 2.6mm; margin-bottom: 3.6mm; }
+.gp-beach-pictures figure { margin: 0; }
+.gp-beach-pictures img { display: block; width: 100%; height: 22mm; object-fit: cover; border-radius: var(--gp-round); }
+.gp-beach-pictures figcaption { font-family: var(--gp-sans); font-weight: 500; font-size: 6pt; margin-top: 0.7mm; text-transform: uppercase; letter-spacing: 0.04em; }
+.gp-beach-notes { display: flex; flex-direction: column; gap: 2mm; }
+.gp-beach-note { padding-left: 2.5mm; border-left: 0.5mm solid var(--gp-accent); }
+.gp-beach-note h4 { font-family: var(--gp-sans); font-weight: 500; font-size: 7.5pt; color: var(--gp-accent); margin: 0 0 0.5mm; text-transform: uppercase; letter-spacing: 0.04em; }
+.gp-beach-note p { font-size: 7pt; line-height: 1.25; margin: 0; }
+.gp-beach-key { font-size: 6.5pt; font-style: italic; color: var(--gp-ink80); margin-top: auto; padding-top: 1.6mm; }
 .gp-ahead-row { display: grid; grid-template-columns: 20mm 1fr; column-gap: 2mm; padding: 1.4mm 0; border-bottom: 0.5pt solid var(--gp-accent); font-size: 8pt; line-height: 1.3; align-items: start; }
 .gp-ahead-row.gp-ahead-pictured { grid-template-columns: 20mm 1fr 16mm; }
 .gp-ahead-when { font-family: var(--gp-sans); font-weight: 500; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-ink); }

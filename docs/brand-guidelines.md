@@ -69,6 +69,7 @@ light blue; green with dark green.
 | Eat | Green | White |
 | Do | Deep blue | White |
 | Buy | Maroon | White |
+| Beaches (after See; by coast) | Blue; the Beachlife page on sand | White |
 | Pubs & bars (last; St Helier, East, West; grid of 16) | Blue | White |
 | Maps | Light blue | Deep blue |
 
@@ -84,6 +85,10 @@ with a rule in the category's colour. Credit: "Map data © OpenStreetMap contrib
 
 ## Layout and imagery
 
+- The Beaches section opens on the Beachlife spread: a beach full bleed under BEACHLIFE (as What's On's
+  opener), then the introduction on sand, edge to edge, with four beaches pictured and the tides, safe
+  swimming and BeachAbility notes. Jersey's palette has no yellow; sand is the nearest, and a
+  background colour by its rules, so type on it stays deep blue.
 - Section tabs run down the outer edge of the page, as in the 2026 editions (tabs across the top
   were tried and not taken). Tabs, folios, chips and pictures have slightly rounded corners (1mm;
   0.6mm on the chips); a tab's outer edge, at the trim, stays square.

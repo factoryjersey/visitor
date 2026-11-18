@@ -310,22 +310,59 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
   );
 }
 
-/** The Beaches section's first page, as the Beach Guide opened: a word on the beaches, then what to know before going in. */
-function BeachIntro() {
+/**
+ * The Beaches section opens on a spread, as the Beach Guide did: on the
+ * left a beach full bleed under BEACHLIFE; on the right, on sand (the
+ * Jersey palette's nearest to yellow, and a background colour by its
+ * rules), a word on the beaches, four of them in pictures, and what to
+ * know before going in. The pictures are the beaches' own, from their
+ * listings.
+ */
+function BeachOpener({ v }: { v: GuideVenue | undefined }) {
   return (
-    <div className="gp-content gp-flow gp-beach-intro">
-      <h3 className="gp-key-heading">Beachlife</h3>
-      <p className="gp-standfirst">{BEACH_INTRO}</p>
-      {BEACH_NOTES.map((n) => (
-        <div key={n.title} className="gp-beach-note">
-          <h4>{n.title}</h4>
-          <p>{n.text}</p>
-        </div>
-      ))}
-      <p className="gp-beach-key">{BEACH_KEY}</p>
+    <div className="gp-opener gp-beach-opener">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {v?.imageUrl && <img src={v.imageUrl} alt="" />}
+      <h2>Beachlife</h2>
+      {v && <p className="gp-caption">{v.name}</p>}
     </div>
   );
 }
+
+function BeachIntro({ pictures }: { pictures: GuideVenue[] }) {
+  return (
+    <>
+      <div className="gp-sand" />
+      <div className="gp-content gp-beach-intro">
+        <p className="gp-standfirst">{BEACH_INTRO}</p>
+        {pictures.length > 0 && (
+          <div className="gp-beach-pictures">
+            {pictures.map((v) => (
+              <figure key={v.name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={v.preview || v.imageUrl} alt="" />
+                <figcaption>{v.name}</figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+        <div className="gp-beach-notes">
+          {BEACH_NOTES.map((n) => (
+            <div key={n.title} className="gp-beach-note">
+              <h4>{n.title}</h4>
+              <p>{n.text}</p>
+            </div>
+          ))}
+        </div>
+        <p className="gp-beach-key">{BEACH_KEY}</p>
+      </div>
+    </>
+  );
+}
+
+/** The beaches the Beachlife spread pictures: the opener's, then four for the right-hand page, each the first with its own photograph. */
+const BEACH_OPENER = ['St. Ouen', 'Plémont', 'Portelet'];
+const BEACH_PICTURES = ['Portelet', 'Plémont', 'Beauport', 'Green Island', 'Grève de Lecq', 'Rozel', 'St. Brelade'];
 
 /** A line in Looking ahead: the month it opens again, its name, its line, and how and when to visit; a client's picture beside. */
 function AheadRow({ r }: { r: LookingAhead }) {
@@ -665,8 +702,15 @@ export function GuideBook(props: {
       const keys = vs.key.filter((k) => here.has(k.area));
       return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} /> };
     };
-    // The beaches open with the Beach Guide's introduction: the tides, safe swimming, the beach wheelchairs.
-    if (vs.section === BEACHES) pages.push({ section, body: <BeachIntro /> });
+    // The beaches open with the Beachlife spread: a beach full bleed, then the introduction on sand with four more.
+    if (vs.section === BEACHES) {
+      const beaches = [...vs.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)), ...vs.directory].filter((v) => v.imageUrl);
+      const named = (start: string) => beaches.find((v) => v.name.startsWith(start));
+      const opener = BEACH_OPENER.map(named).find(Boolean);
+      const pictures = [...new Set(BEACH_PICTURES.map(named).filter((v): v is GuideVenue => !!v && v !== opener))].slice(0, 4);
+      pages.push({ section, bleed: true, body: <BeachOpener v={opener} /> });
+      pages.push({ section, body: <BeachIntro pictures={pictures} /> });
+    }
     for (const p of vs.pages) {
       const { marker, foot } = keyed(vs, p.kind === 'full' ? [p.venue] : p.cells);
       pages.push(
