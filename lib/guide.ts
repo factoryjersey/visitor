@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
-import { htmlToText } from '@/lib/integrations/jersey-com/parse';
+import { printedWords } from '@/lib/domain/third-person';
 import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
 import { doActivities, places, sourceRecords, type Provider } from '@/lib/db/schema';
@@ -106,7 +106,7 @@ const genreOrder = (g: string) => {
   return i < 0 ? GENRES.length : i;
 };
 
-/** Visit Jersey's short descriptions of the events or tours given, by their id here: from the record of their listing, as they wrote it. */
+/** Visit Jersey's short descriptions of the events or tours given, by their id here: from the record of their listing, as they wrote it but in the third person. */
 async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   if (!ids.length) return out;
@@ -115,7 +115,7 @@ async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: st
     .select({ id: column, payload: sourceRecords.payload })
     .from(sourceRecords)
     .where(and(eq(sourceRecords.source, 'visit_jersey'), eq(sourceRecords.externalType, type), eq(sourceRecords.present, true), inArray(column, ids)))) {
-    const words = htmlToText((r.payload as { acf?: { short_description?: unknown } } | null)?.acf?.short_description);
+    const words = printedWords(r.payload);
     if (r.id && words) out.set(r.id, words);
   }
   return out;

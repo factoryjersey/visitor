@@ -5,7 +5,8 @@
  *   pnpm import:events --only eventbrite   one of: eventbrite, ticketsolve-artscentre, ticketsolve-operahouse, jersey-charities,
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, gigzhub, stock (pictures only),
  *                                          print-lines (the guide's snippets for events and tours only), venue-lines (venues' one-liners only),
- *                                          pictures (text check only), nightlife (evening events at pubs and bars only)
+ *                                          pictures (text check only), nightlife (evening events at pubs and bars only),
+ *                                          third-person (Visit Jersey's short descriptions in the third person only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -49,6 +50,7 @@ import { FEEDS, parseShows } from '@/lib/integrations/ticketsolve/parse';
 import { fillStockImages } from '@/lib/integrations/stock/fill';
 import { fillPrintLines, fillTourLines } from '@/lib/integrations/claude/fill-print-lines';
 import { fillVenueLines } from '@/lib/integrations/claude/fill-venue-lines';
+import { fillThirdPerson } from '@/lib/integrations/claude/fill-third-person';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
 import { fillProviderCodes } from '@/lib/db/provider-codes';
 import { matchGooglePlaces } from '@/lib/integrations/google/match';
@@ -542,6 +544,16 @@ if (!values.only || values.only === 'venue-lines') {
   } catch (e) {
     failed += 1;
     console.error(`venue lines failed: ${(e as Error).message}`);
+  }
+}
+// And Visit Jersey's short descriptions, printed whole, in the third person where they were written in the first.
+if (!values.only || values.only === 'third-person') {
+  try {
+    const t = await fillThirdPerson();
+    console.log(`third person: ${t.written} of ${t.wanted} short descriptions put in the third person`);
+  } catch (e) {
+    failed += 1;
+    console.error(`third person failed: ${(e as Error).message}`);
   }
 }
 // And which pictures are posters and flyers, which the guide does not print.

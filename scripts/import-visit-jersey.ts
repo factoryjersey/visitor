@@ -67,7 +67,8 @@ async function upsertRecord(type: ListingType, raw: RawItem & { _rewrite?: KeptR
     .values({ source: SOURCE, externalType: type, externalId: String(raw.id), payload: raw, modifiedAt, portalSyncedAt })
     .onConflictDoUpdate({
       target: [sourceRecords.source, sourceRecords.externalType, sourceRecords.externalId],
-      set: { payload: raw, modifiedAt, portalSyncedAt, present: true, fetchedAt: new Date() },
+      // Their record as they give it now, keeping our third-person copy of its short description (fill-third-person.ts): it says which words it was made from.
+      set: { payload: sql`${JSON.stringify(raw)}::jsonb || case when ${sourceRecords.payload} ? '_third' then jsonb_build_object('_third', ${sourceRecords.payload}->'_third') else '{}'::jsonb end`, modifiedAt, portalSyncedAt, present: true, fetchedAt: new Date() },
     })
     .returning();
   return row!;
