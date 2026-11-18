@@ -716,7 +716,7 @@ export function GuideBook(props: {
       pages.push(
         p.kind === 'full'
           ? { section, marker, body: <VenueFullBody v={p.venue} /> }
-          : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
+          : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid${vs.section === BEACHES ? ' gp-beach-grid' : ''}`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
       );
     }
     for (const cols of dirPages.filter((pg) => pg[0]?.[0]?.group === vs.section)) {

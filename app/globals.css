@@ -199,6 +199,11 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 /* The bigger venue entries' copy, set with room between its lines as the guide prints it; the listing boxes stay tight. */
 .gp-venue-three-quarters .gp-event-copy, .gp-venue-half .gp-event-copy, .gp-venue-quarter .gp-event-copy { line-height: 1.2; }
 .gp-venue-quarter .gp-venue-name { font-size: 10.5pt; }
+/* Beaches pictured throughout: a row each, the picture on alternate sides, the grid's rules between. */
+.gp-beach-grid .gp-venue-quarter { grid-template-columns: 2fr 3fr; }
+.gp-beach-grid .gp-venue-quarter:nth-child(even) { grid-template-columns: 3fr 2fr; }
+.gp-beach-grid .gp-venue-quarter:nth-child(even) .gp-venue-picture { order: 2; }
+.gp-beach-grid .gp-venue-quarter .gp-venue-name { font-size: 9.5pt; }
 .gp-venue-tag { flex: none; font-family: var(--gp-sans); font-weight: 500; font-size: 5.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gp-ink); background: var(--gp-tint20); padding: 0.3mm 1mm; }
 .gp-venue-new { background: var(--gp-accent); color: var(--gp-on-accent, white); }
 .gp-venue-name-big .gp-venue-new { margin-left: 2mm; vertical-align: middle; font-size: 6.5pt; }

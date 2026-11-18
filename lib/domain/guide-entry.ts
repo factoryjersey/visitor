@@ -472,12 +472,14 @@ export function guideVenue(p: Place): GuideVenue {
   const oneLine = p.listingSize === 'listing' && !!p.guideLine && section !== BEACHES;
   // A beach's notes from the Geopark and the National Park follow its copy where the box has room: both, then one, then none.
   const withNotes = section === BEACHES ? noted(options, p.sourceNotes ?? []) : options;
+  // Beaches are pictured throughout: a beach left as a listing and with its own photograph takes a row, its picture beside its words.
+  const size = section === BEACHES && p.listingSize === 'listing' && printable(p.headerImage) ? 'quarter' : p.listingSize;
   return {
     section: outOut ? PUBS_AND_BARS : section,
     area: outOut ? '' : p.guideArea ?? '',
     name: p.name,
     label: (p.guideLabel ?? '').toUpperCase(),
-    size: p.listingSize,
+    size,
     isNew: isNewVenue(p.firstListedAt),
     // A directory line has no copy; a listing box its one line, when it has one; the bigger entries their copy.
     // A beach's box keeps the Beach Guide's few sentences, fitted to it, as the events' are: which way it faces, the tide, the steps down.
