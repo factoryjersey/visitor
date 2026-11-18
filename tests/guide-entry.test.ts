@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Event, Experience } from '@/lib/db/schema';
 import { toCsv, utf16le } from '@/lib/domain/csv';
-import { guideEvent, guideTour, gridTours, layoutEvents, tourGroups, tourOptions, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
+import { copyOptions, guideEvent, guideTour, gridTours, layoutEvents, tourGroups, tourOptions, type GuideEvent, type GuideTour } from '@/lib/domain/guide-entry';
 
 const base: Event = {
   id: 'e', slug: 'meet-albert', title: 'Meet Albert: The Retired Gunner',
@@ -274,12 +274,27 @@ describe("Visit Jersey's words on the tour grids", () => {
   const theirs = 'Accessible only on the lowest tides of the year, this is a bucket list walk out to the Karame Beacon.';
   const t = (o: Partial<GuideTour> = {}): GuideTour => ({
     kind: 'dated', genre: '', dates: 'Sat 12 Dec', title: 'Intertidal Walk', code: 'IW', provider: 'Intertidal Walks', duration: '3-5 hrs', times: '12pm',
-    copy: theirs, sortKey: '2026-12-12', imageUrl: '', preview: '', guidePicture: false, options: [theirs, 'A low-tide walk.', ''], frame: 'listing', client: false, theirs, ...o,
+    copy: theirs, sortKey: '2026-12-12', imageUrl: '', preview: '', guidePicture: false, options: [theirs, 'A low-tide walk.', ''], frame: 'listing', client: false, theirs: [theirs], ...o,
   });
   it('prints them on the grid of six', () => {
     expect(gridTours([t()], 'grid6')[0]![0]!.copy).toBe(theirs);
   });
   it('keeps the short lines on the grid of twelve', () => {
     expect(gridTours([t()], 'grid12')[0]![0]!.copy).toBe('A low-tide walk.');
+  });
+  it('fills the grid of six with the longer version, and falls back to theirs where it will not fit', () => {
+    const longer = `${theirs} The guide leads the way across the seabed, past gullies and rock pools, explaining the reef's wildlife and history.`;
+    const both = t({ options: [longer, theirs, 'A low-tide walk.', ''], theirs: [longer, theirs] });
+    expect(gridTours([both], 'grid6')[0]![0]!.copy).toBe(longer);
+    expect(gridTours([both], 'grid12')[0]![0]!.copy).toBe('A low-tide walk.');
+    const tooLong = t({ options: [`${theirs} ${'More words about the walk. '.repeat(20)}`.trim(), theirs, ''], theirs: [theirs] });
+    expect(gridTours([tooLong], 'grid6')[0]![0]!.copy).toBe(theirs);
+  });
+});
+
+describe('copyOptions with their longer version', () => {
+  it('puts the longer version first, then theirs whole', () => {
+    const o = copyOptions({ guideCopy: null, summary: 'A walk.', description: null, sourceWords: 'Theirs.', sourceLonger: 'Theirs. And more.' });
+    expect(o.slice(0, 2)).toEqual(['Theirs. And more.', 'Theirs.']);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsThird, printedWords, sameButForPerson, thirdKey } from '@/lib/domain/third-person';
+import { fromTheirLong, needsThird, printedWords, sameButForPerson, thirdKey, wantsEdit } from '@/lib/domain/third-person';
 
 describe('needsThird', () => {
   it('finds the first person, in any case', () => {
@@ -29,16 +29,38 @@ describe('sameButForPerson', () => {
   });
 });
 
+describe('fromTheirLong', () => {
+  const short = 'A guided walk across the seabed at low tide.';
+  const long = 'Our guides lead you out across the seabed to the Karame Beacon, past gullies and rock pools. We explain the wildlife of the reef and its history. Bring wellies and a waterproof.';
+  it('takes more that is in their long description', () => {
+    expect(fromTheirLong('The guides lead visitors out to the Karame Beacon, past gullies and rock pools.', long, 'Intertidal Walks', 440, short)).toBe(true);
+    expect(fromTheirLong('', long, null, 440, short)).toBe(true);
+  });
+  it('refuses what they did not say, or too much', () => {
+    expect(fromTheirLong('A magical, unforgettable adventure the whole family will treasure forever.', long, null, 440, short)).toBe(false);
+    expect(fromTheirLong('The guides lead visitors out to the Karame Beacon. '.repeat(10), long, null, 440, short)).toBe(false);
+  });
+});
+
+describe('wantsEdit', () => {
+  it('sends the first person, or a long description with more to tell', () => {
+    expect(wantsEdit('Join us for jazz.', null)).toBe(true);
+    expect(wantsEdit('A jazz night.', 'A jazz night at the Arts Centre with the island’s best trio, playing standards and their own tunes.')).toBe(true);
+    expect(wantsEdit('A jazz night.', 'A jazz night.')).toBe(false);
+  });
+});
+
 describe('printedWords', () => {
   const short = '<p>Join us for a night of music.</p>\n';
-  it('prints the third person when it was made from these words', () => {
-    const payload = { acf: { short_description: short }, _third: { key: thirdKey('Join us for a night of music.'), text: 'Join the Arts Centre for a night of music.' } };
-    expect(printedWords(payload)).toBe('Join the Arts Centre for a night of music.');
+  const long = '<p>An evening of folk and jazz from island players, with a bar.</p>';
+  it('prints the third person, and the longer version, when made from these words', () => {
+    const payload = { acf: { short_description: short, long_description: long }, _third: { key: thirdKey('Join us for a night of music.', 'An evening of folk and jazz from island players, with a bar.'), text: 'Join the Arts Centre for a night of music.', more: 'Folk and jazz from island players, with a bar.' } };
+    expect(printedWords(payload)).toEqual({ short: 'Join the Arts Centre for a night of music.', longer: 'Join the Arts Centre for a night of music. Folk and jazz from island players, with a bar.' });
   });
   it('prints their words when they have changed since, or there is none', () => {
     const stale = { acf: { short_description: short }, _third: { key: thirdKey('Something else.'), text: 'Old.' } };
-    expect(printedWords(stale)).toBe('Join us for a night of music.');
-    expect(printedWords({ acf: { short_description: short } })).toBe('Join us for a night of music.');
+    expect(printedWords(stale)).toEqual({ short: 'Join us for a night of music.', longer: null });
+    expect(printedWords({ acf: { short_description: short } })).toEqual({ short: 'Join us for a night of music.', longer: null });
     expect(printedWords({ acf: {} })).toBeNull();
   });
 });

@@ -130,8 +130,8 @@ export function printCopy(e: CopySource, budget: number): string {
   return copyOptions(e).find((c) => c.length <= budget) ?? '';
 }
 
-/** What a frame's copy can be made from. sourceWords: the organiser's own short description, printed only whole. */
-type CopySource = { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null; sourceWords?: string | null };
+/** What a frame's copy can be made from. sourceWords: the organiser's own short description, printed only whole; sourceLonger: the same with more from their long description, for the bigger boxes. */
+type CopySource = { guideCopy: string | null; summary: string | null; description: string | null; printLine?: string | null; sourceWords?: string | null; sourceLonger?: string | null };
 
 /**
  * The copy a frame could print, in order of preference: ours whole, then
@@ -144,6 +144,7 @@ export function copyOptions(e: CopySource): string[] {
   const ours = tidy(e.guideCopy);
   // The organiser's own short description (Visit Jersey's, for their listings): whole, as they wrote it, after any we wrote ourselves and before anything cut down.
   const theirs = tidy(e.sourceWords);
+  const longer = tidy(e.sourceLonger);
   const snippet = tidy(e.printLine);
   // The snippet sums the listing up for print: whole, or its first sentence alone.
   const texts = snippet ? [snippet] : [tidy(e.description), tidy(e.summary)];
@@ -156,7 +157,7 @@ export function copyOptions(e: CopySource): string[] {
       if (!trailsOff(out)) prefixes.add(out);
     }
   }
-  return [...new Set([...(ours ? [ours] : []), ...(theirs ? [theirs] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
+  return [...new Set([...(ours ? [ours] : []), ...(longer ? [longer] : []), ...(theirs ? [theirs] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
 }
 
 /** Copy the source cut short ("…", "..."): never printed. */
@@ -202,7 +203,7 @@ export function guideWebsite(eventSite: string | null, venueSite: string | null)
   return TICKET_PLATFORMS.test(host) && venueSite ? venueSite : eventSite;
 }
 
-export function guideEvent(e: Event & { sourceWords?: string | null }, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
+export function guideEvent(e: Event & { sourceWords?: string | null; sourceLonger?: string | null }, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
   // Ongoing listings go by their own first and last days, not the edition's, and a placeholder end is left off.
   const dates = e.printDates ?? (e.occurrence === 'ongoing' && window ? printOngoingDates(e.dates, window) : printDates(e.dates, window));
@@ -646,12 +647,12 @@ export type GuideTour = {
   client: boolean;
   /** The grid its page is on, once laid out. */
   grid?: Exclude<TourLayout, 'columns'>;
-  /** The organiser's own short description (Visit Jersey's, for theirs), when we have it. Not printed as such: it is among the options. */
-  theirs?: string;
+  /** The organiser's own short description (Visit Jersey's, for theirs), and its longer version, when we have them. Not printed as such: they are among the options. */
+  theirs?: string[];
 };
 
 export function guideTour(
-  x: Experience & { sourceWords?: string | null },
+  x: Experience & { sourceWords?: string | null; sourceLonger?: string | null },
   provider: Pick<Provider, 'name' | 'code'> | null,
   window?: Window,
   client = false,
@@ -677,7 +678,7 @@ export function guideTour(
     times: times.split(/ \| |, /).length > 2 ? '' : times,
     // In columns a tour prints its copy whole: ours, else the organiser's own short description, else the summary.
     copy: x.guideCopy ?? x.sourceWords ?? x.summary ?? '',
-    ...(x.sourceWords ? { theirs: x.sourceWords.replace(/\s+/g, ' ').trim() } : {}),
+    ...(x.sourceWords ? { theirs: [x.sourceLonger, x.sourceWords].filter((w): w is string => !!w).map((w) => w.replace(/\s+/g, ' ').trim()) } : {}),
     sortKey: inside[0]?.date ?? '',
     imageUrl: printable(x.headerImage) ? x.headerImage!.url : '',
     preview: printable(x.headerImage) ? webImage(x.headerImage!, 520, 182) : '',
@@ -726,7 +727,7 @@ export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns
   return gridPages(tours, GRID[grid].cells, {
     listing: (given) => {
       // Visit Jersey's own words go on the bigger grids only; on the grid of twelve or sixteen a tour keeps its short lines.
-      const t = given.theirs && !ROOM_FOR_THEIRS.includes(grid) ? { ...given, options: given.options.filter((o) => o !== given.theirs) } : given;
+      const t = given.theirs && !ROOM_FOR_THEIRS.includes(grid) ? { ...given, options: given.options.filter((o) => !given.theirs!.includes(o)) } : given;
       const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
       // What fits by the estimate; failing that, the shortest sentence it has, so no tour goes without one (the proof measures and flags any overset).
       const shortest = [...t.options].reverse().find(Boolean) ?? '';

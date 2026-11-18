@@ -106,9 +106,9 @@ const genreOrder = (g: string) => {
   return i < 0 ? GENRES.length : i;
 };
 
-/** Visit Jersey's short descriptions of the events or tours given, by their id here: from the record of their listing, as they wrote it but in the third person. */
-async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: string[]): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
+/** Visit Jersey's short descriptions of the events or tours given, by their id here: from the record of their listing, as they wrote it but in the third person, and the longer version for the grid of six. */
+async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: string[]): Promise<Map<string, { short: string; longer: string | null }>> {
+  const out = new Map<string, { short: string; longer: string | null }>();
   if (!ids.length) return out;
   const column = type === 'events' ? sourceRecords.eventId : sourceRecords.experienceId;
   for (const r of await db
@@ -143,7 +143,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const leftOut = typed.filter((r) => nonCore(r.types)).map((r) => r.event.title);
   const all = typed
     .filter((r) => !nonCore(r.types))
-    .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types, sourceWords: theirWords.get(event.id) ?? null }, venue, window))
+    .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types, sourceWords: theirWords.get(event.id)?.short ?? null, sourceLonger: theirWords.get(event.id)?.longer ?? null }, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   // By their first date in the edition, long runs among the rest; onto pages as the layout asks.
@@ -157,7 +157,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   const printed: { tour: GuideTour; provider: Provider | null }[] = [];
   for (const { experience, provider: found, client } of tourRows) {
     const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
-    const tour = guideTour({ ...experience, sourceWords: theirTourWords.get(experience.id) ?? null }, provider, window, !!client);
+    const tour = guideTour({ ...experience, sourceWords: theirTourWords.get(experience.id)?.short ?? null, sourceLonger: theirTourWords.get(experience.id)?.longer ?? null }, provider, window, !!client);
     if (tour) printed.push({ tour, provider });
   }
   const tours = printed

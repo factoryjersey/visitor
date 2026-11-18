@@ -546,11 +546,11 @@ if (!values.only || values.only === 'venue-lines') {
     console.error(`venue lines failed: ${(e as Error).message}`);
   }
 }
-// And Visit Jersey's short descriptions, printed whole, in the third person where they were written in the first.
+// And Visit Jersey's short descriptions, printed whole, in the third person, with a longer version from their long description for the grid of six.
 if (!values.only || values.only === 'third-person') {
   try {
     const t = await fillThirdPerson();
-    console.log(`third person: ${t.written} of ${t.wanted} short descriptions put in the third person`);
+    console.log(`their words: ${t.written} of ${t.wanted} short descriptions done, ${t.longer} with a longer version for the grid of six`);
   } catch (e) {
     failed += 1;
     console.error(`third person failed: ${(e as Error).message}`);
