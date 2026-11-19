@@ -28,7 +28,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
     draft = true;
     guide = await buildGuide(window, { draft, layouts });
   }
-  const { highlights, events, pages, tours, tourPages, providers, venues, sections, leftOut } = guide;
+  const { highlights, events, pages, tours, tourPages, providers, venues, sections, leftOut, codeClashes } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
   const tq = layoutsQuery(layouts);
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}`;
@@ -129,6 +129,11 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           ))}
           <a href={pdfHref('all')} target="_blank" rel="noopener" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Whole guide</a>
         </div>
+        {codeClashes.length > 0 && (
+          <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-900">
+            Two businesses share a marker in the key, so only one prints: {codeClashes.join(' · ')}. Give one a new code on its tour provider or Do page.
+          </p>
+        )}
         {leftOut.length > 0 && (
           <details className="text-xs text-stone-600">
             <summary className="cursor-pointer">{leftOut.length} events left out of print as not aimed at visitors: training and work, business, and health and wellbeing</summary>

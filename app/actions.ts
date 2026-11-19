@@ -1,5 +1,6 @@
 'use server';
 
+import { markerTakenBy } from '@/lib/db/key-codes';
 import { and, eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { refreshSite } from '@/lib/refresh';
@@ -268,9 +269,10 @@ export async function setProviderCode(form: FormData): Promise<void> {
   await requireStaff();
   const { id, code } = codeSchema.parse(Object.fromEntries(form));
   const clean = code.trim().toUpperCase() || null;
+  // Never another business's marker, a tour guide's or a Do provider's (lib/db/key-codes.ts).
   if (clean) {
-    const [clash] = await db.select({ id: providers.id }).from(providers).where(eq(providers.code, clean));
-    if (clash && clash.id !== id) return;
+    const [me] = await db.select({ placeId: providers.placeId }).from(providers).where(eq(providers.id, id));
+    if (await markerTakenBy(clean, { providerId: id, placeId: me?.placeId ?? null })) return;
   }
   await db.update(providers).set({ code: clean, updatedAt: new Date() }).where(eq(providers.id, id));
   refreshSite();

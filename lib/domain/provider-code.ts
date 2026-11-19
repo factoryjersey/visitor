@@ -29,9 +29,9 @@ function free(stem: string, taken: Set<string>): string {
   for (let i = 2; ; i += 1) if (!taken.has(`${stem}${i}`)) return `${stem}${i}`;
 }
 
-/** Codes for every provider that has none, alongside the ones that have. */
-export function fillCodes<T extends { id: string; name: string; code: string | null }>(providers: T[]): Map<string, string> {
-  const taken = new Set(providers.map((p) => p.code).filter((c): c is string => !!c));
+/** Codes for every provider that has none, alongside the ones that have, and clear of `alsoTaken` (other businesses' Do markers). */
+export function fillCodes<T extends { id: string; name: string; code: string | null }>(providers: T[], alsoTaken: readonly string[] = []): Map<string, string> {
+  const taken = new Set([...providers.map((p) => p.code).filter((c): c is string => !!c), ...alsoTaken.map((c) => c.toUpperCase())]);
   const out = new Map<string, string>();
   for (const p of [...providers].sort((a, b) => a.name.localeCompare(b.name))) {
     if (p.code) continue;

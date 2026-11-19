@@ -23,3 +23,10 @@ describe('provider key codes', () => {
     expect(codes.has('1')).toBe(false);
   });
 });
+
+describe('fillCodes clear of Do markers', () => {
+  it('never gives a tour guide a marker a Do provider has', () => {
+    const codes = fillCodes([{ id: '1', name: 'Sea Charters', code: null }], ['SC']);
+    expect(codes.get('1')).not.toBe('SC');
+  });
+});

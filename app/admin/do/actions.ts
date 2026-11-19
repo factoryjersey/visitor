@@ -1,11 +1,12 @@
 'use server';
 
+import { markerTakenBy } from '@/lib/db/key-codes';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireStaff } from '@/lib/auth/session';
-import { DO_SIDES, doActivities, places } from '@/lib/db/schema';
+import { DO_SIDES, doActivities, places, providers } from '@/lib/db/schema';
 
 const slugOf = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -63,6 +64,9 @@ export async function saveDoProvider(form: FormData) {
   const id = z.string().uuid().parse(form.get('id'));
   const code = z.string().trim().toUpperCase().max(6).parse(form.get('code') ?? '');
   const activities = form.getAll('activity').map(String).filter(Boolean);
-  await db.update(places).set({ activityCode: code || null, activities, updatedAt: new Date() }).where(eq(places.id, id));
+  // Never another business's marker, a tour guide's or a Do provider's (lib/db/key-codes.ts): the code is kept as it was.
+  const [own] = await db.select({ id: providers.id }).from(providers).where(eq(providers.placeId, id));
+  const taken = code ? await markerTakenBy(code, { placeId: id, ...(own ? { providerId: own.id } : {}) }) : null;
+  await db.update(places).set({ ...(taken ? {} : { activityCode: code || null }), activities, updatedAt: new Date() }).where(eq(places.id, id));
   revalidatePath('/admin/do');
 }

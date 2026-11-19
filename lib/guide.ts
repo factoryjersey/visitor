@@ -95,6 +95,8 @@ export type Guide = {
   /** On a grid, the tours a page at a time, a picture a page; none when they flow in ruled columns. */
   tourPages: GuideTour[][] | null;
   providers: GuideProvider[];
+  /** Markers two businesses share ("SC: dive RIB trips and St. Clement's Golf"): the key prints only one. Never printed; shown to staff. */
+  codeClashes: string[];
   venues: GuideVenue[];
   /** The venues laid out as the sections print them: per section and area, full pages, grid pages, then the directory. */
   sections: VenueSection[];
@@ -205,6 +207,12 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
         doGrid,
       )
     : null;
+  // Two businesses on one marker: the key would print one and lose the other. Said on the guide page, for staff to give one a new code.
+  const codeClashes = (doSet?.providers ?? []).flatMap((d) => {
+    const t = tourProviders.find((x) => x.code && x.code.toUpperCase() === d.code.toUpperCase());
+    // The same business when the Do line is the tour guide's own venue.
+    return t && !indexed.some((p) => p.id === t.placeId && p.name === d.name) ? [`${d.code}: ${t.name} and ${d.name}`] : [];
+  });
   // One key for tours and Do: the tour guides, then Do's providers not already among them.
   const providers = [
     ...tourProviders.map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: keyWebsite(p.website) })),
@@ -261,7 +269,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     website: printWebsite(p.website)?.toLowerCase() ?? '',
   }));
 
-  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, tours: printOrder, tourPages, providers, venues, sections, doSection: doSet, lookingAhead, newThisSeason };
+  return { highlights, events, pages, ongoing, ongoingPages, layout, layouts, leftOut, codeClashes, tours: printOrder, tourPages, providers, venues, sections, doSection: doSet, lookingAhead, newThisSeason };
 }
 
 /** In page order: Frame says which take the picture cells, or (in a grid) which row is the picture box beside its listing. */
