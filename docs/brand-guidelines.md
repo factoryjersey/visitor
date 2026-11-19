@@ -105,8 +105,33 @@ with a rule in the category's colour. Credit: "Map data © OpenStreetMap contrib
 - Type: Proxima Nova and Proxima Nova Condensed become Google Sans Flex and GT Flaire Extra.
 - Bold becomes Medium throughout.
 - Venue names and prices are no longer printed in the section colour, but in deep blue; event and
-  tour titles stay in it, with their dates in bold at 50%, and times move under the title.
+  tour titles stay in it, with their dates in bold at 50%, and the times beside the dates (the editor's
+  winter 2026 proofs moved them up from under the title, to give the copy room).
 - Section colours: Visit teal becomes blue; Eat field green becomes Jersey green; Do midnight blue
   becomes deep blue; Buy plum becomes maroon; events orange becomes Jersey orange; tours green
   becomes dark green.
 - Black (folios, captions) becomes deep blue.
+
+## The editor's house style (winter 2026 proofs)
+
+Elliott's marks on the first winter 2026 proofs, made rules so every proof keeps to them
+(lib/domain/house-style.ts, lib/domain/event-tours.ts, components/guide/book.tsx):
+
+- Dates: the days of a month with commas, then the month: "5, 6, 20 DEC", "4, 11, 18 DEC", "19, 20 DEC";
+  across months "12 DEC, 16 JAN". A run with a hyphen: "8-13 DEC", "1-31 DEC", "18 DEC - 3 JAN"
+  (no more "UNTIL", "&" or "6/20").
+- Times on the date's line. More than two different times (a show's matinees and evenings) print
+  none: they confused more than they told. A time typed into the listing's print field still prints.
+- Addresses print each part once: no repeated parish or postcode, no "Jersey", no stray "-JE2".
+- Phone numbers carry the trunk 0 once: "+44 (0) 1534", never "+44 (0) 01534".
+- Titles: "St." with its stop ("St. Lawrence"); La, Le and Les capitalised as the start of a Jersey
+  place name ("La Hougue Bie"); a booking site's date on the end of a title ("Walk 3 4/12/26") goes.
+- A tour guide's walks listed as events (a title opening with the name of a provider who has tours in
+  the guide, "Stroll In Jersey Twilight Walk…") print with the tours, not in What's On, and not at all
+  when the guide's own tour that day is already printed.
+- No box goes without copy: at worst its shortest sentence, flagged overset in the proof.
+- On-demand tours sit on the grid of six as the dated ones do, so their copy runs to its full
+  length; their side marker is deep blue, apart from On specific dates' green.
+- The provider key: websites a size down so the whole address shows; a social page prints as its
+  address ("facebook.com"); each tour page's foot reads "Tour Guide & Activity Provider Index on
+  Pages 18-19", with the key's real pages.

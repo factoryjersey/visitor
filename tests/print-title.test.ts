@@ -22,4 +22,9 @@ describe('headings in title case', () => {
   it('cases a shouted title again', () => {
     expect(printTitle('THE OCHE CLUB BRUNCH SOCIAL')).toBe('The Oche Club Brunch Social');
   });
+  it('as the editor marked them: St. with its stop, La with its capital, no booking-site dates', () => {
+    expect(printTitle("Let's Go Walk St Lawrence!")).toBe("Let's Go Walk St. Lawrence!");
+    expect(printTitle('Longhouse Tour and Fire Lighting at la Hougue Bie')).toBe('Longhouse Tour and Fire Lighting at La Hougue Bie');
+    expect(printTitle('Stroll In Jersey Folklore Walk 3   4/12/26')).toBe('Stroll in Jersey Folklore Walk');
+  });
 });

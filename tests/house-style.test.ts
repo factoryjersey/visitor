@@ -27,16 +27,21 @@ describe('printDates', () => {
   });
 
   it('prints a short run as a range, across a month too', () => {
-    expect(printDates(d(...range('2026-09-01', '2026-09-05')))).toBe('1 - 5 SEP');
+    expect(printDates(d(...range('2026-09-01', '2026-09-05')))).toBe('1-5 SEP');
     expect(printDates(d(...range('2026-09-30', '2026-10-04')))).toBe('30 SEP - 4 OCT');
   });
 
-  it('prints two dates with an ampersand', () => {
-    expect(printDates(d('2026-09-01', '2026-09-15'))).toBe('1 SEP & 15 SEP');
+  it('lists the days of a month with commas, as the editor marked them', () => {
+    expect(printDates(d('2026-09-01', '2026-09-15'))).toBe('1, 15 SEP');
+    expect(printDates(d('2026-12-19', '2026-12-20'))).toBe('19, 20 DEC');
+    expect(printDates(d('2026-12-05', '2026-12-06', '2026-12-20'))).toBe('5, 6, 20 DEC');
+    expect(printDates(d('2026-12-04', '2026-12-11', '2026-12-18'))).toBe('4, 11, 18 DEC');
+    expect(printDates(d('2026-12-12', '2027-01-16'))).toBe('12 DEC, 16 JAN');
   });
 
-  it('prints a long, mostly daily run as UNTIL', () => {
-    expect(printDates(d(...range('2026-09-01', '2026-10-29')))).toBe('1 SEP UNTIL 29 OCT');
+  it('prints a long, mostly daily run as a range', () => {
+    expect(printDates(d(...range('2026-12-01', '2026-12-31')))).toBe('1-31 DEC');
+    expect(printDates(d(...range('2026-09-01', '2026-10-29')))).toBe('1 SEP - 29 OCT');
   });
 
   it('prints the same days each week as a weekday and a range', () => {
@@ -47,23 +52,23 @@ describe('printDates', () => {
     expect(printDates(d(...market))).toBe('EVERY THU - SUN, 26 NOV - 20 DEC');
     expect(printDates(d('2026-11-07', '2026-11-08', '2026-11-14', '2026-11-15', '2026-11-21', '2026-11-22'))).toBe('EVERY SAT & SUN, 7 NOV - 22 NOV');
     // Tide walks land on any day: still their dates.
-    expect(printDates(d('2026-09-02', '2026-09-13', '2026-09-16', '2026-09-27'))).toBe('2 SEP, 13/16/27 SEP');
+    expect(printDates(d('2026-09-02', '2026-09-13', '2026-09-16', '2026-09-27'))).toBe('2, 13, 16, 27 SEP');
   });
 
-  it('groups the rest by month after the first date', () => {
+  it('groups the rest by month', () => {
     // Every Tuesday and Thursday is a weekly pattern now (below); dates that skip weeks still group.
     expect(printDates(d('2026-09-01', '2026-09-03', '2026-09-15', '2026-09-24')))
-      .toBe('1 SEP, 3/15/24 SEP');
+      .toBe('1, 3, 15, 24 SEP');
     expect(printDates(d('2026-09-01', '2026-09-03', '2026-09-08', '2026-09-10', '2026-09-15', '2026-09-17', '2026-09-22', '2026-09-24')))
       .toBe('EVERY TUE & THU, 1 SEP - 24 SEP');
     expect(printDates(d('2026-09-04', '2026-10-02', '2026-11-06'))).toBe('4 SEP, 2 OCT, 6 NOV');
     expect(printDates(d('2026-09-06', '2026-09-20', '2026-10-04', '2026-10-18', '2026-11-07', '2026-11-08')))
-      .toBe('6 SEP, 20 SEP, 4/18 OCT, 7/8 NOV');
+      .toBe('6, 20 SEP, 4, 18 OCT, 7, 8 NOV');
   });
 
   it('keeps only dates inside the edition', () => {
     const all = d(...range('2026-10-17', '2027-12-31'));
-    expect(printDates(all, { from: '2026-11-01', to: '2027-02-28' })).toBe('1 NOV UNTIL 28 FEB');
+    expect(printDates(all, { from: '2026-11-01', to: '2027-02-28' })).toBe('1 NOV - 28 FEB');
     expect(printDates(all, { from: '2028-01-01', to: '2028-03-31' })).toBeNull();
   });
 });
@@ -106,9 +111,17 @@ describe('the rest of an entry', () => {
     expect(printAddress({ addressLine1: 'Castle Green', parish: 'St Martin', postcode: 'JE3 6ET' })).toBe('Castle Green, St. Martin, JE3 6ET');
   });
 
+  it('prints each part of an address once, as the editor struck the repeats', () => {
+    expect(printAddress({ addressLine1: 'Church Street, St. Helier, JE2 3NN Jersey', parish: 'St Helier', postcode: 'JE2 3NN' })).toBe('Church Street, St. Helier, JE2 3NN');
+    expect(printAddress({ addressLine1: '19 halket Street, JE2 4WJ, St. Helier,-JE2', parish: 'St Helier', postcode: null })).toBe('19 halket Street, St. Helier, JE2 4WJ');
+    expect(printAddress({ addressLine1: 'Minden Place, 20 Broad St, St Helier, Jersey JE2 3RR', parish: 'St Helier', postcode: 'JE2 4WQ' })).toBe('Minden Place, 20 Broad St, St. Helier, JE2 4WQ');
+    expect(printAddress({ addressLine1: 'La Reu des Picots, Trinity, JE3 5JX', parish: 'Trinity', postcode: null })).toBe('La Reu des Picots, Trinity, JE3 5JX');
+  });
+
   it('prints a phone, or the email when there is none', () => {
     expect(printContact('+44 (0) 1534 633300', 'a@b.je')).toBe('+44 (0) 1534 633300');
     expect(printContact(null, 'drink@curfew.je')).toBe('drink@curfew.je');
+    expect(printContact('+44 (0) 01534 720511', null)).toBe('+44 (0) 1534 720511');
   });
 });
 

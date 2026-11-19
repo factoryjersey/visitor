@@ -14,6 +14,7 @@ import {
   printTitle,
   printWebsite,
   socialSite,
+  tooManyTimes,
 } from './house-style';
 
 /**
@@ -203,6 +204,9 @@ export function guideWebsite(eventSite: string | null, venueSite: string | null)
   return TICKET_PLATFORMS.test(host) && venueSite ? venueSite : eventSite;
 }
 
+/** Times as printed: none when there are more than two different ones. */
+const keptTimes = (times: string) => (tooManyTimes(times) ? '' : times);
+
 export function guideEvent(e: Event & { sourceWords?: string | null; sourceLonger?: string | null }, venue: Pick<Place, 'name' | 'addressLine1' | 'parish' | 'postcode' | 'phone' | 'website'> | null, window?: Window): GuideEvent | null {
   const inside = e.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
   // Ongoing listings go by their own first and last days, not the edition's, and a placeholder end is left off.
@@ -216,7 +220,8 @@ export function guideEvent(e: Event & { sourceWords?: string | null; sourceLonge
 
   const entry = {
     dates,
-    times: e.printTimes ?? printTimes(inside.length ? inside : e.dates) ?? '',
+    // Times that change from day to day, beyond two, are left to the organiser (the editor struck them as confusing).
+    times: e.printTimes ?? keptTimes(printTimes(inside.length ? inside : e.dates) ?? ''),
     title: printTitle(e.title),
     price: e.printPrice ?? printPrice(e.fromPricePence, e.toPricePence, { free: e.free }) ?? '',
     venue: e.venueName ?? venue?.name ?? e.venue?.split(',')[0] ?? '',
@@ -295,7 +300,8 @@ export function layoutsFrom(get: (key: string) => string | null | undefined): Gu
 }
 
 /** On-demand tours, unless chosen: in columns with dated ones in columns, else on the grid of twelve. */
-export const defaultOngoing = (tours: TourLayout): TourLayout => (tours === 'columns' ? 'columns' : 'grid12');
+/** On-demand tours on the grid of six too, as the dated ones: on twelve their copy was cut to a line or lost (the editor's "expand copy", "no copy"). */
+export const defaultOngoing = (tours: TourLayout): TourLayout => (tours === 'columns' ? 'columns' : 'grid6');
 
 /** The template as address parameters, leaving out what is the default. */
 export function layoutsQuery(l: GuideLayouts): string {
@@ -675,7 +681,7 @@ export function guideTour(
     provider: provider?.name ?? '',
     duration: x.duration ?? '',
     // Bookable all day at many times reads as noise in print; leave it to the provider.
-    times: times.split(/ \| |, /).length > 2 ? '' : times,
+    times: x.printTimes ? times : keptTimes(times),
     // In columns a tour prints its copy whole: ours, else the organiser's own short description, else the summary.
     copy: x.guideCopy ?? x.sourceWords ?? x.summary ?? '',
     ...(x.sourceWords ? { theirs: [x.sourceLonger, x.sourceWords].filter((w): w is string => !!w).map((w) => w.replace(/\s+/g, ' ').trim()) } : {}),

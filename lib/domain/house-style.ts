@@ -83,18 +83,16 @@ export function printOngoingDates(dates: readonly EventDate[], window: { from: s
 
 /**
  * An event's dates as the guide prints them, keeping only those inside
- * the edition's window.
+ * the edition's window. The editor's style (Elliott, winter 2026 proofs):
+ * the days of a month listed with commas before it, a run with a hyphen.
  *
  *   one date                          26 OCT
- *   two                               1 SEP & 15 SEP
- *   a short run of consecutive days   1 - 5 SEP, 30 SEP - 4 OCT
+ *   two days running                  19, 20 DEC
+ *   a run of consecutive days         8-13 DEC, 30 SEP - 4 OCT
  *   the same days most weeks          EVERY FRIDAY, 6 NOV - 18 DEC
  *                                     EVERY THU - SUN, 26 NOV - 20 DEC
- *   a long run, mostly daily          1 SEP UNTIL 29 OCT
- *   anything else                     1 SEP, 3/8/10/15 SEP, 2 OCT
- *
- * The last is the guide's own shape: the first date in full, then the
- * rest grouped by month.
+ *   a long run, mostly daily          1-31 DEC, 18 DEC - 3 JAN
+ *   anything else, by month           5, 6, 20 DEC; 4, 11, 18 DEC, 2 JAN
  */
 export function printDates(dates: readonly EventDate[], window?: { from: string; to: string }): string | null {
   const isos = [...new Set(dates.map((x) => x.date))]
@@ -108,24 +106,29 @@ export function printDates(dates: readonly EventDate[], window?: { from: string;
 
   const span = last.t - first.t + 1;
   const consecutive = span === days.length;
-  if (consecutive && span <= 7) {
-    return first.m === last.m ? `${first.d} - ${last.d} ${MONTHS[last.m - 1]}` : `${dm(first)} - ${dm(last)}`;
-  }
+  const run = () => (first.m === last.m && first.y === last.y ? `${first.d}-${last.d} ${MONTHS[last.m - 1]}` : `${dm(first)} - ${dm(last)}`);
+  if (consecutive && span <= 7 && days.length > 2) return run();
   const weekly = everyWeek(days);
   if (weekly) return `EVERY ${weekly}, ${dm(first)} - ${dm(last)}`;
   // Open most days over a long stretch: an exhibition, a season.
-  if (days.length >= 8 && days.length / span >= 0.4) return `${dm(first)} UNTIL ${dm(last)}`;
-  if (days.length === 2) return `${dm(first)} & ${dm(last)}`;
-
-  const groups: string[] = [];
-  for (const x of days.slice(1)) {
-    const prev = groups.at(-1);
-    const label = MONTHS[x.m - 1]!;
-    if (prev?.endsWith(` ${label}`)) groups[groups.length - 1] = prev.replace(` ${label}`, `/${x.d} ${label}`);
-    else groups.push(`${x.d} ${label}`);
-  }
-  return [dm(first), ...groups].join(', ');
+  if (days.length >= 8 && days.length / span >= 0.4) return run();
+  return byMonth(days);
 }
+
+/** "5, 6, 20 DEC", "4, 11, 18 DEC, 2 JAN": each month's days, then the month. */
+function byMonth(days: Day[]): string {
+  const groups: { key: string; label: string; days: number[] }[] = [];
+  for (const x of days) {
+    const key = `${x.y}-${x.m}`;
+    const g = groups.at(-1);
+    if (g?.key === key) g.days.push(x.d);
+    else groups.push({ key, label: MONTHS[x.m - 1]!, days: [x.d] });
+  }
+  return groups.map((g) => `${g.days.join(', ')} ${g.label}`).join(', ');
+}
+
+/** Times that differ from day to day, beyond two, confuse more than they tell (the editor struck them): the guide leaves them to the organiser. */
+export const tooManyTimes = (times: string) => times.split(/ \| |, /).length > 2;
 
 /**
  * "10:00-16:00", or "15:00, 19:30" for two shows with no end time, or
@@ -179,6 +182,11 @@ export function printWebsite(url: string | null): string | null {
   return hostOf(url)?.toUpperCase() ?? null;
 }
 
+/** A provider's website in the guide's key: its address, a social page's too ("facebook.com"), since the key has nothing else to point to. */
+export function keyWebsite(url: string | null): string {
+  return (url && hostOf(url)) || '';
+}
+
 /** How a link reads on the site: the website's address, or the social page's name. */
 export function siteLabel(url: string | null): string | null {
   return socialSite(url) ?? printWebsite(url)?.toLowerCase() ?? null;
@@ -186,13 +194,46 @@ export function siteLabel(url: string | null): string | null {
 
 /** A phone number if there is one, otherwise the email: the guide prints one or the other. */
 export function printContact(phone: string | null, email: string | null): string | null {
-  return phone?.trim() || email?.trim() || null;
+  return printPhone(phone) || email?.trim() || null;
 }
 
-/** "Castle Green, St. Martin, JE3 6ET". */
+/** A phone number with the trunk 0 once: "+44 (0) 01534 720511" is "+44 (0) 1534 720511". */
+export function printPhone(phone: string | null): string | null {
+  const p = phone?.trim();
+  return p ? p.replace(/^(\+44\s*\(0\)\s*)0/, '$1') : null;
+}
+
+/**
+ * "Castle Green, St. Martin, JE3 6ET". A source's first line often holds
+ * the whole address already ("Church Street, St. Helier, JE2 3NN Jersey"),
+ * so each part prints once: the parish and postcode are not repeated, the
+ * island's name is left off, and a stray half postcode ("-JE2") goes.
+ */
 export function printAddress(p: { addressLine1: string | null; parish: string | null; postcode: string | null }): string | null {
-  const parts = [p.addressLine1, printParish(p.parish), p.postcode].filter(Boolean);
-  return parts.length ? parts.join(', ') : null;
+  const POSTCODE = /\bJE\d\s*\d[A-Z]{2}\b/i;
+  const same = (a: string) => a.toLowerCase().replace(/^(st|saint)\.?\s+/, 'st ').replace(/[^a-z0-9]+/g, '');
+  const parish = printParish(p.parish);
+  const postcode = p.postcode?.trim().toUpperCase() || null;
+  const lineParts = (p.addressLine1 ?? '')
+    .split(',')
+    .map((x) => x.replace(/\bJersey\b/gi, '').replace(/^[\s\-–]+|[\s\-–]+$/g, '').replace(/\s+/g, ' ').trim())
+    .flatMap((x) => {
+      // A postcode run into another part ("JE2 4WQ St. Helier"): apart, so each can be checked.
+      const m = POSTCODE.exec(x);
+      return m ? [x.replace(m[0], '').trim(), m[0].toUpperCase()].filter(Boolean) : [x];
+    })
+    .filter((x) => x && !/^JE\d?$/i.test(x));
+  const code = postcode ?? lineParts.find((x) => POSTCODE.test(x)) ?? null;
+  const parts: string[] = [];
+  for (const x of lineParts) {
+    if (POSTCODE.test(x)) continue;
+    const parishHere = printParish(x);
+    if (parish && same(parishHere ?? x) === same(parish)) continue;
+    if (parts.some((y) => same(y) === same(x))) continue;
+    parts.push(x);
+  }
+  const all = [...parts, ...(parish ? [parish] : []), ...(code ? [code] : [])];
+  return all.length ? all.join(', ') : null;
 }
 
 const TOUR_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -218,7 +259,8 @@ export function printTourDates(dates: readonly EventDate[], window?: { from: str
 }
 
 /** Words a title keeps small unless they open or close it, or follow a colon or dash. */
-const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'v', 'vs', 'via', 'with', 'de', 'du', 'la', 'le', 'les', 'des']);
+// Not la, le and les: in Jersey they begin place names (La Hougue Bie, Le Hocq, Les Landes) and print with a capital.
+const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'v', 'vs', 'via', 'with', 'de', 'du', 'des']);
 
 /**
  * A heading in title case, as the guide prints them: "An Island Christmas
@@ -227,7 +269,9 @@ const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', '
  * capitals inside (O'Sullivan, McQueen, iNED). A title shouted in
  * capitals is cased again from scratch.
  */
-export function printTitle(title: string): string {
+export function printTitle(given: string): string {
+  // A booking site's own tidying left in: a date ("Folklore Walk 3   4/12/26"), and runs of spaces.
+  const title = given.replace(/\s+\d{0,2}\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/, '').replace(/\s+/g, ' ').trim();
   const letters = title.replace(/[^A-Za-z]/g, '');
   const shouted = letters.length > 3 && letters === letters.toUpperCase();
   const source = shouted ? title.toLowerCase() : title;
@@ -255,7 +299,9 @@ export function printTitle(title: string): string {
         })
         .join('-');
     })
-    .join('');
+    .join('')
+    // "St Lawrence" as the guide writes it: "St. Lawrence".
+    .replace(/\bSt(?= [A-Z])/g, 'St.');
 }
 
 /** Where, for a card: the venue or meeting point, and the parish unless the name already says it. "Jersey Arts Centre, St. Helier". */

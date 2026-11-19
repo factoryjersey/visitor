@@ -1,8 +1,9 @@
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { printedWords } from '@/lib/domain/third-person';
+import { asTourTitle, tourProviderOf } from '@/lib/domain/event-tours';
 import { db } from '@/lib/db';
 import { guideSelection, includedExperiences } from '@/lib/db/queries';
-import { doActivities, places, sourceRecords, type Provider } from '@/lib/db/schema';
+import { doActivities, places, sourceRecords, type Experience, type Provider } from '@/lib/db/schema';
 import { doSection, type DoSection } from '@/lib/domain/do-section';
 import { openingText, reopensIn, windowMonths } from '@/lib/domain/opening';
 import { usableLine } from '@/lib/domain/venue-line';
@@ -32,7 +33,7 @@ import {
   type VenueSection,
   type Window,
 } from '@/lib/domain/guide-entry';
-import { printContact, printParish, printWebsite } from '@/lib/domain/house-style';
+import { keyWebsite, printContact, printParish, printWebsite } from '@/lib/domain/house-style';
 import { fillCodes } from '@/lib/domain/provider-code';
 import { nonCore, withCategories } from '@/lib/domain/categorise';
 
@@ -141,8 +142,15 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   // What is not aimed at visitors is left out of print: training and work, business, health and wellbeing. The event's own words count too, unless staff have set its types by hand.
   const typed = selection.events.map((row) => ({ ...row, types: row.event.lockedFields.includes('eventTypes') ? row.event.eventTypes : withCategories(row.event.eventTypes, row.event) }));
   const leftOut = typed.filter((r) => nonCore(r.types)).map((r) => r.event.title);
+  // A tour guide's walks listed as events print with the tours (lib/domain/event-tours.ts): only providers with a tour in the guide count.
+  const guiding = [...new Map(tourRows.flatMap(({ provider }) => (provider ? [[provider.id, provider] as const] : []))).values()];
+  const asTours = typed.flatMap((r) => {
+    const provider = tourProviderOf(r.event.title, guiding);
+    return provider ? [{ event: r.event, provider }] : [];
+  });
+  const touring = new Set(asTours.map((r) => r.event.id));
   const all = typed
-    .filter((r) => !nonCore(r.types))
+    .filter((r) => !nonCore(r.types) && !touring.has(r.event.id))
     .map(({ event, venue, types }) => guideEvent({ ...event, eventTypes: types, sourceWords: theirWords.get(event.id)?.short ?? null, sourceLonger: theirWords.get(event.id)?.longer ?? null }, venue, window))
     .filter((g): g is GuideEvent => g !== null);
   const highlights = all.filter((e) => e.highlight).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
@@ -159,6 +167,13 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
     const tour = guideTour({ ...experience, sourceWords: theirTourWords.get(experience.id)?.short ?? null, sourceLonger: theirTourWords.get(experience.id)?.longer ?? null }, provider, window, !!client);
     if (tour) printed.push({ tour, provider });
+  }
+  // The tour guides' walks that came as events: a dated tour each, unless the guide's own tour that day is printed already.
+  for (const { event, provider: found } of asTours) {
+    const provider = found && !found.code ? { ...found, code: missing.get(found.id) ?? null } : found;
+    const genre = tourRows.find((r) => r.provider?.id === found.id && r.experience.genre)?.experience.genre ?? null;
+    const tour = guideTour({ ...(event as unknown as Experience), occurrence: 'one-off', title: asTourTitle(event.title, found), genre, duration: null, printLine: event.printLine }, provider, window, false);
+    if (tour && !printed.some((p) => p.provider?.id === found.id && p.tour.kind === 'dated' && p.tour.sortKey === tour.sortKey)) printed.push({ tour, provider });
   }
   const tours = printed
     .map((p) => p.tour)
@@ -186,13 +201,13 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
           return { slug: a.slug, name: a.name, side: a.side, blurb: a.blurb ?? '', imageUrl: image?.url ?? '', preview: image ? webImage(image, 520, 360) : '', guidePicture: !!a.image };
         }),
         // A provider who also runs tours keeps its tour guide marker: one provider, one marker, one line in the key.
-        indexed.map((p) => ({ code: tourProviders.find((t) => t.placeId === p.id && t.code)?.code ?? p.activityCode!, name: p.name, phone: p.phone ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '', activities: p.activities })),
+        indexed.map((p) => ({ code: tourProviders.find((t) => t.placeId === p.id && t.code)?.code ?? p.activityCode!, name: p.name, phone: p.phone ?? '', website: keyWebsite(p.website), activities: p.activities })),
         doGrid,
       )
     : null;
   // One key for tours and Do: the tour guides, then Do's providers not already among them.
   const providers = [
-    ...tourProviders.map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: printWebsite(p.website)?.toLowerCase() ?? '' })),
+    ...tourProviders.map((p) => ({ code: p.code ?? '', name: p.name, contact: printContact(p.phone, p.email) ?? '', website: keyWebsite(p.website) })),
     ...(doSet?.providers ?? [])
       .filter((d) => !tourProviders.some((t) => t.code && t.code.toUpperCase() === d.code.toUpperCase()))
       .map((d) => ({ code: d.code, name: d.name, contact: d.phone, website: d.website })),

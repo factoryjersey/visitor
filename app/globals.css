@@ -155,6 +155,9 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-tours-light); }
 .gp-tab.gp-marker span { color: var(--gp-on-accent, white); }
+/* On demand apart from On specific dates at a glance (the editor could not tell them apart): the brand's deep blue, not the tours' green. */
+.gp-tab.gp-marker.gp-marker-on-demand { background: #022e3c; }
+.gp-tab.gp-marker.gp-marker-on-demand span { color: white; }
 .gp-tour-footer { position: absolute; bottom: 4.6mm; display: flex; align-items: center; gap: 1mm; font-family: var(--gp-sans); font-weight: 500; font-size: 7pt; color: var(--gp-ink); }
 .gp-page.gp-left .gp-tour-footer { left: 8.1mm; } .gp-page.gp-right .gp-tour-footer { right: 8.1mm; }
 .gp-tour-footer svg { width: 2.8mm; height: 2.8mm; }
@@ -167,7 +170,7 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-event-when { font-weight: 700; font-size: 9pt; text-transform: uppercase; color: var(--gp-tint50); }
 .gp-event-when .gp-icons { color: var(--gp-ink80); }
 .gp-event-times { font-weight: 500; font-style: italic; font-size: 7.5pt; color: var(--gp-ink80); margin: 0 0 0.3mm; }
-.gp-event-when em { font-weight: 500; font-style: italic; color: var(--gp-ink80); margin-left: 2mm; text-transform: none; }
+.gp-event-when em { font-weight: 500; font-style: italic; font-size: 0.85em; color: var(--gp-ink80); margin-left: 1.5mm; text-transform: none; white-space: nowrap; }
 .gp-event-title { font-weight: 500; font-size: 9pt; color: var(--gp-accent); margin: 0.2mm 0 0.3mm; }
 .gp-event-copy { font-weight: 300; }
 .gp-price { color: var(--gp-ink); }
@@ -253,7 +256,8 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-provider svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-provider b { font-weight: 500; }
 .gp-provider strong { color: var(--gp-ink); font-weight: 500; font-size: 8.5pt; }
-.gp-provider em { color: var(--gp-ink80); font-size: 8.5pt; font-stretch: condensed; overflow: hidden; text-overflow: ellipsis; }
+/* The website a size down so the whole address shows (the editor marked those cut short). */
+.gp-provider em { color: var(--gp-ink80); font-size: 7.5pt; font-stretch: condensed; overflow: hidden; text-overflow: ellipsis; }
 .gp-break { height: 3mm; }
 .gp-tour-heading { margin: 1mm 0 3.5mm; color: var(--gp-ink); font-family: var(--gp-sans); }
 .gp-tour-heading h3 { font-family: var(--gp-head); }

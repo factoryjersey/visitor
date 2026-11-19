@@ -47,7 +47,7 @@ export function Frame({ page, n }: { page: Page; n: number }) {
   return (
     <div className={`gp-page gp-${side}${page.bleed ? ' gp-bleed' : ''}`} style={{ '--gp-accent': page.section.colour, '--gp-on-accent': markerText(page.section.colour), '--gp-tint20': tint(page.section.colour, 20), '--gp-tint50': tint(page.section.colour, 50), '--gp-tint60': tint(page.section.colour, 60) } as React.CSSProperties}>
       <div className={`gp-tab gp-${side}`} style={{ background: page.section.colour }}><span>{page.section.name}</span></div>
-      {page.marker && <div className={`gp-tab gp-marker gp-${side}`}><span>{page.marker}</span></div>}
+      {page.marker && <div className={`gp-tab gp-marker gp-${side}${page.marker === 'On demand' ? ' gp-marker-on-demand' : ''}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}
       <Folio n={n} side={side} />
       {page.body}
@@ -107,7 +107,10 @@ function useFit(copies: string[], droppable: boolean, strict = false) {
   // Strict, for a client's proof: their words as written, overset if they do not fit, never cut to fit.
   const options: [string, boolean][] = strict
     ? [[said[0] ?? '', true]]
-    : [...said.map((c): [string, boolean] => [c, true]), ...(droppable ? said.map((c): [string, boolean] => [c, false]) : []), ['', true]];
+    : said.length
+      // Never a box with no words (the editor flagged every one): at worst its shortest sentence, the contact dropped, and flagged as overset in the proof.
+      ? [...said.map((c): [string, boolean] => [c, true]), ...(droppable ? said.map((c): [string, boolean] => [c, false]) : [])]
+      : [['', true]];
   const [pick, setPick] = useState(0);
   const [fonts, setFonts] = useState(false);
   const [overset, setOverset] = useState(false);
@@ -146,9 +149,9 @@ function ListingCell({ e }: { e: GuideEvent }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={e.preview} alt="" className="gp-event-image" />
       )}
-      <p className="gp-event-when"><ListingIcons icons={iconsFor(e)} />{e.dates}</p>
+      {/* The times share the date's line, as the editor asked, leaving the copy more room. */}
+      <p className="gp-event-when"><ListingIcons icons={iconsFor(e)} />{e.dates}{e.times && <em>{e.times}</em>}</p>
       <h4 className="gp-event-title">{e.title}</h4>
-      {e.times && <p className="gp-event-times">{e.times}</p>}
       <p className="gp-event-copy">{copy} {e.price && <span className="gp-price">{e.price}</span>}</p>
       {e.venue && <p className="gp-event-venue"><MapPin aria-hidden="true" />{e.venue}</p>}
       {e.address && <p className="gp-event-address">{e.address}</p>}
@@ -166,13 +169,15 @@ function TourBox({ t }: { t: GuideTour }) {
     <article ref={ref} className={`gp-event gp-listing gp-tour-box${overset ? ' gp-overset' : ''}`} title={overset ? OVERSET : t.provider}>
       {tourWhen(t) ? (
         <>
-          <p className="gp-event-when"><ListingIcons icons={iconsFor(t)} />{tourWhen(t)}</p>
+          <p className="gp-event-when"><ListingIcons icons={iconsFor(t)} />{tourWhen(t)}{t.times && <em>{t.times}</em>}</p>
           <h4 className="gp-event-title">{t.title}</h4>
         </>
       ) : (
-        <h4 className="gp-event-title"><ListingIcons icons={iconsFor(t)} />{t.title}</h4>
+        <>
+          <h4 className="gp-event-title"><ListingIcons icons={iconsFor(t)} />{t.title}</h4>
+          {t.times && <p className="gp-event-times">{t.times}</p>}
+        </>
       )}
-      {t.times && <p className="gp-event-times">{t.times}</p>}
       <p className="gp-event-copy">{copy}</p>
       <p className="gp-tour-meta">
         {t.code ? <span className="gp-code"><BadgeCheck aria-hidden="true" />{t.code}</span> : <span className="gp-code">{t.provider}</span>}
@@ -199,9 +204,8 @@ export function HighlightBody({ e }: { e: GuideEvent }) {
     <div className="gp-content gp-highlight">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {e.preview && <img src={e.preview.replace(/w_520,h_182/, 'w_1000,h_700')} alt="" className="gp-highlight-image" />}
-      <p className="gp-event-when">{e.dates}</p>
+      <p className="gp-event-when">{e.dates}{e.times && <em>{e.times}</em>}</p>
       <h3 className="gp-highlight-title">{e.title}</h3>
-      {e.times && <p className="gp-event-times">{e.times}</p>}
       <div className="gp-highlight-copy">{e.extendedCopy.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}</div>
       {e.price && <p className="gp-price">{e.price}</p>}
       {e.venue && <p className="gp-event-venue"><MapPin aria-hidden="true" />{e.venue}</p>}
@@ -224,6 +228,10 @@ function TourEntry({ t }: { t: GuideTour }) {
     </article>
   );
 }
+
+/** Where the key is, as the editor worded it: "Tour Guide & Activity Provider Index on Pages 18-19". */
+export const indexLine = (first: number, count: number) =>
+  count > 1 ? `Tour Guide & Activity Provider Index on Pages ${first}-${first + count - 1}` : `Tour Guide & Activity Provider Index on Page ${first}`;
 
 function ProviderRow({ p }: { p: GuideProvider }) {
   return (
@@ -650,6 +658,7 @@ export function GuideBook(props: {
   }
   // The key to every provider's marker, tours' and Do's, where the tours open; Do keeps a key of its own only when no tours print.
   let sharedKey: number | null = null;
+  let keyPages = 1;
   // Tours start on a left-hand page, as a section does in the guide.
   if (tourPages && ongoingPages && (tourPages.length || tourGrid?.length || ongoingPages.length)) {
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: EVENTS, body: <div className="gp-content" /> });
@@ -657,6 +666,7 @@ export function GuideBook(props: {
     // The key opens the section: every tour page sends the reader back to it.
     const keyPage = props.firstPage + pages.length - tourPages.length;
     if (providers.length && tourPages.length) sharedKey = keyPage;
+    keyPages = tourPages.length || 1;
     const grids = tourGrid ?? [];
     const flowed = (kind: GuideTour['kind']) => (kind === 'dated' ? datedFlows : ongoingFlows);
     // Dated grid pages, then on-demand ones in columns (when the dated were on the grid), then on-demand grid pages.
@@ -680,7 +690,7 @@ export function GuideBook(props: {
             <div className={`gp-content gp-grid gp-${cells[0]?.grid ?? 'grid8'} gp-tour-grid`}>
               {cells.map((t) => <TourBox key={t.frame + t.title + t.sortKey + t.dates} t={t} />)}
             </div>
-            {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate guide on index page {keyPage}</p>}
+            {providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />{indexLine(keyPage, keyPages)}</p>}
           </>
         ),
       });
@@ -749,7 +759,7 @@ export function GuideBook(props: {
           body: (
             <>
               <div className={`gp-content gp-grid gp-${ds.grid} gp-venue-grid gp-do-grid`}>{pg.cells.map((b) => <DoBoxCell key={b.frame + b.slug} b={b} mixed={pg.sides.length > 1} />)}</div>
-              {ds.providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />Locate provider on page {keyPage}</p>}
+              {ds.providers.length > 0 && <p className="gp-tour-footer"><BadgeCheck aria-hidden="true" />{indexLine(keyPage, sharedKey ? keyPages : doKeyPages?.length || 1)}</p>}
             </>
           ),
         });
