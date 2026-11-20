@@ -190,6 +190,11 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-venue-grid .gp-venue-half { grid-column: 1 / -1; grid-row: span 2; }
 .gp-venue-grid .gp-venue-quarter { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 3mm; }
 /* On the grid of sixteen a row is half as tall: the same share of the page takes twice the rows. */
+.gp-grid12.gp-venue-grid .gp-venue-three-quarters { grid-row: span 4; }
+.gp-grid12.gp-venue-grid .gp-venue-half { grid-row: span 3; }
+.gp-grid12.gp-venue-grid .gp-venue-quarter { grid-row: span 2; }
+.gp-grid12 .gp-venue-listing .gp-venue-name { font-size: 8.5pt; }
+.gp-grid12.gp-venue-grid .gp-venue { padding-top: 1mm; }
 .gp-grid16.gp-venue-grid .gp-venue-three-quarters { grid-row: span 6; }
 .gp-grid16.gp-venue-grid .gp-venue-half { grid-row: span 4; }
 .gp-grid16.gp-venue-grid .gp-venue-quarter { grid-row: span 2; }

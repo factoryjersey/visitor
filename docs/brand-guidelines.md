@@ -130,6 +130,7 @@ Elliott's marks on the first winter 2026 proofs, made rules so every proof keeps
   the guide, "Stroll In Jersey Twilight Walk…") print with the tours, not in What's On, and not at all
   when the guide's own tour that day is already printed.
 - No box goes without copy: at worst its shortest sentence, flagged overset in the proof.
+- Eat and Pubs & bars run area by area (St. Helier, East, West), each area from a new page headed "Eat St. Helier" and so on.
 - On-demand tours sit on the grid of six as the dated ones do, so their copy runs to its full
   length; their side marker is deep blue, apart from On specific dates' green.
 - The provider key: websites a size down so the whole address shows; a social page prints as its

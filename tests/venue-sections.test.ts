@@ -226,3 +226,14 @@ describe('a venue line too long for its box', () => {
     expect(shorterLines('A cosy pub.')).toEqual([]);
   });
 });
+
+describe('the grid of twelve for venues', () => {
+  it('puts three-quarters and a quarter on one page, and two halves', () => {
+    const [s] = venueSections([v('Big', { size: 'three-quarters' }), v('Small', { size: 'quarter' }), v('H1', { size: 'half' }), v('H2', { size: 'half' })], () => 'grid12');
+    expect(s!.pages.map((p) => (p.kind === 'grid' ? p.cells.map((c) => c.frame) : []))).toEqual([['three-quarters', 'quarter'], ['half', 'half']]);
+  });
+  it('runs Pubs & bars area by area, as Eat', () => {
+    const [s] = venueSections([v('P1', { section: 'Pubs & bars', area: 'West' }), v('P2', { section: 'Pubs & bars', area: 'St Helier' })]);
+    expect(s!.pages.map((p) => p.area)).toEqual(['St Helier', 'West']);
+  });
+});

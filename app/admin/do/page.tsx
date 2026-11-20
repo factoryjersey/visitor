@@ -37,11 +37,11 @@ export default async function DoPage() {
         <p>
           <b>{included.length}</b> activities run on together, water then land, a picture a page; <b>{indexed.length}</b> providers in the key that follows them.
         </p>
-        {(['grid8', 'grid16'] as const).map((g) => {
+        {(['grid8', 'grid12', 'grid16'] as const).map((g) => {
           const f = doFill(included.length, g);
           return (
             <p key={g} className="text-stone-600">
-              Grid of {g === 'grid8' ? 'eight' : 'sixteen'}: {f.pages} page{f.pages === 1 ? '' : 's'}
+              Grid of {g === 'grid8' ? 'eight' : g === 'grid12' ? 'twelve' : 'sixteen'}: {f.pages} page{f.pages === 1 ? '' : 's'}
               {f.empty ? <>, {f.empty} empty box{f.empty === 1 ? '' : 'es'} — add {f.add} or leave out {f.drop} for full pages</> : ', every page full'}
             </p>
           );

@@ -247,7 +247,7 @@ export function guideEvent(e: Event & { sourceWords?: string | null; sourceLonge
  * boxes, two across, every listing without a picture and one box a
  * picture beside the listing it belongs to.
  */
-export const LAYOUTS = ['top', 'grid6', 'grid8', 'grid16'] as const;
+export const LAYOUTS = ['top', 'grid6', 'grid8', 'grid12', 'grid16'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const layoutFrom = (v: string | null | undefined): Layout => (LAYOUTS as readonly string[]).includes(v ?? '') ? (v as Layout) : 'top';
 
@@ -257,7 +257,7 @@ export const TOUR_LAYOUTS = ['columns', 'grid6', 'grid8', 'grid12', 'grid16'] as
 export const DEFAULT_TOURS: TourLayout = 'grid6';
 export type TourLayout = (typeof TOUR_LAYOUTS)[number];
 /** A venue section: on the grid of eight (a listing a box, an eighth) or of sixteen (a listing a sixteenth). */
-export const VENUE_GRIDS = ['grid8', 'grid16'] as const;
+export const VENUE_GRIDS = ['grid8', 'grid12', 'grid16'] as const;
 export type VenueGrid = (typeof VENUE_GRIDS)[number];
 
 /** Each part of the guide's template, chosen on the production page and carried in its address. */
@@ -557,7 +557,7 @@ export type VenuePage = { kind: 'full'; venue: GuideVenue; area?: string } | { k
 export type AreaKey = { code: string; area: string };
 export type VenueSection = { section: string; grid: VenueGrid; pages: VenuePage[]; directory: GuideVenue[]; key: AreaKey[]; byArea?: boolean };
 /** Sections that run area by area, each area from a new page under its own heading, as Eat did in the 2026 editions. */
-export const AREA_PAGED: string[] = ['Eat'];
+export const AREA_PAGED: string[] = ['Eat', 'Pubs & bars'];
 
 /** A page's share each size takes: on the grid of eight, three rows, two and one of four; on sixteen, six, four and two of eight. */
 const SHARE: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3 / 4, half: 1 / 2, quarter: 1 / 4 };
@@ -612,7 +612,8 @@ export function venueSections(venues: GuideVenue[], gridFor: (section: string) =
       const grids: { cells: VenueCell[]; free: number }[] = [];
       for (const v of entries) {
         if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
-        const rows = SHARE[v.size] * ROWS;
+        // Whole rows: on the grid of twelve (six rows) three-quarters takes four and a quarter two, so the two still share a page.
+        const rows = v.size === 'quarter' ? Math.ceil(SHARE[v.size] * ROWS) : Math.floor(SHARE[v.size] * ROWS);
         let page = grids.find((g) => g.free >= rows);
         if (!page) grids.push((page = { cells: [], free: ROWS }));
         page.cells.push({ ...v, frame: v.size });
