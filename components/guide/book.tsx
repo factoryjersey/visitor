@@ -6,6 +6,7 @@ import { BEACHES, tourWhen, type GuideEvent, type GuideTour, type GuideVenue, ty
 import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
+import { printParish } from '@/lib/domain/house-style';
 import { markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
@@ -32,7 +33,7 @@ export { EVENTS, type Section };
 export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
-export type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor> };
+export type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor>; head?: string };
 
 /** Content height of a flowing page, in mm: 8.5mm from the top to 150mm. */
 const FLOW_MM = 141.5;
@@ -50,6 +51,8 @@ export function Frame({ page, n }: { page: Page; n: number }) {
       {page.marker && <div className={`gp-tab gp-marker gp-${side}${page.marker === 'On demand' ? ' gp-marker-on-demand' : ''}`}><span>{page.marker}</span></div>}
       {page.key && <PageKey icons={page.key} side={side} below={page.marker ? 'marker' : 'tab'} />}
       <Folio n={n} side={side} />
+      {/* The running head of a section run area by area: "Eat St. Helier", as the 2026 editions printed it. */}
+      {page.head && <p className="gp-running"><b>{page.section.name}</b> {page.head}</p>}
       {page.body}
     </div>
   );
@@ -723,10 +726,11 @@ export function GuideBook(props: {
     }
     for (const p of vs.pages) {
       const { marker, foot } = keyed(vs, p.kind === 'full' ? [p.venue] : p.cells);
+      const head = vs.byArea && p.area !== undefined ? printParish(p.area) ?? '' : undefined;
       pages.push(
         p.kind === 'full'
-          ? { section, marker, body: <VenueFullBody v={p.venue} /> }
-          : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid${vs.section === BEACHES ? ' gp-beach-grid' : ''}`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
+          ? { section, marker, head, body: <VenueFullBody v={p.venue} /> }
+          : { section, marker, head, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid${vs.section === BEACHES ? ' gp-beach-grid' : ''}`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
       );
     }
     for (const cols of dirPages.filter((pg) => pg[0]?.[0]?.group === vs.section)) {

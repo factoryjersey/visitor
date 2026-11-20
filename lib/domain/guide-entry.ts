@@ -472,6 +472,25 @@ const BUS_SECTIONS: string[] = ['See', BEACHES];
 /** What staff called Eat's bars and clubs before they had a section: a venue still set to it prints with the pubs and bars. */
 const OUT_OUT = 'Out Out';
 
+/**
+ * A one-liner, shorter, for a box whose name runs to two lines: the line
+ * up to a comma or a "with" that ends a whole thought, longest first.
+ * "Hotel brasserie serving modern pan-European dishes from Jersey produce,
+ * with a terrace over St Aubin's Bay." gives "Hotel brasserie serving
+ * modern pan-European dishes from Jersey produce." Never under five words.
+ */
+export function shorterLines(line: string): string[] {
+  const out: string[] = [];
+  // Where a new clause starts, never inside a list ("lobster, crab and oysters").
+  const re = /,?\s(?=(?:with|plus|known for|serving|offering|overlooking|where|run by|set in)\s)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(line))) {
+    const cut = line.slice(0, m.index).replace(/[\s,;:–-]+$/, '');
+    if (cut.split(/\s+/).length >= 5 && !/\b(and|or|of|the|a|an|to|in|on|at|by|for|from)$/i.test(cut)) out.push(`${cut}.`);
+  }
+  return [...new Set(out.reverse())].filter((c) => c.length < line.length);
+}
+
 export function guideVenue(p: Place): GuideVenue {
   const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
   const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
@@ -497,7 +516,7 @@ export function guideVenue(p: Place): GuideVenue {
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!] : withNotes,
+    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!, ...shorterLines(p.guideLine!)] : withNotes,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
     opening: openingText(p.openingHours, p.openMonths) ?? '',
@@ -532,10 +551,13 @@ const ranked = (order: readonly string[], v: string) => {
 /** A box on a venue grid page: an entry across both columns for so many rows, or a listing in one box. */
 export type VenueFrame = 'three-quarters' | 'half' | 'quarter' | 'listing';
 export type VenueCell = GuideVenue & { frame: VenueFrame };
-export type VenuePage = { kind: 'full'; venue: GuideVenue } | { kind: 'grid'; cells: VenueCell[] };
+/** area: the one area a page holds, in a section run area by area (AREA_PAGED). */
+export type VenuePage = { kind: 'full'; venue: GuideVenue; area?: string } | { kind: 'grid'; cells: VenueCell[]; area?: string };
 /** An area's short marker, printed on its boxes as the tour guides' are, and the area it stands for. */
 export type AreaKey = { code: string; area: string };
-export type VenueSection = { section: string; grid: VenueGrid; pages: VenuePage[]; directory: GuideVenue[]; key: AreaKey[] };
+export type VenueSection = { section: string; grid: VenueGrid; pages: VenuePage[]; directory: GuideVenue[]; key: AreaKey[]; byArea?: boolean };
+/** Sections that run area by area, each area from a new page under its own heading, as Eat did in the 2026 editions. */
+export const AREA_PAGED: string[] = ['Eat'];
 
 /** A page's share each size takes: on the grid of eight, three rows, two and one of four; on sixteen, six, four and two of eight. */
 const SHARE: Record<Exclude<VenueFrame, 'listing'>, number> = { 'three-quarters': 3 / 4, half: 1 / 2, quarter: 1 / 4 };
@@ -585,38 +607,51 @@ export function venueSections(venues: GuideVenue[], gridFor: (section: string) =
     const key = areaKey([...new Set(here.map((v) => v.area))]);
     const code = new Map(key.map((k) => [k.area, k.code]));
     const keyed = here.map((v) => ({ ...v, areaCode: code.get(v.area) ?? '' }));
-    const fulls: VenuePage[] = keyed.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue }));
-    const grids: { cells: VenueCell[]; free: number }[] = [];
-    for (const v of keyed) {
-      if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
-      const rows = SHARE[v.size] * ROWS;
-      let page = grids.find((g) => g.free >= rows);
-      if (!page) grids.push((page = { cells: [], free: ROWS }));
-      page.cells.push({ ...v, frame: v.size });
-      page.free -= rows;
-    }
+    // Bigger entries onto pages first, each onto the first page with rows enough for it; listings then fill the rows left, two to a row, and further grids.
+    const pack = (entries: typeof keyed, listings: VenueCell[]) => {
+      const grids: { cells: VenueCell[]; free: number }[] = [];
+      for (const v of entries) {
+        if (v.size !== 'three-quarters' && v.size !== 'half' && v.size !== 'quarter') continue;
+        const rows = SHARE[v.size] * ROWS;
+        let page = grids.find((g) => g.free >= rows);
+        if (!page) grids.push((page = { cells: [], free: ROWS }));
+        page.cells.push({ ...v, frame: v.size });
+        page.free -= rows;
+      }
+      const rest = [...listings];
+      // Free rows stay counted: the rationing reads what the booked entries leave.
+      for (const g of grids) g.cells.push(...rest.splice(0, g.free * 2));
+      while (rest.length) grids.push({ cells: rest.splice(0, GRID[grid].cells), free: 0 });
+      return grids;
+    };
     let listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
     // Rationed: the rows booked entries leave, and so many pages more; the rest go to the index.
     const pages = budget(section);
     const toIndex: GuideVenue[] = [];
     if (pages !== null) {
-      const room = grids.reduce((n, g) => n + g.free * 2, 0) + pages * GRID[grid].cells;
+      const booked = pack(keyed, []);
+      const room = booked.reduce((n, g) => n + g.free * 2, 0) + pages * GRID[grid].cells;
       const first = [...listings].sort((a, b) => Number(b.featured) - Number(a.featured) || Number(b.printed) - Number(a.printed) || Number(b.isNew) - Number(a.isNew) || Number(!!b.imageUrl) - Number(!!a.imageUrl) || a.name.localeCompare(b.name));
       const boxed = new Set(first.slice(0, room));
       toIndex.push(...listings.filter((v) => !boxed.has(v)).map(({ frame: _f, ...v }) => v));
       listings = listings.filter((v) => boxed.has(v));
     }
-    for (const g of grids) {
-      g.cells.push(...listings.splice(0, g.free * 2));
-      g.free = 0;
-    }
-    while (listings.length) grids.push({ cells: listings.splice(0, GRID[grid].cells), free: 0 });
+    const fullsOf = (vs: typeof keyed): VenuePage[] => vs.filter((v) => v.size === 'full').map((venue) => ({ kind: 'full', venue, area: venue.area }));
+    // Eat runs area by area, as the 2026 editions did: each area from a page of its own, under its own heading ("Eat St. Helier", "Eat East", "Eat West").
+    const areas = AREA_PAGED.includes(section) ? [...new Set(keyed.map((v) => v.area))] : null;
+    const sectionPages: VenuePage[] = areas
+      ? areas.flatMap((area) => [
+          ...fullsOf(keyed.filter((v) => v.area === area)),
+          ...pack(keyed.filter((v) => v.area === area), listings.filter((v) => v.area === area)).map((g): VenuePage => ({ kind: 'grid', cells: g.cells, area })),
+        ])
+      : [...fullsOf(keyed), ...pack(keyed, listings).map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))];
     return {
       section,
       grid,
-      pages: [...fulls, ...grids.map((g): VenuePage => ({ kind: 'grid', cells: g.cells }))],
+      pages: sectionPages,
       directory: [...keyed.filter((v) => v.size === 'directory'), ...toIndex].sort((a, b) => inArea(a, b) || a.name.localeCompare(b.name)),
       key,
+      byArea: !!areas,
     };
   });
 }

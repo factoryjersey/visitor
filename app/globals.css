@@ -154,6 +154,10 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
 .gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-tours-light); }
+.gp-running { position: absolute; top: 3.8mm; margin: 0; font-size: 7.5pt; line-height: 1; color: var(--gp-ink80); }
+.gp-page.gp-left .gp-running { left: 7.9mm; }
+.gp-page.gp-right .gp-running { left: 12mm; }
+.gp-running b { font-weight: 500; color: var(--gp-accent); }
 .gp-tab.gp-marker span { color: var(--gp-on-accent, white); }
 /* On demand apart from On specific dates at a glance (the editor could not tell them apart): the brand's deep blue, not the tours' green. */
 .gp-tab.gp-marker.gp-marker-on-demand { background: #022e3c; }

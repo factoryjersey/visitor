@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueGridFor, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
-  section: 'Eat', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', bus: '', ...o,
+  section: 'Buy', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', bus: '', ...o,
 });
 
 describe('venueSections', () => {
@@ -22,6 +22,13 @@ describe('venueSections', () => {
   it('fills the last rows of one area with the next, leaving no part-empty pages between', () => {
     const out = venueSections([...Array.from({ length: 5 }, (_, i) => v(`S${i}`)), ...Array.from({ length: 5 }, (_, i) => v(`G${i}`, { area: 'Gorey' }))]);
     expect(out[0]!.pages.map((p) => (p.kind === 'grid' ? p.cells.length : 1))).toEqual([8, 2]);
+  });
+
+  it('runs Eat area by area, as the 2026 editions did: each area from a page of its own, named on it', () => {
+    const eat = (name: string, area: string) => v(name, { section: 'Eat', area });
+    const [s] = venueSections([...Array.from({ length: 5 }, (_, i) => eat(`S${i}`, 'St. Helier')), eat('E0', 'East'), eat('W0', 'West'), eat('W1', 'West')]);
+    expect(s!.byArea).toBe(true);
+    expect(s!.pages.map((p) => [p.area, p.kind === 'grid' ? p.cells.length : 1])).toEqual([['St. Helier', 5], ['East', 1], ['West', 2]]);
   });
 
   it('keys areas by their own markers, else initials made unlike the others', () => {
@@ -137,7 +144,7 @@ describe('Eat by area, as the last edition runs it', () => {
 
 describe('Pubs & bars', () => {
   it('prints as a section of its own after Eat, on the grid of sixteen unless chosen', () => {
-    const out = venueSections([v('Bar', { section: 'Pubs & bars', area: 'West' }), v('Cafe', { area: 'St Helier' }), v('Shop', { section: 'Buy', area: '' })]);
+    const out = venueSections([v('Bar', { section: 'Pubs & bars', area: 'West' }), v('Cafe', { section: 'Eat', area: 'St Helier' }), v('Shop', { section: 'Buy', area: '' })]);
     expect(out.map((s) => s.section)).toEqual(['Buy', 'Eat', 'Pubs & bars']);
     expect(venueGridFor({ venues: {} }, 'Pubs & bars')).toBe('grid16');
     expect(venueGridFor({ venues: { 'Pubs & bars': 'grid8' } }, 'Pubs & bars')).toBe('grid8');
@@ -208,5 +215,14 @@ describe('noted', () => {
     ]);
     expect(out.at(-1)).toBe('Long copy.');
     expect(noted(['A.'], [])).toEqual(['A.']);
+  });
+});
+
+describe('a venue line too long for its box', () => {
+  it('has shorter forms, cut where a new clause starts, never inside a list', async () => {
+    const { shorterLines } = await import('@/lib/domain/guide-entry');
+    expect(shorterLines('A family-run seafood restaurant by the sea at Havre des Pas, serving local lobster, crab and oysters.')).toEqual(['A family-run seafood restaurant by the sea at Havre des Pas.']);
+    expect(shorterLines("Hotel brasserie serving modern pan-European dishes from Jersey produce, with a terrace over St Aubin's Bay.")).toEqual(['Hotel brasserie serving modern pan-European dishes from Jersey produce.']);
+    expect(shorterLines('A cosy pub.')).toEqual([]);
   });
 });
