@@ -205,6 +205,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
   const backing = `<idPkg:BackingStory xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><XmlStory Self="ubs"><ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/$ID/[No paragraph style]"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"/></ParagraphStyleRange></XmlStory></idPkg:BackingStory>`;
   const tags = `<idPkg:Tags xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><XMLTag Self="XMLTag/Root" Name="Root"/></idPkg:Tags>`;
 
+  // Numbered as the book's documents are, automatically, so the book paginates it; on its own it opens at its page in the edition (StartPageNumber), on the side it was laid out for.
   const designmap = `<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="18.0(XX)" ?>\n<Document xmlns:idPkg="${PKG}" DOMVersion="${DOM}" Self="d" StoryList="${stories.join(' ')}" ZeroPoint="0 0" ActiveLayer="uL" CMYKProfile="Coated FOGRA39 (ISO 12647-2:2004)" RGBProfile="sRGB IEC61966-2.1" SolidColorIntent="UseColorSettings" AfterBlendingIntent="UseColorSettings" DefaultImageIntent="UseColorSettings" RGBPolicy="PreserveEmbeddedProfiles" CMYKPolicy="CombinationOfPreserveAndSafeCmyk" AccurateLABSpots="false">`
     + '<idPkg:Graphic src="Resources/Graphic.xml"/><idPkg:Fonts src="Resources/Fonts.xml"/><idPkg:Styles src="Resources/Styles.xml"/><idPkg:Preferences src="Resources/Preferences.xml"/><idPkg:Tags src="XML/Tags.xml"/>'
     // The ears and folio on a layer of their own, above the pages', so a picture to the edge does not cover them.
@@ -212,7 +213,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     + '<Layer Self="uL" Name="Layer 1" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"><Properties><LayerColor type="enumeration">LightBlue</LayerColor></Properties></Layer>'
     + masterFiles.map(([path]) => `<idPkg:MasterSpread src="${path}"/>`).join('')
     + spreadFiles.map((s) => `<idPkg:Spread src="Spreads/Spread_${s}.xml"/>`).join('')
-    + `<Section Self="sec" Length="${pageCount}" Name="" ContinueNumbering="false" IncludeSectionPrefix="false" PageNumberStyle="Arabic" PageStart="${firstPageId[0] ?? 'n'}" PageNumberStart="${doc.firstPage}" SectionPrefix="" Marker=""/>`
+    + `<Section Self="sec" Length="${pageCount}" Name="" ContinueNumbering="true" IncludeSectionPrefix="false" PageNumberStyle="Arabic" PageStart="${firstPageId[0] ?? 'n'}" SectionPrefix="" Marker=""/>`
     + '<idPkg:BackingStory src="XML/BackingStory.xml"/>'
     + stories.map((s) => `<idPkg:Story src="Stories/Story_${s}.xml"/>`).join('')
     + '</Document>';

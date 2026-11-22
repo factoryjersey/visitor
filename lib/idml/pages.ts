@@ -49,15 +49,19 @@ export function fonts(palette: GuidePalette) {
     : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', medium: 'Medium', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
-/** The styles every frame uses, by name: editing one in InDesign changes them all. */
+/**
+ * The styles every frame uses, by name: editing one in InDesign changes them all. The
+ * ones the book's What's On already has keep its names (listing body, listings title,
+ * photo caption, Page Tab CAPs), so loading the book's styles restyles these pages.
+ */
 export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charStyles: CharStyle[] } {
   const f = fonts(palette);
   const p = (name: string, style: string, size: number, o: Partial<ParaStyle> = {}): ParaStyle => ({ name, font: f.body, style, size, colour: INK, ...o });
   return {
     paraStyles: [
       p('When', f.bold, 9, { caps: true, leading: 10 }),
-      p('Title', f.medium, 9, { leading: 10, before: 0.2, after: 0.3 }),
-      p('Copy', f.light, 8.5, { leading: 9.5 }),
+      p('listings title', f.medium, 9, { leading: 10, before: 0.2, after: 0.3 }),
+      p('listing body', f.light, 8.5, { leading: 9.5 }),
       p('Venue', f.medium, 7.5, { before: 2, leading: 8.6 }),
       p('Address', f.medium, 7.5, { leading: 8.6 }),
       p('Contact', f.regular, 7.5, { leading: 8.6 }),
@@ -67,8 +71,8 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Highlight title', f.headStyle, 15, { font: f.head, leading: 15.8, before: 0.5, after: 2 }),
       p('Highlight copy', f.light, 8.5, { leading: 9.8, after: 1.5 }),
       p('Opener title', f.headStyle, 30, { font: f.head, caps: true, leading: 30, colour: 'Paper' }),
-      p('Caption', f.medium, 5.5, { colour: 'Paper', leading: 6.5 }),
-      p('Tab', f.medium, 5.2, { caps: true, colour: 'Paper', tracking: 60 }),
+      p('photo caption', f.medium, 5.5, { colour: 'Paper', leading: 6.5 }),
+      p('Page Tab CAPs', f.medium, 5.2, { caps: true, colour: 'Paper', tracking: 60 }),
       p('Folio', f.medium, 6, { colour: 'Paper' }),
       p('Running head', f.regular, 7.5, {}),
       p('Footer', f.medium, 7, {}),
@@ -135,7 +139,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     const prefix = prefixFor(section.name);
     const m: IdmlMaster = { id: `um${prefix}`, prefix, name: section.name, basedOn: 'umA', ...sides((l) => [
       { kind: 'rect', x: ear(l), y: 8.1, w: 6.9, h: 33.9, fill: section.colour },
-      { kind: 'text', x: word(l), y: 8.1, w: 3.9, h: 33.9, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: section.name }] }] },
+      { kind: 'text', x: word(l), y: 8.1, w: 3.9, h: 33.9, vertical: true, centre: true, paras: [{ style: 'Page Tab CAPs', runs: [{ text: section.name }] }] },
     ]) };
     masters.push(m);
     masterOf.set(section.name, m);
@@ -152,7 +156,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     const tours = section.name === TOURS.name;
     const m: IdmlMaster = { id: `um${prefix}`, prefix, name: `${section.name} ${marker}`, basedOn: parent.id, ...sides((l) => [
       { kind: 'rect', x: ear(l), y: 43.6, w: 6.9, h: 28, fill: tours ? page.toursLight.name : section.colour, tint: tours ? undefined : 60 },
-      { kind: 'text', x: word(l), y: 43.6, w: 3.9, h: 28, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: marker }] }] },
+      { kind: 'text', x: word(l), y: 43.6, w: 3.9, h: 28, vertical: true, centre: true, paras: [{ style: 'Page Tab CAPs', runs: [{ text: marker }] }] },
     ]) };
     masters.push(m);
     masterOf.set(key, m);
@@ -205,7 +209,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     else items.push({ kind: 'rect', x: -3, y: -3, w: PAGE_W + 6, h: PAGE_H + 6, fill: events.colour });
     furniture(items, events);
     items.push({ kind: 'text', x: 8.1, y: PAGE_H - 34 - 24, w: 95, h: 24, paras: [{ style: 'Opener title', runs: [{ text: 'Events\nthis season' }] }] });
-    if (opener) items.push({ kind: 'text', x: 8.1, y: PAGE_H - 10 - 4, w: 80, h: 4, fill: INK, inset: 0.8, paras: [{ style: 'Caption', runs: [{ text: `${opener.dates} : ‘${opener.title}’` }] }] });
+    if (opener) items.push({ kind: 'text', x: 8.1, y: PAGE_H - 10 - 4, w: 80, h: 4, fill: INK, inset: 0.8, paras: [{ style: 'photo caption', runs: [{ text: `${opener.dates} : ‘${opener.title}’` }] }] });
     push(items);
   }
   for (const h of guide.highlights) {
@@ -249,8 +253,8 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
       ];
       items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: [
         { style: 'When', size: s.when, colour: events.colour, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times' }] : [])] },
-        { style: 'Title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
-        ...(e.copy || e.price ? [{ style: 'Copy', size: s.copy, runs: [{ text: e.copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
+        { style: 'listings title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
+        ...(e.copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: e.copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
         ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: e.venue }] }] : []),
         ...small,
       ] });
@@ -292,9 +296,9 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         const when = t.kind === 'dated' ? t.dates : '';
         items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: [
           ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times' }] : [])] }] : []),
-          { style: 'Title', size: s.title, colour: tours.colour, runs: [{ text: t.title }] },
+          { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }] },
           ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
-          ...(t.copy ? [{ style: 'Copy', size: s.copy, runs: [{ text: t.copy }] }] : []),
+          ...(t.copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: t.copy }] }] : []),
           { style: 'Tour meta', size: s.small, runs: [{ text: t.code || t.provider, char: 'Code' }, ...(t.duration ? [{ text: `   ${t.duration}` }] : [])] },
         ] });
       });
@@ -418,7 +422,7 @@ function venueParas(v: GuideVenue, frame: string, s: { when: number; title: numb
   const contact = [v.address, v.phone].filter(Boolean).join(' · ');
   return [
     { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: `  Tripadvisor ${v.tripadvisor.rating.toFixed(1)}`, char: 'Tag' }] : [])] },
-    ...(v.copy ? [{ style: 'Copy', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
+    ...(v.copy ? [{ style: 'listing body', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
     ...(contact ? [{ style: 'Address', size: s.small, runs: [{ text: contact }] }] : []),
     ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
     ...(v.bus ? [{ style: 'Contact', size: s.small, runs: [{ text: `Bus ${v.bus}` }] }] : []),
