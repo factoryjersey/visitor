@@ -7,7 +7,7 @@ import { paletteFor, paletteSwatches } from '@/lib/domain/guide-colours';
 import { layoutsFrom } from '@/lib/domain/guide-entry';
 import { buildGuide, EVENT_COLUMNS, HIGHLIGHT_COLUMNS, isDraft, PROVIDER_COLUMNS, TOUR_COLUMNS, VENUE_COLUMNS, windowFrom } from '@/lib/guide';
 import { ZipWriter } from '@/lib/zip';
-import { guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
+import { bookDocument, guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
 import { idmlFiles } from '@/lib/idml/write';
 import { asJpeg, imageSize } from '@/lib/idml/image-size';
 
@@ -95,17 +95,32 @@ export async function GET(request: NextRequest) {
       // The pages themselves, as an InDesign document beside Links/.
       const firstPage = Math.max(1, Math.min(400, Number(sp.get('page')) || 36));
       const sectionNames = guide.sections.map((s) => s.section);
-      const idml: Uint8Array[] = [];
-      const inner = new ZipWriter((c) => idml.push(c));
-      for (const [name, body] of idmlFiles({ pages: guidePages({ guide, palette, firstPage, pictures, opener: sp.get('opener') }), firstPage, ...styles(palette), swatches: swatches(palette, sectionNames) })) inner.add(name, new TextEncoder().encode(body));
-      inner.finish();
-      const idmlBytes = new Uint8Array(idml.reduce((n, c) => n + c.length, 0));
-      idml.reduce((at, c) => (idmlBytes.set(c, at), at + c.length), 0);
-      zip.add(`${job}/${job}.idml`, idmlBytes);
+      // The book's documents, as the editions name them (vjvg_26_4: the fourth of 2026, winter): What's On and Tours to replace the merge files, the venue sections, and the whole run in one.
+      const [yy, mm] = [window.from.slice(2, 4), Number(window.from.slice(5, 7))];
+      const issue = `${yy}_${mm >= 12 || mm < 3 ? 4 : mm >= 9 ? 3 : mm >= 6 ? 2 : 1}`;
+      const laid = guidePages({ guide, palette, firstPage, pictures, opener: sp.get('opener') });
+      const shared = { ...styles(palette), swatches: swatches(palette, sectionNames) };
+      const docs: [string, ReturnType<typeof bookDocument>][] = [
+        [`whatson_events_${issue}.idml`, bookDocument(laid, ['events'])],
+        [`whatson_tours_${issue}.idml`, bookDocument(laid, ['tours'])],
+        [`vjvg_venues_${issue}.idml`, bookDocument(laid, ['venues'])],
+        [`${job}.idml`, bookDocument(laid, ['events', 'tours', 'venues'])],
+      ];
+      for (const [file, doc] of docs) {
+        if (!doc) continue;
+        const idml: Uint8Array[] = [];
+        const inner = new ZipWriter((c) => idml.push(c));
+        for (const [name, body] of idmlFiles({ ...doc, ...shared })) inner.add(name, new TextEncoder().encode(body));
+        inner.finish();
+        const idmlBytes = new Uint8Array(idml.reduce((n, c) => n + c.length, 0));
+        idml.reduce((at, c) => (idmlBytes.set(c, at), at + c.length), 0);
+        zip.add(`${job}/${file}`, idmlBytes);
+      }
       const readme = [
         `Visitor Guide, ${window.from} to ${window.to}: InDesign package`,
         '',
-        `${job}.idml: the edition's pages for InDesign (File > Open, then save as .indd): What's On, Tours and experiences, and the venue sections, every frame in place, text in named paragraph styles, pictures linked from Links/. Copy is fitted by estimate: check for overset text. Fonts: ${palette === 'classic' ? 'Proxima Nova Condensed' : 'Google Sans Flex and GT Flaire Extra'}. A blank A-Master is applied to every page, for your masters.`,
+        `whatson_events_${issue}.idml and whatson_tours_${issue}.idml: What's On and Tours and experiences, for the book in place of the merge files; vjvg_venues_${issue}.idml: the venue sections; ${job}.idml: all of them in one. Open each in InDesign (File > Open) and save as .indd. Every frame is in place, text in named paragraph styles, pictures linked from Links/. Copy is fitted by estimate: check for overset text. Fonts: ${palette === 'classic' ? 'Proxima Nova Condensed' : 'Google Sans Flex and GT Flaire Extra'}.`,
+        `The ears are parent pages, on their own layer (Ears) above the pages': A-Folio carries the folio; each section's parent (E-What's On, T-Tours…) its tab, based on A; each marker's (E1, T1…) its marker tab, based on its section's. Change an ear once on its parent and every page follows; they stay on the outside edge whichever side a page falls in the book. Each document starts at its page in the edition (What's On at ${firstPage}): set the book to keep each document's own numbering.`,
         'highlights.csv, whats-on.csv, tours.csv, providers.csv, venues.csv: Data Merge sources (UTF-16), in page order.',
         'The @Picture column names each picture in Links/: keep Links/ beside the CSVs and Data Merge places them.',
         `swatches.ase: the edition's colours (${group}), as global CMYK swatches. Swatches panel > Load Swatches. CMYK converted from RGB: check before press.`,

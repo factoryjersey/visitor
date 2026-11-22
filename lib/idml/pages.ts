@@ -2,7 +2,7 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { PAGE_H, PAGE_W, type CharStyle, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
+import { PAGE_H, PAGE_W, type CharStyle, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
 
 /**
  * The guide's pages as InDesign frames, placed as the proof places them
@@ -95,39 +95,90 @@ export function swatches(palette: GuidePalette, sections: string[]): Swatch[] {
   return [{ name: INK, cmyk: PALETTE.deepBlue.cmyk }, ...[...new Map(all.map((w) => [w.name, w])).values()].map((w) => ({ name: w.name, cmyk: w.cmyk }))];
 }
 
-export function guidePages(input: LayoutInput): IdmlPage[] {
+/** Which document of the book a page is for: What's On, Tours and experiences, or the venue sections. */
+export type GuidePart = 'events' | 'tours' | 'venues';
+export type GuidePage = IdmlPage & { part: GuidePart };
+
+export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: IdmlMaster[] } {
   const { guide, palette, pictures } = input;
   const page = pageSwatches(palette);
-  const pages: IdmlPage[] = [];
+  const pages: GuidePage[] = [];
   let n = input.firstPage;
   const left = () => n % 2 === 0;
   const pic = (url: string) => (url ? pictures.get(url) : undefined);
 
-  /** The furniture every page has: its section's tab and word, a marker tab under it, the folio. */
-  const furniture = (items: Item[], section: { name: string; colour: string }, marker?: string, head?: string) => {
-    const l = left();
-    const x = l ? -3 : PAGE_W - 3.9;
-    items.push({ kind: 'rect', x, y: 8.1, w: 6.9, h: 33.9, fill: section.colour });
-    items.push({ kind: 'text', x: l ? 0 : PAGE_W - 3.9, y: 8.1, w: 3.9, h: 33.9, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: section.name }] }] });
-    if (marker) {
-      items.push({ kind: 'rect', x, y: 43.6, w: 6.9, h: 28, fill: section.name === TOURS.name ? page.toursLight.name : section.colour, tint: section.name === TOURS.name ? undefined : 60 });
-      items.push({ kind: 'text', x: l ? 0 : PAGE_W - 3.9, y: 43.6, w: 3.9, h: 28, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: marker }] }] });
-    }
-    items.push({ kind: 'rect', x, y: 148.9, w: 6.9, h: 8.1, fill: INK });
-    items.push({ kind: 'text', x: l ? 0 : PAGE_W - 3.9, y: 148.9, w: 3.9, h: 8.1, vertical: true, centre: true, paras: [{ style: 'Folio', runs: [{ text: '', pageNumber: true }] }] });
-    if (head !== undefined) items.push({ kind: 'text', x: LEFT_MARGIN(l), y: 3.3, w: 80, h: 4, paras: [{ style: 'Running head', runs: [{ text: `${section.name} `, char: 'Accent' }, { text: head }], colour: undefined }] });
+  /*
+   * The ears and folio are parent pages (masters), so they are drawn once and
+   * changed in one place, and sit on the outside edge whichever side a page
+   * falls in the book: A-Folio, the folio; a parent for each section, its tab
+   * and word, based on A; and one for each marker under it ("On demand",
+   * "St. Helier"), based on its section's.
+   */
+  const masters: IdmlMaster[] = [];
+  const masterOf = new Map<string, IdmlMaster>();
+  const ear = (l: boolean) => (l ? -3 : PAGE_W - 3.9);
+  const word = (l: boolean) => (l ? 0 : PAGE_W - 3.9);
+  const sides = (f: (l: boolean) => Item[]) => ({ left: f(true), right: f(false) });
+  masters.push({ id: 'umA', prefix: 'A', name: 'Folio', ...sides((l) => [
+    { kind: 'rect', x: ear(l), y: 148.9, w: 6.9, h: 8.1, fill: INK },
+    { kind: 'text', x: word(l), y: 148.9, w: 3.9, h: 8.1, vertical: true, centre: true, paras: [{ style: 'Folio', runs: [{ text: '', pageNumber: true }] }] },
+  ]) });
+  const prefixes = new Set(['A']);
+  const prefixFor = (name: string) => {
+    const letters = name.replace(/[^A-Za-z]/g, '').toUpperCase();
+    for (let k = 1; k <= 3; k += 1) if (!prefixes.has(letters.slice(0, k))) return prefixes.add(letters.slice(0, k)), letters.slice(0, k);
+    for (let i = 2; ; i += 1) if (!prefixes.has(`${letters[0]}${i}`)) return prefixes.add(`${letters[0]}${i}`), `${letters[0]}${i}`;
   };
+  const sectionMaster = (section: { name: string; colour: string }) => {
+    const known = masterOf.get(section.name);
+    if (known) return known;
+    const prefix = prefixFor(section.name);
+    const m: IdmlMaster = { id: `um${prefix}`, prefix, name: section.name, basedOn: 'umA', ...sides((l) => [
+      { kind: 'rect', x: ear(l), y: 8.1, w: 6.9, h: 33.9, fill: section.colour },
+      { kind: 'text', x: word(l), y: 8.1, w: 3.9, h: 33.9, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: section.name }] }] },
+    ]) };
+    masters.push(m);
+    masterOf.set(section.name, m);
+    return m;
+  };
+  const markerMaster = (section: { name: string; colour: string }, marker: string) => {
+    const key = `${section.name}\u0000${marker}`;
+    const known = masterOf.get(key);
+    if (known) return known;
+    const parent = sectionMaster(section);
+    const count = masters.filter((x) => x.basedOn === parent.id).length + 1;
+    const prefix = `${parent.prefix}${count}`.slice(0, 4);
+    prefixes.add(prefix);
+    const tours = section.name === TOURS.name;
+    const m: IdmlMaster = { id: `um${prefix}`, prefix, name: `${section.name} ${marker}`, basedOn: parent.id, ...sides((l) => [
+      { kind: 'rect', x: ear(l), y: 43.6, w: 6.9, h: 28, fill: tours ? page.toursLight.name : section.colour, tint: tours ? undefined : 60 },
+      { kind: 'text', x: word(l), y: 43.6, w: 3.9, h: 28, vertical: true, centre: true, paras: [{ style: 'Tab', runs: [{ text: marker }] }] },
+    ]) };
+    masters.push(m);
+    masterOf.set(key, m);
+    return m;
+  };
+  /** The page's parent: its section's, or its marker's. The page itself carries only its content. */
+  let current = 'umA';
+  const furniture = (_items: Item[], section: { name: string; colour: string }, marker?: string) => {
+    current = (marker ? markerMaster(section, marker) : sectionMaster(section)).id;
+  };
+  let part: GuidePart = 'events';
   const push = (items: Item[]) => {
-    pages.push({ n, items });
+    pages.push({ n, items, master: current, part });
+    current = 'umA';
     n += 1;
   };
+  // A section starts on a left-hand page: a blank page before it, if need be, ends the one before, under its parent page.
   const startLeft = (section: { name: string; colour: string }) => {
     if (!left()) {
-      const items: Item[] = [];
-      furniture(items, section);
-      push(items);
+      const last = pages.at(-1)?.master;
+      if (last) current = last;
+      else furniture([], section);
+      push([]);
     }
   };
+
   const cell = (grid: string, col: number, row: number, colSpan = 1, rowSpan = 1, rows = ROWS[grid] ?? ROWS.grid8!, gap = 2) => {
     const x = LEFT_MARGIN(left()) + col * (COL + GUTTER);
     const y = GRID_TOP + rows.slice(0, row).reduce((a, b) => a + b, 0) + row * gap;
@@ -213,6 +264,7 @@ export function guidePages(input: LayoutInput): IdmlPage[] {
   const tours = { ...TOURS, colour: page.tours.name };
   if (guide.tours.length) {
     startLeft(events);
+    part = 'tours';
     if (guide.providers.length) {
       const perPage = 34;
       const keyPages = Math.max(1, Math.ceil(guide.providers.length / perPage));
@@ -256,7 +308,8 @@ export function guidePages(input: LayoutInput): IdmlPage[] {
 
   function venueSection(vs: VenueSection) {
     const section = { name: vs.section, colour: sectionSwatch(vs.section, palette).name };
-    startLeft(pages.length ? { name: section.name, colour: section.colour } : section);
+    startLeft(section);
+    part = 'venues';
     const s = SIZES[vs.grid] ?? SIZES.grid8!;
     const areaFoot = (on: GuideVenue[]) => {
       const here = new Set(on.map((v) => v.area));
@@ -341,7 +394,19 @@ export function guidePages(input: LayoutInput): IdmlPage[] {
     }
   }
 
-  return pages;
+  return { pages, masters };
+}
+
+/**
+ * One document of the book: its pages, and the parent pages they use with the
+ * ones those are based on, in order.
+ */
+export function bookDocument(all: { pages: GuidePage[]; masters: IdmlMaster[] }, parts: GuidePart[]): { pages: IdmlPage[]; masters: IdmlMaster[]; firstPage: number } | null {
+  const pages = all.pages.filter((p) => parts.includes(p.part));
+  if (!pages.length) return null;
+  const used = new Set<string>();
+  for (const p of pages) for (let m: string | undefined = p.master; m && !used.has(m); m = all.masters.find((x) => x.id === m)?.basedOn) used.add(m);
+  return { pages: pages.map(({ part: _p, ...page }) => page), masters: all.masters.filter((m) => used.has(m.id)), firstPage: pages[0]!.n };
 }
 
 const spanRows = (c: VenueCell, rows: number) => {

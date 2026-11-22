@@ -26,7 +26,14 @@ export type Item =
   | { kind: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; weight: number }
   | (Box & { kind: 'text'; paras: Para[]; fill?: string; vertical?: boolean; centre?: boolean; thread?: string; inset?: number })
   | (Box & { kind: 'image'; link: string; px?: number; py?: number; fill?: string });
-export type IdmlPage = { n: number; items: Item[] };
+/** A page, and the parent page (master) it takes its ears and folio from. */
+export type IdmlPage = { n: number; items: Item[]; master?: string };
+/**
+ * A parent page (master) spread: its left and right pages' items, on the ears
+ * layer above the pages' own, and the parent it is based on, so the ears and
+ * folio are drawn once and changed in one place.
+ */
+export type IdmlMaster = { id: string; prefix: string; name: string; basedOn?: string; left: Item[]; right: Item[] };
 
 export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean };
 export type CharStyle = { name: string; font?: string; style?: string; size?: number; colour?: string; caps?: boolean };
@@ -56,6 +63,8 @@ function pathLocal(w: number, h: number): string {
 
 export type IdmlInput = {
   pages: IdmlPage[];
+  /** Parent pages, parents before the ones based on them. Without, a blank A-Master. */
+  masters?: IdmlMaster[];
   firstPage: number;
   paraStyles: ParaStyle[];
   charStyles: CharStyle[];
@@ -93,26 +102,16 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
   }
   const threadParas = new Map<string, Para[]>();
 
-  const spreadFiles: string[] = [];
-  let pageCount = 0;
-  const firstPageId: string[] = [];
-  spreads.forEach((sp) => {
-    const sid = next('sp');
+  /** A page's or a parent page's items as spread XML, on the given layer. */
+  function renderItems(items: Item[], dx: number, layer: string): string {
     let body = '';
-    for (const p of sp) {
-      const left = p.n % 2 === 0;
-      const dx = left ? -W : 0;
-      const pid = next('pg');
-      if (!firstPageId.length) firstPageId.push(pid);
-      pageCount += 1;
-      body += `<Page Self="${pid}" Name="${p.n}" AppliedMaster="umA" GeometricBounds="0 0 ${fmt(H)} ${fmt(W)}" ItemTransform="1 0 0 1 ${fmt(dx)} ${fmt(-H / 2)}" MasterPageTransform="1 0 0 1 0 0" OverrideList=""><Properties><PageColor type="enumeration">UseMasterColor</PageColor></Properties><MarginPreference ColumnCount="2" ColumnGutter="${fmt(3.9 * MM)}" Top="${fmt(11.6 * MM)}" Bottom="${fmt(11 * MM)}" Left="${fmt((left ? 7.9 : 12) * MM)}" Right="${fmt((left ? 12 : 7.9) * MM)}" ColumnDirection="Horizontal" ColumnsPositions="0 ${fmt(45.5 * MM)} ${fmt(49.4 * MM)} ${fmt(94.9 * MM)}"/></Page>`;
-      for (const it of p.items) {
+    for (const it of items) {
         if (it.kind === 'rect') {
-          body += `<Rectangle Self="${next('r')}" ContentType="Unassigned" ItemLayer="uL" FillColor="${colourRef(it.fill)}"${it.tint !== undefined ? ` FillTint="${it.tint}"` : ''} StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">${path(it, dx)}</Rectangle>`;
+          body += `<Rectangle Self="${next('r')}" ContentType="Unassigned" ItemLayer="${layer}" FillColor="${colourRef(it.fill)}"${it.tint !== undefined ? ` FillTint="${it.tint}"` : ''} StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">${path(it, dx)}</Rectangle>`;
         } else if (it.kind === 'line') {
           const ax = dx + it.x1 * MM, ay = -H / 2 + it.y1 * MM, bx = dx + it.x2 * MM, by = -H / 2 + it.y2 * MM;
           const pt = (x: number, y: number) => `<PathPointType Anchor="${fmt(x)} ${fmt(y)}" LeftDirection="${fmt(x)} ${fmt(y)}" RightDirection="${fmt(x)} ${fmt(y)}"/>`;
-          body += `<GraphicLine Self="${next('gl')}" ItemLayer="uL" StrokeColor="${colourRef(it.stroke)}" StrokeWeight="${fmt(it.weight)}" FillColor="Swatch/None" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0"><Properties><PathGeometry><GeometryPathType PathOpen="true"><PathPointArray>${pt(ax, ay)}${pt(bx, by)}</PathPointArray></GeometryPathType></PathGeometry></Properties></GraphicLine>`;
+          body += `<GraphicLine Self="${next('gl')}" ItemLayer="${layer}" StrokeColor="${colourRef(it.stroke)}" StrokeWeight="${fmt(it.weight)}" FillColor="Swatch/None" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0"><Properties><PathGeometry><GeometryPathType PathOpen="true"><PathPointArray>${pt(ax, ay)}${pt(bx, by)}</PathPointArray></GeometryPathType></PathGeometry></Properties></GraphicLine>`;
         } else if (it.kind === 'image') {
           const l = dx + it.x * MM, t = -H / 2 + it.y * MM, fw = it.w * MM, fh = it.h * MM;
           // Filled proportionally, as the proof crops it, taking the picture at 72 pixels to the inch: InDesign refits it on any change (auto-fit).
@@ -122,9 +121,9 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
             const tx = l + (fw - it.px * s) / 2, ty = t + (fh - it.py * s) / 2;
             img = `<Image Self="${next('im')}" ItemTransform="${fmt(s)} 0 0 ${fmt(s)} ${fmt(tx)} ${fmt(ty)}"><Properties><GraphicBounds Left="0" Top="0" Right="${it.px}" Bottom="${it.py}"/></Properties><Link Self="${next('ln')}" LinkResourceURI="file:${esc(it.link)}" StoredState="Normal"/></Image>`;
           }
-          body += `<Rectangle Self="${next('r')}" ContentType="GraphicType" ItemLayer="uL" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}" StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Graphics Frame]" ItemTransform="1 0 0 1 0 0">${path(it, dx)}<FrameFittingOption AutoFit="true" FittingOnEmptyFrame="FillProportionally" FittingAlignment="CenterAnchor"/>${img}</Rectangle>`;
+          body += `<Rectangle Self="${next('r')}" ContentType="GraphicType" ItemLayer="${layer}" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}" StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Graphics Frame]" ItemTransform="1 0 0 1 0 0">${path(it, dx)}<FrameFittingOption AutoFit="true" FittingOnEmptyFrame="FillProportionally" FittingAlignment="CenterAnchor"/>${img}</Rectangle>`;
         } else {
-          const fid = frameIds.get(it)!;
+          const fid = frameIds.get(it) ?? next('tf');
           let story: string;
           let prev = 'n', nxt = 'n';
           if (it.thread) {
@@ -144,9 +143,26 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
           const cx = dx + (it.x + it.w / 2) * MM, cy = -H / 2 + (it.y + it.h / 2) * MM;
           const geometry = it.vertical ? pathLocal(it.h * MM, it.w * MM) : path(it, dx);
           const transform = it.vertical ? `0 1 -1 0 ${fmt(cx)} ${fmt(cy)}` : '1 0 0 1 0 0';
-          body += `<TextFrame Self="${fid}" ParentStory="${story}" PreviousTextFrame="${prev}" NextTextFrame="${nxt}" ContentType="TextType" ItemLayer="uL" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}" StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="${transform}">${geometry}<TextFramePreference TextColumnCount="1" AutoSizingType="Off" VerticalJustification="${it.centre ? 'CenterAlign' : 'TopAlign'}" InsetSpacing="${inset} ${inset} ${inset} ${inset}" FirstBaselineOffset="AscentOffset" IgnoreWrap="false"/></TextFrame>`;
+          body += `<TextFrame Self="${fid}" ParentStory="${story}" PreviousTextFrame="${prev}" NextTextFrame="${nxt}" ContentType="TextType" ItemLayer="${layer}" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}" StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="${transform}">${geometry}<TextFramePreference TextColumnCount="1" AutoSizingType="Off" VerticalJustification="${it.centre ? 'CenterAlign' : 'TopAlign'}" InsetSpacing="${inset} ${inset} ${inset} ${inset}" FirstBaselineOffset="AscentOffset" IgnoreWrap="false"/></TextFrame>`;
         }
-      }
+    }
+    return body;
+  }
+
+  const spreadFiles: string[] = [];
+  let pageCount = 0;
+  const firstPageId: string[] = [];
+  spreads.forEach((sp) => {
+    const sid = next('sp');
+    let body = '';
+    for (const p of sp) {
+      const left = p.n % 2 === 0;
+      const dx = left ? -W : 0;
+      const pid = next('pg');
+      if (!firstPageId.length) firstPageId.push(pid);
+      pageCount += 1;
+      body += `<Page Self="${pid}" Name="${p.n}" AppliedMaster="${p.master ?? masters[0]!.id}" GeometricBounds="0 0 ${fmt(H)} ${fmt(W)}" ItemTransform="1 0 0 1 ${fmt(dx)} ${fmt(-H / 2)}" MasterPageTransform="1 0 0 1 0 0" OverrideList=""><Properties><PageColor type="enumeration">UseMasterColor</PageColor></Properties><MarginPreference ColumnCount="2" ColumnGutter="${fmt(3.9 * MM)}" Top="${fmt(11.6 * MM)}" Bottom="${fmt(11 * MM)}" Left="${fmt((left ? 7.9 : 12) * MM)}" Right="${fmt((left ? 12 : 7.9) * MM)}" ColumnDirection="Horizontal" ColumnsPositions="0 ${fmt(45.5 * MM)} ${fmt(49.4 * MM)} ${fmt(94.9 * MM)}"/></Page>`;
+      body += renderItems(p.items, dx, 'uL');
     }
     spreadFiles.push(sid);
     files.push([`Spreads/Spread_${sid}.xml`, xml(`<idPkg:Spread xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><Spread Self="${sid}" PageCount="${sp.length}" BindingLocation="${sp[0]!.n % 2 === 0 ? 1 : 0}" AllowPageShuffle="true" ShowMasterItems="true" ItemTransform="1 0 0 1 0 0" FlattenerOverride="Default">${body}</Spread></idPkg:Spread>`)]);
@@ -156,7 +172,12 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     files.push([`Stories/Story_${story}.xml`, storyXml(story, threadParas.get(thread) ?? [])]);
   }
 
-  const master = `<idPkg:MasterSpread xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><MasterSpread Self="umA" Name="A-Master" NamePrefix="A" BaseName="Master" ShowMasterItems="true" PageCount="2" ItemTransform="1 0 0 1 0 0"><Page Self="umAl" Name="A" AppliedMaster="n" GeometricBounds="0 0 ${fmt(H)} ${fmt(W)}" ItemTransform="1 0 0 1 ${fmt(-W)} ${fmt(-H / 2)}" MasterPageTransform="1 0 0 1 0 0"/><Page Self="umAr" Name="A" AppliedMaster="n" GeometricBounds="0 0 ${fmt(H)} ${fmt(W)}" ItemTransform="1 0 0 1 0 ${fmt(-H / 2)}" MasterPageTransform="1 0 0 1 0 0"/></MasterSpread></idPkg:MasterSpread>`;
+  const masters: IdmlMaster[] = doc.masters?.length ? doc.masters : [{ id: 'umA', prefix: 'A', name: 'Master', left: [], right: [] }];
+  const masterFiles = masters.map((m): [string, string] => {
+    const page = (side: 'l' | 'r') => `<Page Self="${m.id}${side}" Name="${esc(m.prefix)}" AppliedMaster="${m.basedOn ?? 'n'}" GeometricBounds="0 0 ${fmt(H)} ${fmt(W)}" ItemTransform="1 0 0 1 ${side === 'l' ? fmt(-W) : 0} ${fmt(-H / 2)}" MasterPageTransform="1 0 0 1 0 0"><MarginPreference ColumnCount="2" ColumnGutter="${fmt(3.9 * MM)}" Top="${fmt(11.6 * MM)}" Bottom="${fmt(11 * MM)}" Left="${fmt((side === 'l' ? 7.9 : 12) * MM)}" Right="${fmt((side === 'l' ? 12 : 7.9) * MM)}" ColumnDirection="Horizontal" ColumnsPositions="0 ${fmt(45.5 * MM)} ${fmt(49.4 * MM)} ${fmt(94.9 * MM)}"/></Page>`;
+    const items = renderItems(m.left, -W, 'uE') + renderItems(m.right, 0, 'uE');
+    return [`MasterSpreads/MasterSpread_${m.id}.xml`, xml(`<idPkg:MasterSpread xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><MasterSpread Self="${m.id}" Name="${esc(`${m.prefix}-${m.name}`)}" NamePrefix="${esc(m.prefix)}" BaseName="${esc(m.name)}" ShowMasterItems="true" PageCount="2" ItemTransform="1 0 0 1 0 0">${page('l')}${page('r')}${items}</MasterSpread></idPkg:MasterSpread>`)];
+  });
 
   const graphic = `<idPkg:Graphic xmlns:idPkg="${PKG}" DOMVersion="${DOM}">`
     + '<Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" AlternateSpace="NoAlternateColor" AlternateColorValue="" Name="Black" ColorEditable="false" ColorRemovable="false" Visible="true" SwatchCreatorID="7937"/>'
@@ -186,8 +207,10 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
 
   const designmap = `<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="18.0(XX)" ?>\n<Document xmlns:idPkg="${PKG}" DOMVersion="${DOM}" Self="d" StoryList="${stories.join(' ')}" ZeroPoint="0 0" ActiveLayer="uL" CMYKProfile="Coated FOGRA39 (ISO 12647-2:2004)" RGBProfile="sRGB IEC61966-2.1" SolidColorIntent="UseColorSettings" AfterBlendingIntent="UseColorSettings" DefaultImageIntent="UseColorSettings" RGBPolicy="PreserveEmbeddedProfiles" CMYKPolicy="CombinationOfPreserveAndSafeCmyk" AccurateLABSpots="false">`
     + '<idPkg:Graphic src="Resources/Graphic.xml"/><idPkg:Fonts src="Resources/Fonts.xml"/><idPkg:Styles src="Resources/Styles.xml"/><idPkg:Preferences src="Resources/Preferences.xml"/><idPkg:Tags src="XML/Tags.xml"/>'
+    // The ears and folio on a layer of their own, above the pages', so a picture to the edge does not cover them.
+    + '<Layer Self="uE" Name="Ears" Visible="true" Locked="false" IgnoreWrap="true" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"><Properties><LayerColor type="enumeration">Red</LayerColor></Properties></Layer>'
     + '<Layer Self="uL" Name="Layer 1" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"><Properties><LayerColor type="enumeration">LightBlue</LayerColor></Properties></Layer>'
-    + '<idPkg:MasterSpread src="MasterSpreads/MasterSpread_umA.xml"/>'
+    + masterFiles.map(([path]) => `<idPkg:MasterSpread src="${path}"/>`).join('')
     + spreadFiles.map((s) => `<idPkg:Spread src="Spreads/Spread_${s}.xml"/>`).join('')
     + `<Section Self="sec" Length="${pageCount}" Name="" ContinueNumbering="false" IncludeSectionPrefix="false" PageNumberStyle="Arabic" PageStart="${firstPageId[0] ?? 'n'}" PageNumberStart="${doc.firstPage}" SectionPrefix="" Marker=""/>`
     + '<idPkg:BackingStory src="XML/BackingStory.xml"/>'
@@ -202,7 +225,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     ['Resources/Fonts.xml', xml(fonts)],
     ['Resources/Styles.xml', xml(styles)],
     ['Resources/Preferences.xml', xml(prefs)],
-    ['MasterSpreads/MasterSpread_umA.xml', xml(master)],
+    ...masterFiles,
     ['XML/BackingStory.xml', xml(backing)],
     ['XML/Tags.xml', xml(tags)],
     ...files,
