@@ -352,8 +352,8 @@ const spanRows = (c: VenueCell, rows: number) => {
 function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }): Para[] {
   const contact = [v.address, v.phone].filter(Boolean).join(' · ');
   return [
-    { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: `  Tripadvisor ${v.tripadvisor.rating.toFixed(1)}`, char: 'Tag' }] : [])] },
-    ...(v.copy ? [{ style: 'Copy', size: frame === 'listing' ? s.copy : 8.5, runs: [{ text: v.copy }] }] : []),
+    { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: `  Tripadvisor ${v.tripadvisor.rating.toFixed(1)}`, char: 'Tag' }] : [])] },
+    ...(v.copy ? [{ style: 'Copy', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
     ...(contact ? [{ style: 'Address', size: s.small, runs: [{ text: contact }] }] : []),
     ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
     ...(v.bus ? [{ style: 'Contact', size: s.small, runs: [{ text: `Bus ${v.bus}` }] }] : []),

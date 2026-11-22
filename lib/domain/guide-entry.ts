@@ -2,7 +2,7 @@ import type { Event, Experience, ListingSize, Place, Provider } from '@/lib/db/s
 import { isNewVenue } from './new-venue';
 import { openingText } from './opening';
 import { webImage } from './images';
-import { UNIQUE } from './occurrence';
+import { runsWeekly, UNIQUE } from './occurrence';
 import {
   printAddress,
   printContact,
@@ -12,6 +12,7 @@ import {
   printTimes,
   printTourDates,
   printTitle,
+  printVenueName,
   printWebsite,
   socialSite,
   tooManyTimes,
@@ -443,6 +444,9 @@ export type GuideVenue = {
   /** Featured in a past guide, or has its own guide copy: first for a box when the section's pages for listings are rationed. */
   featured: boolean;
   printed: boolean;
+  /** Its name as a listing box prints it, shorter ("Locke’s" for "Locke’s Coffee & Grub"), and the "at …" its words open with. Listings only. */
+  printName?: string;
+  nameSub?: string;
   /** A previous client (marked, booked space, or in the last edition): kept in a box on the small grids even when its name runs long. Not printed. */
   client?: boolean;
   /** When it opens: the months, unless all year, then the hours. Empty when the source does not say. */
@@ -542,6 +546,7 @@ export function guideVenue(p: Place): GuideVenue {
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
     // A previous client: marked as one, booked space bigger than a listing, or in the last edition (its line taken from there, and locked).
+    ...(p.listingSize === 'listing' && section !== BEACHES ? (({ name, sub }) => ({ printName: name, ...(sub ? { nameSub: sub } : {}) }))(printVenueName(p.name)) : {}),
     client: p.client || (p.lockedFields ?? []).includes('guideLine') || Object.values(p.spaceByEdition ?? {}).some((z) => z !== 'listing' && z !== 'directory'),
     opening: openingText(p.openingHours, p.openMonths) ?? '',
     bus: BUS_SECTIONS.includes(section) ? (p.busRoutes ?? []).join(', ') : '',
@@ -626,13 +631,13 @@ export function areaKey(areas: string[]): AreaKey[] {
  * its label beside it: estimated from its letters at the name's size
  * (7.5pt on the grid of sixteen, 8.5pt on twelve) in a 45.5mm column.
  */
-export function nameFits(v: Pick<GuideVenue, 'name' | 'label' | 'tripadvisor'>, grid: 'grid12' | 'grid16'): boolean {
+export function nameFits(v: Pick<GuideVenue, 'name' | 'label' | 'tripadvisor'> & { printName?: string }, grid: 'grid12' | 'grid16'): boolean {
   const pt = grid === 'grid16' ? 7.5 : 8.5;
   // Average advance of the guide's sans, in ems: lower case and spaces about half, capitals about two thirds.
   // Checked against the guide's sans in the browser: within a few per cent either way, so 3% is added.
   const ems = (t: string) => 1.03 * [...t].reduce((n, c) => n + (c === ' ' ? 0.26 : /[A-Z]/.test(c) ? 0.64 : /[il.'’,]/.test(c) ? 0.26 : /[mw]/.test(c) ? 0.8 : 0.53), 0);
   const MM_PER_PT = 25.4 / 72;
-  const name = ems(v.name) * pt * MM_PER_PT;
+  const name = ems(v.printName ?? v.name) * pt * MM_PER_PT;
   // The label in capitals at 5.5pt with its padding and gap; the Tripadvisor bubbles.
   const label = v.label ? ems(v.label) * 5.5 * MM_PER_PT + 3.5 : 0;
   const ta = v.tripadvisor ? 13 : 0;
@@ -749,7 +754,8 @@ export function guideTour(
   client = false,
 ): GuideTour | null {
   const inside = x.dates.filter((d) => !window || (d.date >= window.from && d.date <= window.to));
-  const dated = UNIQUE.includes(x.occurrence);
+  // A tour on the same days every week (Valley Adventure Centre's every weekend) is on demand, whatever the source calls it, unless staff set its dates.
+  const dated = UNIQUE.includes(x.occurrence) && (!!x.printDates || !runsWeekly(inside.map((d) => d.date)));
   const dates = dated ? x.printDates ?? printTourDates(x.dates, window) : '';
   // A dated tour with no dates in this edition is not in it; an on-demand
   // one is, if it runs at all during the edition or lists no dates.

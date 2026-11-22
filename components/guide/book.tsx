@@ -295,7 +295,7 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
   const text = (
     <>
       <p className="gp-venue-head">
-        <span className="gp-venue-name">{c.name}</span>
+        <span className="gp-venue-name" title={c.printName && c.printName !== c.name ? c.name : undefined}>{c.frame === 'listing' ? c.printName ?? c.name : c.name}</span>
         {c.tripadvisor && (
           <span className="gp-ta" title={`Tripadvisor ${c.tripadvisor.rating.toFixed(1)}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -307,7 +307,7 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
         <AreaCode code={c.areaCode} />
       </p>
-      <p className="gp-event-copy">{copy}</p>
+      <p className="gp-event-copy">{c.frame === 'listing' && c.nameSub && <span className="gp-venue-sub">{c.nameSub} </span>}{copy}</p>
       {contact && keep && <p className="gp-event-address">{where}{c.phone}</p>}
       {c.website && <p className="gp-event-web">{c.website}</p>}
       {c.frame !== 'listing' && c.opening && <p className="gp-venue-open"><Clock aria-hidden="true" />{c.opening}</p>}

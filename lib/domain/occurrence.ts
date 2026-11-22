@@ -87,3 +87,20 @@ export const OCCURRENCE_LABEL: Record<Occurrence, string> = {
   regular: 'Regular',
   ongoing: 'Ongoing',
 };
+
+/**
+ * A tour that runs week in, week out, read from its dates in the edition: three
+ * or more, most of them a week from another (every weekend, every Tuesday).
+ * Providers list a few weeks ahead, so the run looks short; in print it is
+ * bookable on demand rather than a list of dates. Tide walks, which move with
+ * the tide, do not repeat a week apart and keep their dates.
+ */
+export function runsWeekly(dates: readonly string[]): boolean {
+  const days = [...new Set(dates.map(dayNumber))].sort((a, b) => a - b);
+  if (days.length < 3) return false;
+  const on = new Set(days);
+  const weekly = days.filter((d) => on.has(d - 7) || on.has(d + 7));
+  // A pair a week apart is chance; a run of three weeks or more, most of the dates, is a pattern.
+  const weeks = new Set(weekly.map((d) => Math.floor((d - days[0]!) / 7)));
+  return weekly.length / days.length >= 0.75 && weeks.size >= 3;
+}

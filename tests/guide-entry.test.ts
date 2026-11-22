@@ -68,9 +68,15 @@ const tour: Experience = {
 
 describe('guideTour', () => {
   it('prints a dated tour with its dates and provider code', () => {
-    expect(guideTour(tour, { name: 'Absolute Adventures', code: 'AA' })).toMatchObject({
-      kind: 'dated', dates: '1/8/15/22/29 Sep, 6 Oct', title: 'Beach Blokarting', code: 'AA', duration: '1-2 hrs',
+    const odd = { ...tour, dates: tour.dates.filter((_, i) => i === 0 || i === 2 || i === 5) };
+    expect(guideTour(odd, { name: 'Absolute Adventures', code: 'AA' })).toMatchObject({
+      kind: 'dated', title: 'Beach Blokarting', code: 'AA', duration: '1-2 hrs',
     });
+  });
+
+  it('prints a tour on the same day every week on demand, unless staff set its dates', () => {
+    expect(guideTour(tour, { name: 'Absolute Adventures', code: 'AA' })).toMatchObject({ kind: 'on demand', dates: '' });
+    expect(guideTour({ ...tour, printDates: '1/8/15/22/29 Sep, 6 Oct' }, { name: 'Absolute Adventures', code: 'AA' })).toMatchObject({ kind: 'dated', dates: '1/8/15/22/29 Sep, 6 Oct' });
   });
 
   it('prints an on-demand tour under its genre, without dates', () => {

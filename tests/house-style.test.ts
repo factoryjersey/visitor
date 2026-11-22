@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   printOngoingDates,
+  printVenueName,
   printAddress,
   printContact,
   printDates,
@@ -177,5 +178,25 @@ describe('printOngoingDates', () => {
     expect(printOngoingDates(days('2027-01-01', '2027-12-31'), winter)).toBe('FROM 1 JAN');
     expect(printOngoingDates(days('2026-12-12', '2027-02-04'), winter)).toBe('12 DEC - 4 FEB');
     expect(printOngoingDates(days('2027-03-01', '2027-06-01'), winter)).toBeNull();
+  });
+});
+
+describe('printVenueName', () => {
+  it('takes a descriptive tail, a dash part and a trailing Jersey off a listing’s name', () => {
+    expect(printVenueName('Locke’s Coffee & Grub')).toEqual({ name: 'Locke’s', sub: '' });
+    expect(printVenueName('Pêtchi Restaurant & Wine Bar').name).toBe('Pêtchi');
+    expect(printVenueName('Botana Tapas Bar and Restaurant').name).toBe('Botana');
+    expect(printVenueName('Salty Dog Café, Bar & Bistro').name).toBe('Salty Dog');
+    expect(printVenueName('Dockyard Restaurant – Marina Metro Hotel').name).toBe('Dockyard Restaurant');
+    expect(printVenueName('The Harbour Gallery Jersey').name).toBe('The Harbour Gallery');
+  });
+
+  it('moves "at …" to the first line of its words', () => {
+    expect(printVenueName('The Terrace at the Ommaroo Hotel')).toEqual({ name: 'The Terrace', sub: 'at the Ommaroo Hotel' });
+    expect(printVenueName('Champagne Lounge, Grand Jersey')).toEqual({ name: 'Champagne Lounge', sub: 'at Grand Jersey' });
+  });
+
+  it('leaves a name whole when shortening would leave too little, or it is a list', () => {
+    for (const n of ['Prince’s Bar', 'So Bar', 'Little Thai Restaurant', 'Maison de Jersey', 'Pallot Steam, Motor & General Museum', 'Jersey Museum, Art Gallery and Victorian House']) expect(printVenueName(n)).toEqual({ name: n, sub: '' });
   });
 });

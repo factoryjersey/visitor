@@ -269,6 +269,40 @@ const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'en', 'for', '
  * capitals inside (O'Sullivan, McQueen, iNED). A title shouted in
  * capitals is cased again from scratch.
  */
+/** Words that describe a venue rather than name it: a tail of two or more of them comes off its name in a listing box. */
+const VENUE_WORDS = new Set(['restaurant', 'restaurants', 'bar', 'bars', 'wine', 'tapas', 'coffee', 'shop', 'grub', 'bistro', 'brasserie', 'tearoom', 'café', 'cafe', 'kitchen', 'dining', 'pub', 'grill', 'eatery', 'terrace', 'seafood', 'and', '&']);
+const NOT_A_NAME = new Set(['the', 'a', 'an', 'la', 'le', 'les']);
+
+/**
+ * A venue's name as a listing box prints it, shorter, with any "at …" for the first line of its words:
+ *   "Locke’s Coffee & Grub" → Locke’s; "Pêtchi Restaurant & Wine Bar" → Pêtchi;
+ *   "Dockyard Restaurant – Marina Metro Hotel" → Dockyard Restaurant; "The Harbour Gallery Jersey" → The Harbour Gallery;
+ *   "The Terrace at the Ommaroo Hotel" → The Terrace, "at the Ommaroo Hotel".
+ * A name that is all descriptive words, or a single one after the name ("Prince’s Bar", "So Bar"), stays whole.
+ */
+export function printVenueName(given: string): { name: string; sub: string } {
+  let name = given.replace(/\s+/g, ' ').trim();
+  let sub = '';
+  // What follows a dash is a description, or the hotel it is in: it goes.
+  name = name.replace(/\s+[–—-]\s+.*$/, '');
+  // "at …": the place it is in, to the first line of its words.
+  const at = name.match(/^(.+?)\s+(at\s+.+)$/i);
+  if (at && !NOT_A_NAME.has(at[1]!.toLowerCase())) [name, sub] = [at[1]!, at[2]!.replace(/^At\b/, 'at')];
+  // A comma before the hotel's name ("Champagne Lounge, Grand Jersey"), not before a list ("Steam, Motor & General Museum").
+  const comma = name.match(/^(.+?),\s+([^,&]+)$/);
+  if (comma && !/\band\b/i.test(comma[2]!) && !comma[2]!.split(' ').every((w) => VENUE_WORDS.has(w.toLowerCase()))) [name, sub] = [comma[1]!, sub || `at ${comma[2]!}`];
+  // A tail of descriptive words, two or more ("Coffee & Grub", "Café, Bar & Bistro").
+  const words = name.split(' ');
+  let cut = words.length;
+  while (cut > 1 && VENUE_WORDS.has(words[cut - 1]!.replace(/,$/, '').toLowerCase())) cut -= 1;
+  const head = words.slice(0, cut);
+  if (words.length - cut >= 2 && head.some((w) => !NOT_A_NAME.has(w.toLowerCase()))) name = head.join(' ').replace(/,$/, '');
+  // "Jersey" after a name of two words or more, not "Maison de Jersey".
+  const w = name.split(' ');
+  if (w.length >= 3 && w.at(-1) === 'Jersey' && !/^(de|of|du)$/i.test(w.at(-2)!)) name = w.slice(0, -1).join(' ');
+  return { name, sub };
+}
+
 export function printTitle(given: string): string {
   // A booking site's own tidying left in: a date ("Folklore Walk 3   4/12/26"), and runs of spaces.
   const title = given.replace(/\s+\d{0,2}\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/, '').replace(/\s+/g, ' ').trim();

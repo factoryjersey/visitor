@@ -304,6 +304,8 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 }
 /* The area markers, keyed at the foot of the page, as the tours' guides are. */
 .gp-area-code { margin-left: auto; font-size: 6.5pt; }
+/* The "at …" a shortened name leaves ("The Terrace" at the Ommaroo Hotel): the first words of its box, in the name's weight. */
+.gp-venue-sub { font-weight: 500; color: var(--gp-ink); }
 /* On the grids of twelve and sixteen the box's area marker goes: the page's head and side marker name the area, and the room goes to the words. */
 .gp-grid12.gp-venue-grid .gp-venue-listing .gp-area-code, .gp-grid16.gp-venue-grid .gp-venue-listing .gp-area-code { display: none; }
 .gp-directory .gp-area-code { margin: 0 1mm 0 0; }
