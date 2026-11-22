@@ -1,6 +1,5 @@
 import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
-import { printParish } from '@/lib/domain/house-style';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
 import { PAGE_H, PAGE_W, type CharStyle, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -270,7 +269,7 @@ export function guidePages(input: LayoutInput): IdmlPage[] {
     for (const p of vs.pages) {
       const items: Item[] = [];
       const on = p.kind === 'full' ? [p.venue] : p.cells;
-      furniture(items, section, marker(on), vs.byArea && p.area !== undefined ? printParish(p.area) ?? '' : undefined);
+      furniture(items, section, marker(on));
       if (p.kind === 'full') {
         const v = p.venue;
         const x = LEFT_MARGIN(left());
@@ -313,7 +312,7 @@ export function guidePages(input: LayoutInput): IdmlPage[] {
           }
         }
       }
-      footer(items, areaFoot(on));
+      if (vs.grid !== 'grid12' && vs.grid !== 'grid16') footer(items, areaFoot(on));
       push(items);
     }
     // Its index: the directory lines, by area, flowing over as many pages as they need.

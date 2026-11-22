@@ -6,7 +6,6 @@ import { BEACHES, tourWhen, type GuideEvent, type GuideTour, type GuideVenue, ty
 import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
-import { printParish } from '@/lib/domain/house-style';
 import { markerText, pageSwatches, sectionSwatch, tint, type GuidePalette } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
@@ -736,7 +735,9 @@ export function GuideBook(props: {
     const keyed = (vs: VenueSection, on: GuideVenue[]) => {
       const here = new Set(on.map((v) => v.area));
       const keys = vs.key.filter((k) => here.has(k.area));
-      return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} rated={on.some((v) => v.tripadvisor)} /> };
+      // The grids of twelve and sixteen print no area markers on their boxes, so their pages need no key to them.
+      const small = vs.grid === 'grid12' || vs.grid === 'grid16';
+      return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={small ? [] : keys} rated={on.some((v) => v.tripadvisor)} /> };
     };
     // The beaches open with the Beachlife spread: a beach full bleed, then the introduction on sand with four more.
     if (vs.section === BEACHES) {
@@ -749,11 +750,10 @@ export function GuideBook(props: {
     }
     for (const p of vs.pages) {
       const { marker, foot } = keyed(vs, p.kind === 'full' ? [p.venue] : p.cells);
-      const head = vs.byArea && p.area !== undefined ? printParish(p.area) ?? '' : undefined;
       pages.push(
         p.kind === 'full'
-          ? { section, marker, head, body: <VenueFullBody v={p.venue} /> }
-          : { section, marker, head, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid${vs.section === BEACHES ? ' gp-beach-grid' : ''}`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
+          ? { section, marker, body: <VenueFullBody v={p.venue} /> }
+          : { section, marker, body: <><div className={`gp-content gp-grid gp-${vs.grid} gp-venue-grid${vs.section === BEACHES ? ' gp-beach-grid' : ''}`}>{p.cells.map((c) => <VenueBox key={c.frame + c.name} c={c} />)}</div>{foot}</> },
       );
     }
     for (const cols of dirPages.filter((pg) => pg[0]?.[0]?.group === vs.section)) {

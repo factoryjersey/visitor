@@ -142,9 +142,10 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-grid16 .gp-venue-listing .gp-venue-name { font-size: 7.5pt; }
 /* The grid of sixteen's venue boxes as the 2026 editions set them: the description at 6.5pt, closely led, the phone and website on one line, rows closer together, so a two- or three-sentence description fits. */
 .gp-grid.gp-grid16.gp-venue-grid { grid-template-rows: repeat(8, minmax(0, 1fr)); row-gap: 1mm; }
-.gp-grid16 .gp-venue-listing .gp-event-copy { font-size: 6.5pt; line-height: 1.12; }
-.gp-grid16 .gp-venue-listing .gp-event-address, .gp-grid16 .gp-venue-listing .gp-event-web { display: inline; margin: 0; }
-.gp-grid16 .gp-venue-listing .gp-event-address + .gp-event-web { margin-left: 1.2mm; }
+.gp-grid16 .gp-venue-listing .gp-event-copy, .gp-grid12 .gp-venue-listing .gp-event-copy { font-size: 6.5pt; line-height: 1.12; }
+.gp-grid16 .gp-venue-listing .gp-event-address, .gp-grid16 .gp-venue-listing .gp-event-web, .gp-grid12 .gp-venue-listing .gp-event-address, .gp-grid12 .gp-venue-listing .gp-event-web { display: inline; margin: 0; }
+.gp-grid16 .gp-venue-listing .gp-event-address + .gp-event-web, .gp-grid12 .gp-venue-listing .gp-event-address + .gp-event-web { margin-left: 1.2mm; }
+.gp-grid12 .gp-venue-listing .gp-venue-where-line { display: none; }
 .gp-grid16.gp-venue-grid .gp-venue { padding-top: 0.8mm; }
 .gp-grid16 .gp-tour-meta { margin-top: 0.3mm; font-size: 6.5pt; }
 .gp-image { margin: 0; }
@@ -303,6 +304,8 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 }
 /* The area markers, keyed at the foot of the page, as the tours' guides are. */
 .gp-area-code { margin-left: auto; font-size: 6.5pt; }
+/* On the grids of twelve and sixteen the box's area marker goes: the page's head and side marker name the area, and the room goes to the words. */
+.gp-grid12.gp-venue-grid .gp-venue-listing .gp-area-code, .gp-grid16.gp-venue-grid .gp-venue-listing .gp-area-code { display: none; }
 .gp-directory .gp-area-code { margin: 0 1mm 0 0; }
 .gp-area-key { flex-wrap: wrap; gap: 0.6mm 3mm; max-width: 120mm; }
 .gp-area-key span { display: inline-flex; align-items: center; gap: 0.6mm; }

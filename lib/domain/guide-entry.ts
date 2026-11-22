@@ -443,6 +443,8 @@ export type GuideVenue = {
   /** Featured in a past guide, or has its own guide copy: first for a box when the section's pages for listings are rationed. */
   featured: boolean;
   printed: boolean;
+  /** A previous client (marked, booked space, or in the last edition): kept in a box on the small grids even when its name runs long. Not printed. */
+  client?: boolean;
   /** When it opens: the months, unless all year, then the hours. Empty when the source does not say. */
   opening: string;
   /** The buses that stop near it, "12a, 14": printed on the places people go out to, the beaches and the sights. */
@@ -539,6 +541,8 @@ export function guideVenue(p: Place): GuideVenue {
     options: p.listingSize === 'directory' ? [] : oneLine ? lineOptions(p.guideLine!) : withNotes,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
+    // A previous client: marked as one, booked space bigger than a listing, or in the last edition (its line taken from there, and locked).
+    client: p.client || (p.lockedFields ?? []).includes('guideLine') || Object.values(p.spaceByEdition ?? {}).some((z) => z !== 'listing' && z !== 'directory'),
     opening: openingText(p.openingHours, p.openMonths) ?? '',
     bus: BUS_SECTIONS.includes(section) ? (p.busRoutes ?? []).join(', ') : '',
     tripadvisor: p.tripadvisor && p.tripadvisor.ratingImage ? { rating: p.tripadvisor.rating, image: p.tripadvisor.ratingImage } : null,
@@ -617,6 +621,24 @@ export function areaKey(areas: string[]): AreaKey[] {
  * with a picture, keep their boxes; the others join the directory lines
  * in the index that follows, by area. Within an area and size, by name.
  */
+/**
+ * Whether a listing's name goes on one line of its box on the small grids, with
+ * its label beside it: estimated from its letters at the name's size
+ * (7.5pt on the grid of sixteen, 8.5pt on twelve) in a 45.5mm column.
+ */
+export function nameFits(v: Pick<GuideVenue, 'name' | 'label' | 'tripadvisor'>, grid: 'grid12' | 'grid16'): boolean {
+  const pt = grid === 'grid16' ? 7.5 : 8.5;
+  // Average advance of the guide's sans, in ems: lower case and spaces about half, capitals about two thirds.
+  // Checked against the guide's sans in the browser: within a few per cent either way, so 3% is added.
+  const ems = (t: string) => 1.03 * [...t].reduce((n, c) => n + (c === ' ' ? 0.26 : /[A-Z]/.test(c) ? 0.64 : /[il.'’,]/.test(c) ? 0.26 : /[mw]/.test(c) ? 0.8 : 0.53), 0);
+  const MM_PER_PT = 25.4 / 72;
+  const name = ems(v.name) * pt * MM_PER_PT;
+  // The label in capitals at 5.5pt with its padding and gap; the Tripadvisor bubbles.
+  const label = v.label ? ems(v.label) * 5.5 * MM_PER_PT + 3.5 : 0;
+  const ta = v.tripadvisor ? 13 : 0;
+  return name + label + ta <= 45.5;
+}
+
 export function venueSections(venues: GuideVenue[], gridFor: (section: string) => VenueGrid = () => 'grid8', budget: (section: string) => number | null = () => null): VenueSection[] {
   const sections = [...new Set(venues.map((v) => v.section))].sort((a, b) => ranked(VENUE_SECTION_ORDER, a) - ranked(VENUE_SECTION_ORDER, b) || a.localeCompare(b));
   return sections.map((section) => {
@@ -647,9 +669,15 @@ export function venueSections(venues: GuideVenue[], gridFor: (section: string) =
       return grids;
     };
     let listings: VenueCell[] = keyed.filter((v) => v.size === 'listing').map((v) => ({ ...v, frame: 'listing' }));
+    // On the grids of twelve and sixteen a name that will not go on one line leaves its box to the index, unless a client's.
+    const longNames: GuideVenue[] = [];
+    if (grid === 'grid12' || grid === 'grid16') {
+      longNames.push(...listings.filter((v) => !v.client && !nameFits(v, grid)).map(({ frame: _f, ...v }) => v));
+      listings = listings.filter((v) => v.client || nameFits(v, grid));
+    }
     // Rationed: the rows booked entries leave, and so many pages more; the rest go to the index.
     const pages = budget(section);
-    const toIndex: GuideVenue[] = [];
+    const toIndex: GuideVenue[] = [...longNames];
     if (pages !== null) {
       const booked = pack(keyed, []);
       const room = booked.reduce((n, g) => n + g.free * 2, 0) + pages * GRID[grid].cells;

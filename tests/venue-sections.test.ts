@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueGridFor, venueSections, type GuideVenue } from '@/lib/domain/guide-entry';
+import { areaKey, budgetFor, layoutsFrom, layoutsQuery, venueGridFor, venueSections, nameFits, type GuideVenue } from '@/lib/domain/guide-entry';
 
 const v = (name: string, o: Partial<GuideVenue> = {}): GuideVenue => ({
   section: 'Buy', area: 'St. Helier', name, label: '', size: 'listing', isNew: false, copy: '', address: '', phone: '', email: '', website: '', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: '', bus: '', ...o,
@@ -258,5 +258,25 @@ describe('the What’s On opener', () => {
     expect(l.opener).toBe('Art in the Arches');
     expect(layoutsQuery(l)).toBe('opener=Art+in+the+Arches');
     expect(layoutsFrom(() => null).opener).toBeUndefined();
+  });
+});
+
+describe('long names on the small grids', () => {
+  it('sends a listing whose name will not go on one line to the index, unless a client’s', () => {
+    const long = 'The Champagne Lounge at Grand Jersey Hotel & Spa';
+    const [s] = venueSections([v('Bento'), v(long), v(`${long} `.trim() + ' Bar', { client: true })], () => 'grid16');
+    const boxed = s!.pages.flatMap((p) => (p.kind === 'grid' ? p.cells.map((c) => c.name) : []));
+    expect(boxed).toEqual(['Bento', `${long} Bar`]);
+    expect(s!.directory.map((d) => d.name)).toEqual([long]);
+  });
+
+  it('keeps every name on the grid of eight, where names have two lines', () => {
+    const [s] = venueSections([v('The Champagne Lounge at Grand Jersey Hotel & Spa')]);
+    expect(s!.directory).toEqual([]);
+  });
+
+  it('judges a short name to fit, a long one with its label not', () => {
+    expect(nameFits(v('Bento', { label: 'JAPANESE' }), 'grid16')).toBe(true);
+    expect(nameFits(v('The Lamplighter Real Ale Pub', { label: 'REAL ALE' }), 'grid16')).toBe(false);
   });
 });
