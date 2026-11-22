@@ -95,7 +95,27 @@ async function renderToMemory(path, req) {
 }
 
 await app.prepare();
+/**
+ * A fourth: guide.je is served through Cloudflare, which marks every request
+ * it passes on (cf-ray). A request for guide.je without the mark came
+ * round Cloudflare, straight to Railway, as the flood of 22 November 2026
+ * did: it is turned away at once, before Next does any work. Railway's own
+ * hosts (its health check) are served as before. ORIGIN_OPEN=1 lifts it.
+ */
+export function roundCloudflare(req) {
+  if (process.env.ORIGIN_OPEN === '1') return false;
+  const h = (req.headers.host ?? '').toLowerCase().replace(/:\d+$/, '');
+  if (h !== primary.hostname && h !== `www.${primary.hostname}`) return false;
+  if (req.headers['x-guide-render']) return false;
+  return !req.headers['cf-ray'];
+}
+
 createServer((req, res) => {
+  if (roundCloudflare(req)) {
+    res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', connection: 'close' });
+    res.end('guide.je is served through Cloudflare.');
+    return;
+  }
   if (elsewhere(req.headers.host)) {
     res.writeHead(301, { location: `${primary.origin}${req.url ?? '/'}`, 'cache-control': 'public, max-age=86400' });
     res.end();
