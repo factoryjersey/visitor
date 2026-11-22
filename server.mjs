@@ -83,7 +83,7 @@ async function renderToMemory(path, req) {
   try {
     const r = await fetch(`http://127.0.0.1:${port}${path}`, {
       headers: { host: req.headers.host ?? primary.hostname, 'x-guide-render': '1', 'user-agent': 'guide-shared-render', accept: 'text/html' },
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(30_000),
     });
     const body = Buffer.from(await r.arrayBuffer());
     const headers = {};
@@ -94,16 +94,41 @@ async function renderToMemory(path, req) {
   }
 }
 
+/** Renders a shared page and keeps it, the one render at a time for that page. */
+function refresh(key, req) {
+  const old = kept.get(key);
+  const pending = renderToMemory(key, req).then((r) => {
+    if (r && r.status === 200 && r.body.length) {
+      const headers = { ...r.headers };
+      for (const h of ['set-cookie', 'content-length', 'transfer-encoding', 'content-encoding', 'connection']) delete headers[h];
+      kept.set(key, { at: Date.now(), status: 200, headers, body: r.body });
+    } else if (old?.body) kept.set(key, { ...old, at: Date.now() - KEEP_MS + 10_000 });
+    else kept.delete(key);
+  });
+  kept.set(key, { ...(old ?? {}), pending });
+  pending.finally(() => {
+    const now = kept.get(key);
+    if (now?.pending === pending) {
+      const { pending: _p, ...rest } = now;
+      if (rest.body) kept.set(key, rest);
+      else kept.delete(key);
+    }
+  });
+  return pending;
+}
+
 await app.prepare();
 /**
  * A fourth: guide.je is served through Cloudflare, which marks every request
  * it passes on (cf-ray). A request for guide.je without the mark came
  * round Cloudflare, straight to Railway, as the flood of 22 November 2026
  * did: it is turned away at once, before Next does any work. Railway's own
- * hosts (its health check) are served as before. ORIGIN_OPEN=1 lifts it.
+ * hosts (its health check) are served as before. Off unless
+ * CLOUDFLARE_ONLY=1: Railway's edge does not always pass Cloudflare's mark
+ * on, and with it on, visitors who came through Cloudflare were refused.
  */
 export function roundCloudflare(req) {
-  if (process.env.ORIGIN_OPEN === '1') return false;
+  if (process.env.CLOUDFLARE_ONLY !== '1') return false;
   const h = (req.headers.host ?? '').toLowerCase().replace(/:\d+$/, '');
   if (h !== primary.hostname && h !== `www.${primary.hostname}`) return false;
   if (req.headers['x-guide-render']) return false;
@@ -128,26 +153,23 @@ createServer((req, res) => {
     return;
   }
   const entry = kept.get(key);
-  if (entry?.body && Date.now() - entry.at < KEEP_MS) return serveKept(entry, res);
-  // One render at a time per page; everyone else waits for it.
-  const pending = entry?.pending ?? renderToMemory(key, req).then((r) => {
-    if (r && r.status === 200 && r.body.length) {
-      const headers = { ...r.headers };
-      delete headers['set-cookie'];
-      delete headers['content-length'];
-      delete headers['transfer-encoding'];
-      delete headers['content-encoding'];
-      delete headers['connection'];
-      kept.set(key, { at: Date.now(), status: 200, headers, body: r.body });
-    } else kept.delete(key);
-    return r;
-  });
-  if (!entry?.pending) kept.set(key, { ...(entry?.body ? entry : {}), pending });
-  pending.then((r) => {
+  // A copy in hand is served at once, however busy the server, and refreshed behind it once it is a minute old.
+  if (entry?.body) {
+    serveKept(entry, res);
+    if (Date.now() - entry.at >= KEEP_MS && !entry.pending) refresh(key, req);
+    return;
+  }
+  // None yet: one render for everyone waiting; if it fails, a quick "try again" rather than a render each.
+  (entry?.pending ?? refresh(key, req)).then(() => {
     const fresh = kept.get(key);
     if (fresh?.body) serveKept(fresh, res);
-    else if (entry?.body) serveKept(entry, res);
-    else if (r) { res.writeHead(r.status, r.headers); res.end(r.body); }
-    else handle(req, res);
+    else {
+      res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8', 'retry-after': '20', 'cache-control': 'no-store' });
+      res.end('guide.je is busy: please try again in a moment.');
+    }
   });
-}).listen(port, () => console.log(`ready on ${port}`));
+}).listen(port, () => {
+  console.log(`ready on ${port}`);
+  // The shared pages rendered once at the start, so the first rush finds them ready.
+  for (const key of SHARED) refresh(key, { headers: { host: primary.hostname } });
+});
