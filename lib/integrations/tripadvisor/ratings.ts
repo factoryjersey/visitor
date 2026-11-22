@@ -30,8 +30,8 @@ export function fromDetails(d: unknown): TripadvisorRating | null {
   return { rating, reviews: Number.isFinite(reviews) ? reviews : 0, url: x.web_url, ratingImage: typeof x.rating_image_url === 'string' ? x.rating_image_url : '' };
 }
 
-export async function fillTripadvisor(limit = 400): Promise<{ looked: number; rated: number; failed: number }> {
-  if (!env.TRIPADVISOR_API_KEY) return { looked: 0, rated: 0, failed: 0 };
+export async function fillTripadvisor(limit = 400): Promise<{ looked: number; rated: number; failed: number; reason?: string }> {
+  if (!env.TRIPADVISOR_API_KEY) return { looked: 0, rated: 0, failed: 0, reason: 'no TRIPADVISOR_API_KEY' };
   const since = new Date(Date.now() - REFRESH_DAYS * 86_400_000);
   const due = await db
     .select({ id: places.id, tripadvisorId: places.tripadvisorId })
@@ -41,6 +41,7 @@ export async function fillTripadvisor(limit = 400): Promise<{ looked: number; ra
     .limit(limit);
   let rated = 0;
   let failed = 0;
+  let reason: string | undefined;
   for (const v of due) {
     const res = await fetch(`${API}/${encodeURIComponent(v.tripadvisorId!)}/details?key=${encodeURIComponent(env.TRIPADVISOR_API_KEY)}&language=en_UK&currency=GBP`, {
       headers: { accept: 'application/json', referer: 'https://guide.je/' },
@@ -48,12 +49,14 @@ export async function fillTripadvisor(limit = 400): Promise<{ looked: number; ra
     // A refused key or a limit reached: stop, and try the rest another night.
     if (!res || res.status === 401 || res.status === 403 || res.status === 429) {
       failed += 1;
-      if (res && res.status !== 404) break;
+      // Their answer, for the log: a key restricted to a domain or IP says so here.
+      reason = res ? `${res.status} ${(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)}` : 'no answer';
+      if (res) break;
       continue;
     }
     const found = res.ok ? fromDetails(await res.json().catch(() => null)) : null;
     await db.update(places).set({ tripadvisor: found, tripadvisorCheckedAt: new Date() }).where(eq(places.id, v.id));
     if (found) rated += 1;
   }
-  return { looked: due.length, rated, failed };
+  return { looked: due.length, rated, failed, ...(reason ? { reason } : {}) };
 }

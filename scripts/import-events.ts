@@ -504,7 +504,7 @@ if (!values.only || values.only === 'google') {
 if (!values.only || values.only === 'tripadvisor') {
   try {
     const t = await fillTripadvisor();
-    console.log(`tripadvisor: ${t.rated} of ${t.looked} rated${t.failed ? `, ${t.failed} refused (key or limit)` : ''}`);
+    console.log(`tripadvisor: ${t.rated} of ${t.looked} rated${t.failed ? `, ${t.failed} refused` : ''}${t.reason ? ` (${t.reason})` : ''}`);
   } catch (e) {
     failed += 1;
     console.error(`tripadvisor failed: ${(e as Error).message}`);
