@@ -60,17 +60,32 @@ export function elsewhere(host) {
  * before.
  */
 const SHARED = new Set(['/whats-on', '/search']);
+/** The parameters each shared page reads; anything else in the address (a flood adds random ones to dodge caches) is ignored. */
+const PARAMS = {
+  '/whats-on': ['from', 'to', 'when', 'month', 'ongoing', 'q', 'venue', 'type'],
+  '/search': ['from', 'to', 'when', 'kind', 'cat', 'q'],
+};
 const KEEP_MS = 60_000;
-const kept = new Map(); // path -> { at, status, headers, body } or { pending: Promise }
+const MAX_KEPT = 500;
+/** Pages rendered at once for sharing; past this, a request with no copy to hand is told to try again, not queued. */
+const MAX_RENDERS = 4;
+let rendering = 0;
+const kept = new Map(); // key -> { at, status, headers, body } and/or { pending: Promise }
 
 export function shareable(req) {
-  if (req.method !== 'GET') return null;
+  if (req.method !== 'GET' || req.headers['x-guide-render']) return null;
   const url = req.url ?? '/';
-  if (url.includes('?') || req.headers['x-guide-render']) return null;
-  if (!SHARED.has(url)) return null;
+  const q = url.indexOf('?');
+  const path = q === -1 ? url : url.slice(0, q);
+  if (!SHARED.has(path)) return null;
   if (req.headers['rsc'] || req.headers['next-router-prefetch'] || req.headers['next-action']) return null;
   if (/(?:^|;\s*)sb-[^=]*=/.test(req.headers.cookie ?? '')) return null;
-  return url;
+  const given = new URLSearchParams(q === -1 ? '' : url.slice(q + 1));
+  const keep = new URLSearchParams();
+  for (const name of PARAMS[path]) for (const v of given.getAll(name).slice(0, 4)) if (v && v.length <= 80) keep.append(name, v);
+  keep.sort();
+  const rest = keep.toString();
+  return rest ? `${path}?${rest}` : path;
 }
 
 function serveKept(entry, res) {
@@ -97,7 +112,11 @@ async function renderToMemory(path, req) {
 /** Renders a shared page and keeps it, the one render at a time for that page. */
 function refresh(key, req) {
   const old = kept.get(key);
-  const pending = renderToMemory(key, req).then((r) => {
+  if (rendering >= MAX_RENDERS) return Promise.resolve();
+  rendering += 1;
+  // Kept to a size: the oldest copies go first.
+  while (kept.size >= MAX_KEPT) kept.delete(kept.keys().next().value);
+  const pending = renderToMemory(key, req).finally(() => { rendering -= 1; }).then((r) => {
     if (r && r.status === 200 && r.body.length) {
       const headers = { ...r.headers };
       for (const h of ['set-cookie', 'content-length', 'transfer-encoding', 'content-encoding', 'connection']) delete headers[h];
