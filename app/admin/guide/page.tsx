@@ -129,7 +129,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
           <Link href="/admin/guide/maps" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Maps</Link>
-          <a href={`/admin/guide/export/package.zip?${qs}`} className="rounded border border-stone-300 bg-stone-50 px-3 py-1 font-medium hover:bg-stone-100" title="The CSVs, every picture at full size in Links/, the edition's swatches and notes, in one zip">InDesign package (.zip)</a>
+          <a href={`/admin/guide/export/package.zip?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} className="rounded border border-stone-300 bg-stone-50 px-3 py-1 font-medium hover:bg-stone-100" title="The CSVs, every picture at full size in Links/, the edition's swatches and notes, in one zip">InDesign package (.zip)</a>
           <span className="self-center text-xs text-stone-500">Colours: {palette === 'classic' ? '2026 editions (to issue 36)' : 'Jersey palette (from issue 37)'}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">

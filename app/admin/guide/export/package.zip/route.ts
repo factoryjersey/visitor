@@ -7,6 +7,9 @@ import { paletteFor, paletteSwatches } from '@/lib/domain/guide-colours';
 import { layoutsFrom } from '@/lib/domain/guide-entry';
 import { buildGuide, EVENT_COLUMNS, HIGHLIGHT_COLUMNS, isDraft, PROVIDER_COLUMNS, TOUR_COLUMNS, VENUE_COLUMNS, windowFrom } from '@/lib/guide';
 import { ZipWriter } from '@/lib/zip';
+import { guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
+import { idmlFiles } from '@/lib/idml/write';
+import { asJpeg, imageSize } from '@/lib/idml/image-size';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!url) return '';
     const had = links.get(url);
     if (had) return had;
-    const ext = (/\.(jpe?g|png|webp|gif|tiff?)(?:$|\?)/i.exec(url)?.[1] ?? 'jpg').toLowerCase().replace('jpeg', 'jpg');
+    const ext = asJpeg(url) !== url ? 'jpg' : (/\.(jpe?g|png|webp|gif|tiff?)(?:$|\?)/i.exec(url)?.[1] ?? 'jpg').toLowerCase().replace('jpeg', 'jpg');
     const stem = title.normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase().slice(0, 60) || 'picture';
     let name = `${stem}.${ext}`;
     for (let i = 2; taken.has(name); i += 1) name = `${stem}-${i}.${ext}`;
@@ -66,12 +69,21 @@ export async function GET(request: NextRequest) {
       const group = palette === 'classic' ? 'Visitor Guide 2026 editions (to issue 36)' : 'Visitor Guide Jersey palette (from issue 37)';
       zip.add(`${job}/swatches.ase`, aseFile(group, paletteSwatches(palette)));
       const missing: string[] = [];
+      // Every picture the pages use, the opener and the venues' too, as the CSVs name them.
+      for (const e of [...guide.highlights, ...events]) if (e.imageUrl) link(e.imageUrl, e.title);
+      for (const t of guide.tours) if (t.imageUrl) link(t.imageUrl, t.title);
+      for (const v of guide.venues) if (v.imageUrl) link(v.imageUrl, v.name);
       const queue = [...links.entries()];
+      const pictures = new Map<string, Picture>();
       const fetchOne = async ([url, path]: [string, string]) => {
         try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+          const res = await fetch(asJpeg(url), { signal: AbortSignal.timeout(30_000) });
           if (!res.ok) throw new Error(String(res.status));
-          zip.add(`${job}/${path}`, new Uint8Array(await res.arrayBuffer()));
+          const bytes = new Uint8Array(await res.arrayBuffer());
+          const size = imageSize(bytes);
+          if (!size) missing.push(`${path}  ${url}  (not JPEG or PNG: InDesign cannot place it; save it as JPEG)`);
+          pictures.set(url, { path, ...(size ? { px: size.px, py: size.py } : {}) });
+          zip.add(`${job}/${path}`, bytes);
         } catch (e) {
           missing.push(`${path}  ${url}  (${(e as Error).message})`);
         }
@@ -80,9 +92,20 @@ export async function GET(request: NextRequest) {
         for (let next = queue.shift(); next; next = queue.shift()) await fetchOne(next);
       });
       await Promise.all(workers);
+      // The pages themselves, as an InDesign document beside Links/.
+      const firstPage = Math.max(1, Math.min(400, Number(sp.get('page')) || 36));
+      const sectionNames = guide.sections.map((s) => s.section);
+      const idml: Uint8Array[] = [];
+      const inner = new ZipWriter((c) => idml.push(c));
+      for (const [name, body] of idmlFiles({ pages: guidePages({ guide, palette, firstPage, pictures, opener: sp.get('opener') }), firstPage, ...styles(palette), swatches: swatches(palette, sectionNames) })) inner.add(name, new TextEncoder().encode(body));
+      inner.finish();
+      const idmlBytes = new Uint8Array(idml.reduce((n, c) => n + c.length, 0));
+      idml.reduce((at, c) => (idmlBytes.set(c, at), at + c.length), 0);
+      zip.add(`${job}/${job}.idml`, idmlBytes);
       const readme = [
         `Visitor Guide, ${window.from} to ${window.to}: InDesign package`,
         '',
+        `${job}.idml: the edition's pages for InDesign (File > Open, then save as .indd): What's On, Tours and experiences, and the venue sections, every frame in place, text in named paragraph styles, pictures linked from Links/. Copy is fitted by estimate: check for overset text. Fonts: ${palette === 'classic' ? 'Proxima Nova Condensed' : 'Google Sans Flex and GT Flaire Extra'}. A blank A-Master is applied to every page, for your masters.`,
         'highlights.csv, whats-on.csv, tours.csv, providers.csv, venues.csv: Data Merge sources (UTF-16), in page order.',
         'The @Picture column names each picture in Links/: keep Links/ beside the CSVs and Data Merge places them.',
         `swatches.ase: the edition's colours (${group}), as global CMYK swatches. Swatches panel > Load Swatches. CMYK converted from RGB: check before press.`,

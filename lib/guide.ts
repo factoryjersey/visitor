@@ -40,15 +40,17 @@ import { nonCore, withCategories } from '@/lib/domain/categorise';
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * The guide's four editions a year. Winter runs into the next year, so
- * Winter 2026 is November 2026 to February 2027.
+ * The guide's four editions a year, a quarter each: spring March to May,
+ * summer June to August, autumn September to November, and winter
+ * December to February, into the next year (Winter 2026 is issue 36).
  */
 export function editions(year: number): { name: string; window: Window }[] {
   return [
     { name: `Spring ${year}`, window: { from: `${year}-03-01`, to: `${year}-05-31` } },
     { name: `Summer ${year}`, window: { from: `${year}-06-01`, to: `${year}-08-31` } },
-    { name: `Autumn ${year}`, window: { from: `${year}-09-01`, to: `${year}-10-31` } },
-    { name: `Winter ${year}`, window: { from: `${year}-11-01`, to: `${year + 1}-02-${(year + 1) % 4 === 0 ? 29 : 28}` } },
+    { name: `Autumn ${year}`, window: { from: `${year}-09-01`, to: `${year}-11-30` } },
+    // Winter runs December to February, as issue 36 does: 1 December 2026 to 28 February 2027.
+    { name: `Winter ${year}`, window: { from: `${year}-12-01`, to: `${year + 1}-02-${(year + 1) % 4 === 0 ? 29 : 28}` } },
   ];
 }
 
