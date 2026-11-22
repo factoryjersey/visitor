@@ -280,4 +280,4 @@ export const HIGHLIGHT_COLUMNS = ['Dates', 'Times', 'Title', 'Extended Copy', 'P
 export const TOUR_COLUMNS = ['Kind', 'Genre', 'Dates', 'Title', 'Code', 'Duration', 'Times', 'Copy', 'Provider', 'Frame', 'Image URL', 'Icons'] as const;
 export const PROVIDER_COLUMNS = ['Code', 'Name', 'Contact', 'Website'] as const;
 /** In page order: section, area, then full pages, grid pages (Frame says feature or listing) and directory lines. */
-export const VENUE_COLUMNS = ['Section', 'Area', 'Key', 'Name', 'Label', 'Size', 'Frame', 'Copy', 'Address', 'Phone', 'Email', 'Website', 'Image URL'] as const;
+export const VENUE_COLUMNS = ['Section', 'Area', 'Key', 'Name', 'Label', 'Size', 'Frame', 'Copy', 'Address', 'Phone', 'Email', 'Website', 'Image URL', 'Tripadvisor rating', 'Tripadvisor image'] as const;

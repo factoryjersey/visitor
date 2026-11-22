@@ -297,6 +297,13 @@ export function VenueBox({ c, strict = false }: { c: VenueCell; strict?: boolean
     <>
       <p className="gp-venue-head">
         <span className="gp-venue-name">{c.name}</span>
+        {c.tripadvisor && (
+          <span className="gp-ta" title={`Tripadvisor ${c.tripadvisor.rating.toFixed(1)}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={c.tripadvisor.image} alt={`${c.tripadvisor.rating.toFixed(1)} of 5 on Tripadvisor`} />
+            {c.tripadvisor.rating.toFixed(1)}
+          </span>
+        )}
         {c.isNew && <span className="gp-venue-tag gp-venue-new">NEW</span>}
         {c.label && <span className="gp-venue-tag">{c.label}</span>}
         <AreaCode code={c.areaCode} />
@@ -431,14 +438,19 @@ function AreaCode({ code }: { code?: string }) {
 }
 
 /** The key to the area markers on a page, at its foot. */
-function AreaFooter({ keys }: { keys: AreaKey[] }) {
-  if (!keys.length) return null;
+function AreaFooter({ keys, rated }: { keys: AreaKey[]; rated?: boolean }) {
+  if (!keys.length && !rated) return null;
   return (
     <p className="gp-tour-footer gp-area-key">
       {keys.map((k) => <span key={k.code}><MapPin aria-hidden="true" /><b>{k.code}</b> {k.area}</span>)}
+      {/* Tripadvisor's attribution, as their brand rules ask: whose rating, and when. */}
+      {rated && <span className="gp-ta-credit">Tripadvisor traveller ratings, {RATED_ON}</span>}
     </p>
   );
 }
+
+/** The month the ratings were taken, for the page foot: the guide goes to print with them. */
+const RATED_ON = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 
 /** A page's marker: its one area, two of them, or the first to the last. */
 function areaMarker(areas: string[]): string | undefined {
@@ -713,7 +725,7 @@ export function GuideBook(props: {
     const keyed = (vs: VenueSection, on: GuideVenue[]) => {
       const here = new Set(on.map((v) => v.area));
       const keys = vs.key.filter((k) => here.has(k.area));
-      return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} /> };
+      return { marker: areaMarker(keys.map((k) => k.area)), foot: <AreaFooter keys={keys} rated={on.some((v) => v.tripadvisor)} /> };
     };
     // The beaches open with the Beachlife spread: a beach full bleed, then the introduction on sand with four more.
     if (vs.section === BEACHES) {

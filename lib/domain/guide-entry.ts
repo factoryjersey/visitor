@@ -444,6 +444,8 @@ export type GuideVenue = {
   opening: string;
   /** The buses that stop near it, "12a, 14": printed on the places people go out to, the beaches and the sights. */
   bus: string;
+  /** Its Tripadvisor rating and Tripadvisor's own bubbles image, printed after its name with the date on the page's foot, as their brand rules for partners allow. */
+  tripadvisor?: { rating: number; image: string } | null;
 };
 
 const SECTION_OF_CATEGORY: Record<Place['category'], string> = {
@@ -521,6 +523,7 @@ export function guideVenue(p: Place): GuideVenue {
     printed: !!p.guideCopy,
     opening: openingText(p.openingHours, p.openMonths) ?? '',
     bus: BUS_SECTIONS.includes(section) ? (p.busRoutes ?? []).join(', ') : '',
+    tripadvisor: p.tripadvisor && p.tripadvisor.ratingImage ? { rating: p.tripadvisor.rating, image: p.tripadvisor.ratingImage } : null,
   };
 }
 

@@ -154,6 +154,9 @@ body { @apply bg-white text-stone-900 antialiased; font-weight: 300; line-height
 .gp-key span { display: inline-flex; align-items: center; gap: 0.8mm; white-space: nowrap; }
 .gp-key svg { width: 2.8mm; height: 2.8mm; flex: none; }
 .gp-tab.gp-marker { top: 43.6mm; height: 28mm; background: var(--gp-tours-light); }
+.gp-ta { display: inline-flex; align-items: center; gap: 0.6mm; margin-left: 1.2mm; font-size: 6.5pt; font-weight: 500; color: var(--gp-ink80); white-space: nowrap; vertical-align: 0.2mm; }
+.gp-ta img { height: 2.3mm; width: auto; }
+.gp-ta-credit { margin-left: auto; font-size: 6.5pt; color: var(--gp-ink80); }
 .gp-running { position: absolute; top: 3.8mm; margin: 0; font-size: 7.5pt; line-height: 1; color: var(--gp-ink80); }
 .gp-page.gp-left .gp-running { left: 7.9mm; }
 .gp-page.gp-right .gp-running { left: 12mm; }
