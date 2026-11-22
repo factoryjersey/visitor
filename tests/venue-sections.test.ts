@@ -248,3 +248,12 @@ describe('a listing box from the guide’s own description', () => {
     expect(o).toContain('Local food and great service.');
   });
 });
+
+describe('the What’s On opener', () => {
+  it('is chosen by title and kept in the address', () => {
+    const l = layoutsFrom((k) => new URLSearchParams('opener=Art+in+the+Arches').get(k));
+    expect(l.opener).toBe('Art in the Arches');
+    expect(layoutsQuery(l)).toBe('opener=Art+in+the+Arches');
+    expect(layoutsFrom(() => null).opener).toBeUndefined();
+  });
+});

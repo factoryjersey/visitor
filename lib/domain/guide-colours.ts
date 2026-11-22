@@ -87,15 +87,72 @@ const ALIASES: [prefix: string, section: SectionName][] = [
  * it starts with ("Eat & Drink: Pubs" is Eat), or by the guide's other
  * names for it (Shop, Shopping: Buy; Attractions: Visit).
  */
-export function sectionSwatch(section: string): Swatch {
+export function sectionSwatch(section: string, palette: GuidePalette = 'jersey'): Swatch {
+  const swatches = palette === 'classic' ? CLASSIC_SECTION_SWATCHES : SECTION_SWATCHES;
   const s = section.trim().toLowerCase();
   const names = Object.keys(SECTION_SWATCHES) as SectionName[];
   const exact = names.find((n) => n.toLowerCase() === s);
-  if (exact) return SECTION_SWATCHES[exact];
+  if (exact) return swatches[exact];
   const alias = ALIASES.find(([p]) => s.startsWith(p));
-  if (alias) return SECTION_SWATCHES[alias[1]];
+  if (alias) return swatches[alias[1]];
   const start = names.find((n) => new RegExp(`^${n.toLowerCase()}\\b`).test(s));
-  return start ? SECTION_SWATCHES[start] : UNASSIGNED;
+  return start ? swatches[start] : UNASSIGNED;
+}
+
+/**
+ * The guide's colours before the Jersey palette: the 2026 editions' own,
+ * read from the summer 2026 edition's tabs. Issue 36 (winter 2026) keeps
+ * them; the Jersey palette starts with issue 37 (spring 2027). RGB as
+ * printed; the CMYK is converted for the swatch file, to be checked
+ * against the old InDesign swatches before press.
+ */
+const classic = (name: string, hex: string): Swatch => ({ name, hex, cmyk: toCmyk(hex) });
+export const CLASSIC = {
+  teal: classic('teal', '#77c8d2'),
+  fieldGreen: classic('field green', '#b9d478'),
+  sandYellow: classic('beach yellow', '#f5ce6e'),
+  midnightBlue: classic('midnight blue', '#4965a8'),
+  plum: classic('plum', '#b94280'),
+  coral: classic('coral', '#f58353'),
+  outOut: classic('out out orange', '#f0804c'),
+  tourGreen: classic('tour green', '#add581'),
+} as const;
+export const CLASSIC_SECTION_SWATCHES: Record<SectionName, Swatch> = {
+  Visit: CLASSIC.teal,
+  See: CLASSIC.fieldGreen,
+  Beaches: CLASSIC.sandYellow,
+  Do: CLASSIC.midnightBlue,
+  Buy: CLASSIC.plum,
+  Eat: CLASSIC.fieldGreen,
+  'Pubs & bars': CLASSIC.outOut,
+};
+export const CLASSIC_PAGE_SWATCHES: Record<keyof typeof PAGE_SWATCHES, Swatch> = {
+  events: CLASSIC.coral,
+  tours: CLASSIC.tourGreen,
+  toursLight: CLASSIC.tourGreen,
+  new: CLASSIC.coral,
+  maps: CLASSIC.sandYellow,
+};
+
+/** 'classic': the 2026 editions' colours, to issue 36; 'jersey': the Jersey palette, from issue 37. */
+export type GuidePalette = 'classic' | 'jersey';
+/** The palette an edition prints in: the classic colours for editions starting before spring 2027 (issue 37). */
+export const JERSEY_PALETTE_FROM = '2027-03-01';
+export const paletteFor = (window: { from: string }, asked?: string | null): GuidePalette =>
+  asked === 'classic' || asked === 'jersey' ? asked : window.from < JERSEY_PALETTE_FROM ? 'classic' : 'jersey';
+export const pageSwatches = (palette: GuidePalette) => (palette === 'classic' ? CLASSIC_PAGE_SWATCHES : PAGE_SWATCHES);
+/** Every swatch the edition prints in, for the swatch file. */
+export const paletteSwatches = (palette: GuidePalette): Swatch[] =>
+  [...new Map([...Object.values(palette === 'classic' ? CLASSIC_SECTION_SWATCHES : SECTION_SWATCHES), ...Object.values(pageSwatches(palette)), PALETTE.deepBlue].map((w) => [w.hex, w])).values()];
+
+/** CMYK from RGB, rounded: for the swatch file, to be checked against the press values. */
+export function toCmyk(hex: string): [number, number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255) as [number, number, number];
+  const k = 1 - Math.max(r, g, b);
+  if (k >= 1) return [0, 0, 0, 100];
+  const f = (c: number) => Math.round(((1 - c - k) / (1 - k)) * 100);
+  return [f(r), f(g), f(b), Math.round(k * 100)];
 }
 
 /** A tint of a colour on paper, as InDesign tints: the colour at pct %, the rest white. Label chips are at 20 %. */

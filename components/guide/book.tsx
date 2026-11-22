@@ -7,7 +7,7 @@ import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
 import { printParish } from '@/lib/domain/house-style';
-import { markerText, sectionSwatch, tint } from '@/lib/domain/guide-colours';
+import { markerText, pageSwatches, sectionSwatch, tint, type GuidePalette } from '@/lib/domain/guide-colours';
 import { iconsFor, ListingIcons, PageKey } from './key-icons';
 import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section';
 
@@ -27,10 +27,10 @@ import { SIDE_TITLE, type DoBox, type DoSection } from '@/lib/domain/do-section'
  * frame is outlined red on screen, as InDesign marks overset text.
  */
 
-import { EVENTS, NEW, TOURS, type Section } from '@/lib/domain/guide-sections';
-export { EVENTS, type Section };
+import { EVENTS as EVENTS_SECTION, NEW as NEW_SECTION, TOURS as TOURS_SECTION, type Section } from '@/lib/domain/guide-sections';
+export { EVENTS_SECTION as EVENTS, type Section };
 /** A venue section in its own colour (lib/domain/guide-colours), the same on its tab and in its entries. */
-export const venueSection = (name: string): Section => ({ name, colour: sectionSwatch(name).hex });
+export const venueSection = (name: string, palette: GuidePalette = 'jersey'): Section => ({ name, colour: sectionSwatch(name, palette).hex });
 
 /** A page marker: a second tab under the section's, naming the part of the section the page is in. */
 export type Page = { section: Section; body: ReactNode; bleed?: boolean; marker?: string; key?: ReturnType<typeof iconsFor>; head?: string };
@@ -556,8 +556,17 @@ export function GuideBook(props: {
   only?: string | null;
   /** For the printer: each page on its own sheet, with 3mm bleed, a 6mm slug and crop marks, rather than in spreads. Its words name the job in the slug. */
   sheets?: string | null;
+  /** Its colours: the 2026 editions' to issue 36, the Jersey palette from issue 37 (lib/domain/guide-colours). */
+  palette?: GuidePalette;
+  /** The title of the event that opens What's On, full bleed (GuideLayouts.opener). */
+  opener?: string | null;
 }) {
   const { highlights, events, tours, providers, layout, tourGrid } = props;
+  const palette = props.palette ?? 'jersey';
+  const swatch = pageSwatches(palette);
+  const EVENTS: Section = { ...EVENTS_SECTION, colour: swatch.events.hex };
+  const TOURS: Section = { ...TOURS_SECTION, colour: swatch.tours.hex };
+  const NEW: Section = { ...NEW_SECTION, colour: swatch.new.hex };
 
   // Tours and experiences: the key, then dated tours, then on-demand ones, each kind flowing in ruled columns or on its grid.
   const datedFlows = props.tourLayouts.tours === 'columns';
@@ -643,7 +652,9 @@ export function GuideBook(props: {
   }
 
   // The opener's picture: the first highlight's, else the first event with its own picture.
-  const lead = highlights.find((e) => e.preview) ?? events.find((e) => e.preview);
+  // The opener's picture: the event staff chose (by its title), else the first highlight, else the first event, with a picture.
+  const chosen = props.opener ? [...highlights, ...events, ...(props.ongoingPages ?? []).flat()].find((e) => e.preview && e.title === props.opener) : undefined;
+  const lead = chosen ?? highlights.find((e) => e.preview) ?? events.find((e) => e.preview);
   const pages: Page[] = [];
   if (events.length || highlights.length || props.ongoingPages?.length) pages.push({ section: EVENTS, bleed: true, body: <Opener e={lead} /> });
   for (const h of highlights) pages.push({ section: EVENTS, body: <HighlightBody e={h} /> });
@@ -720,7 +731,7 @@ export function GuideBook(props: {
 
   // The venue sections, each from a left-hand page and running on: full pages, grid pages, then the directory. Each page keys the areas on it.
   for (const vs of props.venueSections) {
-    const section = venueSection(vs.section);
+    const section = venueSection(vs.section, palette);
     if ((props.firstPage + pages.length) % 2 === 1) pages.push({ section: pages.at(-1)?.section ?? section, body: <div className="gp-content" /> });
     const keyed = (vs: VenueSection, on: GuideVenue[]) => {
       const here = new Set(on.map((v) => v.area));
@@ -794,7 +805,7 @@ export function GuideBook(props: {
   for (; k < numbered.length; k += 2) spreads.push([numbered[k]!, numbered[k + 1] ?? null]);
 
   return (
-    <div className="gp-book">
+    <div className="gp-book" style={{ '--gp-events': swatch.events.hex, '--gp-tours': swatch.tours.hex, '--gp-tours-light': swatch.toursLight.hex } as React.CSSProperties}>
       {measuring}
       {measuringDir}
       {measuringDo}

@@ -2,6 +2,7 @@ import '@fontsource-variable/google-sans-flex/wdth.css';
 import Link from 'next/link';
 import { GuideBook } from '@/components/guide/book';
 import { EVENTS, NEW, TOURS } from '@/lib/domain/guide-sections';
+import { paletteFor } from '@/lib/domain/guide-colours';
 import { PrintWhenReady } from '@/components/guide/print-when-ready';
 import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/domain/guide-entry';
 import { includeDraft } from '@/app/actions';
@@ -31,7 +32,10 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   const { highlights, events, pages, tours, tourPages, providers, venues, sections, leftOut, codeClashes } = guide;
   const listed = events.filter((e) => e.frame !== 'image').length;
   const tq = layoutsQuery(layouts);
-  const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}`;
+  // Its colours: the 2026 editions' to issue 36 (winter 2026), the Jersey palette from issue 37; ?palette= overrides.
+  const askedPalette = one(sp.palette);
+  const palette = paletteFor(window, askedPalette);
+  const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}${askedPalette ? `&palette=${palette}` : ''}`;
   // A section's PDF: the same pages, that section alone (or the whole guide), and the print dialog once they are laid out.
   const pdf = one(sp.pdf) ?? null;
   const pdfHref = (name: string) => `/admin/guide?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}&pdf=${encodeURIComponent(name)}`;
@@ -60,7 +64,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         </div>
         <form action="/admin/guide" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="draft" value={draft ? '1' : '0'} />
-          {[...new URLSearchParams(tq)].map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+          {[...new URLSearchParams(tq)].filter(([k]) => k !== 'opener').map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
           <label className="flex flex-col">
             <span className="text-xs text-stone-500">From</span>
             <input type="date" name="from" defaultValue={window.from} className="rounded border border-stone-300 px-2 py-1" />
@@ -72,6 +76,15 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <label className="flex flex-col">
             <span className="text-xs text-stone-500">First page</span>
             <input type="number" name="page" min={1} max={400} defaultValue={firstPage} className="w-20 rounded border border-stone-300 px-2 py-1" />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-xs text-stone-500">What&apos;s On opener (full-page picture)</span>
+            <select name="opener" defaultValue={layouts.opener ?? ''} className="max-w-64 rounded border border-stone-300 px-2 py-1">
+              <option value="">First highlight or event with a picture</option>
+              {[...new Map([...highlights, ...events, ...guide.ongoing].filter((e) => e.imageUrl).map((e) => [e.title, e])).values()].map((e) => (
+                <option key={e.title} value={e.title}>{e.title} ({e.dates})</option>
+              ))}
+            </select>
           </label>
           <button type="submit" className="rounded bg-stone-900 px-3 py-1 text-white">Show</button>
           <span className="ml-auto flex gap-1">
@@ -116,6 +129,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/providers.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Tour providers</a>
           <a href={`/admin/guide/export/venues.csv?${qs}`} className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Venues</a>
           <Link href="/admin/guide/maps" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Maps</Link>
+          <a href={`/admin/guide/export/package.zip?${qs}`} className="rounded border border-stone-300 bg-stone-50 px-3 py-1 font-medium hover:bg-stone-100" title="The CSVs, every picture at full size in Links/, the edition's swatches and notes, in one zip">InDesign package (.zip)</a>
+          <span className="self-center text-xs text-stone-500">Colours: {palette === 'classic' ? '2026 editions (to issue 36)' : 'Jersey palette (from issue 37)'}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="ml-auto self-center text-xs text-stone-500">For print (PDF):</span>
@@ -163,7 +178,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
       {pdf && <PrintWhenReady title={`Visitor Guide ${window.from} to ${window.to}: ${pdf === 'all' ? 'whole guide' : pdf}`} />}
-      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} sheets={pdf ? `Visitor Guide ${window.from} to ${window.to}` : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} />
+      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} sheets={pdf ? `Visitor Guide ${window.from} to ${window.to}` : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} palette={palette} opener={layouts.opener ?? null} />
 
     </>
   );

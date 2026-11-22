@@ -263,7 +263,8 @@ export type VenueGrid = (typeof VENUE_GRIDS)[number];
 /** Each part of the guide's template, chosen on the production page and carried in its address. */
 /** Venue sections' grids, and how many pages each gives listings (those without booked space) before the rest go to its index. */
 /** `tours` is the template for tours on specific dates; `ongoing` for those on demand. */
-export type GuideLayouts = { events: Layout; tours: TourLayout; ongoing: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null> };
+/** opener: the title of the event whose picture opens What's On, full bleed; unset, the first highlight or event with a picture. */
+export type GuideLayouts = { events: Layout; tours: TourLayout; ongoing: TourLayout; venues: Record<string, VenueGrid>; budgets: Record<string, number | null>; opener?: string | null };
 
 /**
  * Pages for listings beyond the rows booked entries leave, then the section's index, unless chosen
@@ -296,7 +297,8 @@ export function layoutsFrom(get: (key: string) => string | null | undefined): Gu
     if (section && n === 'all') budgets[section] = null;
     else if (section && /^\d{1,2}$/.test(n ?? '')) budgets[section] = Number(n);
   }
-  return { events, tours, ongoing, venues, budgets };
+  const opener = get('opener')?.trim() || null;
+  return { events, tours, ongoing, venues, budgets, ...(opener ? { opener } : {}) };
 }
 
 /** On-demand tours, unless chosen: in columns with dated ones in columns, else on the grid of twelve. */
@@ -316,6 +318,7 @@ export function layoutsQuery(l: GuideLayouts): string {
     .map(([s, n]) => `${s}:${n ?? 'all'}`)
     .join(',');
   if (budgets) q.set('budget', budgets);
+  if (l.opener) q.set('opener', l.opener);
   return q.toString();
 }
 
