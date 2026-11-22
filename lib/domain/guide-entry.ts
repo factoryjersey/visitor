@@ -493,6 +493,16 @@ export function shorterLines(line: string): string[] {
   return [...new Set(out.reverse())].filter((c) => c.length < line.length);
 }
 
+/**
+ * A listing box's words, fullest first: its line whole, then its first
+ * sentences (the guide's own descriptions run to two or three), then the
+ * line cut where a clause starts. The box takes the fullest that fits.
+ */
+export function lineOptions(line: string): string[] {
+  const sentenceCuts = copyOptions({ guideCopy: line, summary: null, description: null }).filter(Boolean);
+  return [...new Set([line, ...[...sentenceCuts, ...shorterLines(line)].sort((a, b) => b.length - a.length)])];
+}
+
 export function guideVenue(p: Place): GuideVenue {
   const options = copyOptions({ guideCopy: p.guideCopy, summary: p.summary, description: p.description });
   const section = p.guideSection ?? SECTION_OF_CATEGORY[p.category];
@@ -518,7 +528,7 @@ export function guideVenue(p: Place): GuideVenue {
     website: printWebsite(p.website) ?? '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     preview: printable(p.headerImage) ? webImage(p.headerImage!, 900, 600) : '',
-    options: p.listingSize === 'directory' ? [] : oneLine ? [p.guideLine!, ...shorterLines(p.guideLine!)] : withNotes,
+    options: p.listingSize === 'directory' ? [] : oneLine ? lineOptions(p.guideLine!) : withNotes,
     featured: !!p.recommendedIn,
     printed: !!p.guideCopy,
     opening: openingText(p.openingHours, p.openMonths) ?? '',

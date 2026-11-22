@@ -237,3 +237,14 @@ describe('the grid of twelve for venues', () => {
     expect(s!.pages.map((p) => p.area)).toEqual(['St Helier', 'West']);
   });
 });
+
+describe('a listing box from the guide’s own description', () => {
+  it('tries it whole, then its first sentences, then a clause cut', async () => {
+    const { lineOptions } = await import('@/lib/domain/guide-entry');
+    const line = 'Local food and great service. There is a guarantee that the title dishes, bass and lobster, are served daily. The chef has local hidden treasures ready for you.';
+    const o = lineOptions(line);
+    expect(o[0]).toBe(line);
+    expect(o).toContain('Local food and great service. There is a guarantee that the title dishes, bass and lobster, are served daily.');
+    expect(o).toContain('Local food and great service.');
+  });
+});
