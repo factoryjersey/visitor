@@ -31,7 +31,11 @@ export function fromDetails(d: unknown): TripadvisorRating | null {
 }
 
 export async function fillTripadvisor(limit = 400): Promise<{ looked: number; rated: number; failed: number; reason?: string }> {
-  if (!env.TRIPADVISOR_API_KEY) return { looked: 0, rated: 0, failed: 0, reason: 'no TRIPADVISOR_API_KEY' };
+  // Pasted keys carry stray spaces or quotes: trimmed off, and their shape (never the key) said in the log if refused.
+  const raw = env.TRIPADVISOR_API_KEY ?? '';
+  const key = raw.trim().replace(/^["']|["']$/g, '');
+  if (!key) return { looked: 0, rated: 0, failed: 0, reason: 'no TRIPADVISOR_API_KEY' };
+  const shape = `key ${key.length} characters${raw !== key ? ', had spaces or quotes round it' : ''}`;
   const since = new Date(Date.now() - REFRESH_DAYS * 86_400_000);
   const due = await db
     .select({ id: places.id, tripadvisorId: places.tripadvisorId })
@@ -43,14 +47,15 @@ export async function fillTripadvisor(limit = 400): Promise<{ looked: number; ra
   let failed = 0;
   let reason: string | undefined;
   for (const v of due) {
-    const res = await fetch(`${API}/${encodeURIComponent(v.tripadvisorId!)}/details?key=${encodeURIComponent(env.TRIPADVISOR_API_KEY)}&language=en_UK&currency=GBP`, {
-      headers: { accept: 'application/json', referer: 'https://guide.je/' },
-    }).catch(() => null);
+    const url = `${API}/${encodeURIComponent(v.tripadvisorId!)}/details?key=${encodeURIComponent(key)}&language=en&currency=GBP`;
+    let res = await fetch(url, { headers: { accept: 'application/json' } }).catch(() => null);
+    // Refused plain: once more naming guide.je as the site, for a key tied to the website.
+    if (res?.status === 403) res = await fetch(url, { headers: { accept: 'application/json', referer: 'https://guide.je/' } }).catch(() => null);
     // A refused key or a limit reached: stop, and try the rest another night.
     if (!res || res.status === 401 || res.status === 403 || res.status === 429) {
       failed += 1;
       // Their answer, for the log: a key restricted to a domain or IP says so here.
-      reason = res ? `${res.status} ${(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)}` : 'no answer';
+      reason = `${res ? `${res.status} ${(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)}` : 'no answer'}; ${shape}`;
       if (res) break;
       continue;
     }
