@@ -778,3 +778,21 @@ export const listingDrops = pgTable(
   (t) => ({ bySource: index('listing_drops_source').on(t.source, t.externalType, t.externalId) }),
 );
 export type ListingDrop = typeof listingDrops.$inferSelect;
+
+/**
+ * The Google account guide.je writes the InDesign package to Drive as: staff
+ * connect it once (Connect Google Drive, on the guide's page), and its
+ * refresh token lets the export put the files straight into the working
+ * folder. One row. The token is a secret: never shown, only used server-side.
+ */
+export const googleDrive = pgTable('google_drive', {
+  id: integer('id').primaryKey().default(1),
+  /** The Google account it acts as. */
+  email: text('email'),
+  refreshToken: text('refresh_token').notNull(),
+  /** The Drive folder the package goes into: the edition's working folder. */
+  folderId: text('folder_id'),
+  connectedBy: text('connected_by'),
+  connectedAt: timestamp('connected_at', { withTimezone: true }).notNull().defaultNow(),
+});
+export type GoogleDrive = typeof googleDrive.$inferSelect;
