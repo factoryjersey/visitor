@@ -224,6 +224,9 @@ describe('a venue line too long for its box', () => {
     expect(shorterLines('A family-run seafood restaurant by the sea at Havre des Pas, serving local lobster, crab and oysters.')).toEqual(['A family-run seafood restaurant by the sea at Havre des Pas.']);
     expect(shorterLines("Hotel brasserie serving modern pan-European dishes from Jersey produce, with a terrace over St Aubin's Bay.")).toEqual(['Hotel brasserie serving modern pan-European dishes from Jersey produce.']);
     expect(shorterLines('A cosy pub.')).toEqual([]);
+    expect(shorterLines("An intimate cocktail bar inspired by Jersey's wartime past, using local ingredients and hosting masterclasses.")).toEqual(["An intimate cocktail bar inspired by Jersey's wartime past."]);
+    expect(shorterLines('Seasonal modern dining upstairs with local fish specials, and a cosy basement bar for cocktails and small plates.')).toContain('Seasonal modern dining upstairs with local fish specials.');
+    expect(shorterLines('A lively evening spot with dining upstairs.')).toEqual(['A lively evening spot.']);
   });
 });
 

@@ -486,15 +486,20 @@ const OUT_OUT = 'Out Out';
  */
 export function shorterLines(line: string): string[] {
   const out: string[] = [];
-  // Where a new clause starts, never inside a list ("lobster, crab and oysters").
-  const re = /,?\s(?=(?:with|plus|known for|serving|offering|overlooking|where|run by|set in)\s)/g;
+  // Where a new clause starts, never inside a list ("lobster, crab and oysters"): before "with", "serving" and the like,
+  // before ", and a", or before a verb in -ing ("using local ingredients", "pouring a wide range").
+  const re = /,?\s(?=(?:with|plus|known for|serving|offering|overlooking|where|run by|set in)\s)|,\s(?=and an?\s)|,?\s(?=[a-z]+ing\s)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(line))) {
+    const next = /^,?\s([a-z]+)/.exec(line.slice(m.index))?.[1] ?? '';
+    if (NOT_A_CLAUSE.has(next)) continue;
     const cut = line.slice(0, m.index).replace(/[\s,;:–-]+$/, '');
-    if (cut.split(/\s+/).length >= 5 && !/\b(and|or|of|the|a|an|to|in|on|at|by|for|from)$/i.test(cut)) out.push(`${cut}.`);
+    if (cut.split(/\s+/).length >= 3 && !/\b(and|or|of|the|a|an|to|in|on|at|by|for|from|its|their|with)$/i.test(cut)) out.push(`${cut}.`);
   }
   return [...new Set(out.reverse())].filter((c) => c.length < line.length);
 }
+/** Words in -ing that name things rather than start a clause: a line is not cut before them. */
+const NOT_A_CLAUSE = new Set(['evening', 'evenings', 'morning', 'mornings', 'dining', 'building', 'buildings', 'thing', 'things', 'king', 'spring', 'string', 'nothing', 'something', 'everything', 'ceiling', 'pudding', 'clothing', 'lighting', 'seating', 'shopping', 'wedding', 'weddings', 'bowling', 'sailing', 'swimming', 'parking', 'clubbing', 'living', 'setting', 'landing', 'sing', 'ring', 'wing', 'wings', 'bring', 'during', 'including', 'herring', 'awning', 'awnings', 'tasting', 'tastings', 'brewing', 'baking', 'cooking', 'gathering', 'gatherings', 'opening', 'painting', 'paintings', 'wellbeing', 'being', 'crossing', 'surfing', 'walking', 'cycling', 'climbing', 'fishing', 'diving', 'riding']);
 
 /**
  * A listing box's words, fullest first: its line whole, then its first
