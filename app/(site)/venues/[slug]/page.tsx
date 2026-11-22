@@ -13,6 +13,7 @@ import { NewBadge } from '@/components/site/new-badge';
 import { isNewVenue } from '@/lib/domain/new-venue';
 import { openingText } from '@/lib/domain/opening';
 import { GoogleReviews } from '@/components/site/google-reviews';
+import { TripadvisorRating } from '@/components/site/tripadvisor-rating';
 import { googleConfigured } from '@/lib/integrations/google/places';
 import { staffViewer } from '@/lib/auth/session';
 import { printAddress, printPrice, siteLabel, socialSite } from '@/lib/domain/house-style';
@@ -109,6 +110,7 @@ export default async function VenuePage({ params }: Props) {
               <Gallery images={venue.gallery} header={venue.headerImage} title={venue.name} />
             </div>
 
+            {venue.tripadvisor && <TripadvisorRating t={venue.tripadvisor} />}
             {venue.googlePlaceId && googleConfigured() && <GoogleReviews slug={venue.slug} />}
 
             <section className="mt-12">

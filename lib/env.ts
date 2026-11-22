@@ -35,6 +35,8 @@ const envSchema = z.object({
   PEXELS_API_KEY: z.string().optional(),
   /** Google Maps Platform, Places API (New): matches venues to Google and shows their rating and reviews. Without it the reviews panel is not shown. */
   GOOGLE_MAPS_API_KEY: z.string().optional(),
+  /** Tripadvisor Content API, for venues' ratings (lib/integrations/tripadvisor). */
+  TRIPADVISOR_API_KEY: z.string().optional(),
   // The sender: an address on a domain verified in Resend.
   EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
   // Who hears about new claims, comma-separated. Unset: every staff account.

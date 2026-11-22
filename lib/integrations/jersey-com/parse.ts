@@ -41,6 +41,8 @@ export type VjPlace = {
   lowRatePence: number | null;
   highRatePence: number | null;
   aaRating: string | null;
+  /** Its Tripadvisor listing's number, when they give a real one (not "00000181"). */
+  tripadvisorId: string | null;
   /** Accommodation only: Hotel, Guest house, Self-catering… Left out for other listings, so a hotel's restaurant listing does not clear it. */
   stayType?: string | null;
   headerImage: Image | null;
@@ -254,6 +256,12 @@ function phoneOf(v: unknown): string | null {
   return str(p.formatted) ?? str(p.number);
 }
 
+/** "21316433" as it is; leading zeros off, and too short to be real ("00000181") is none. */
+export function tripadvisorId(v: unknown): string | null {
+  const id = typeof v === 'string' || typeof v === 'number' ? String(v).trim().replace(/^0+/, '') : '';
+  return /^\d{4,}$/.test(id) ? id : null;
+}
+
 export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
   const acf = raw.acf ?? {};
   const a = (acf.address ?? {}) as Record<string, unknown>;
@@ -291,6 +299,7 @@ export function toPlace(raw: RawItem, type: PlaceType): VjPlace {
     lowRatePence: pence(acf.low_season_rate),
     highRatePence: pence(acf.high_season_rate),
     aaRating: labelOf(acf.aa_rating) ?? labels(acf.aa_rating)[0] ?? null,
+    tripadvisorId: tripadvisorId(acf.tripadvisor),
     ...(type === 'accommodation' ? { stayType: labels(Array.isArray(acf.type) ? acf.type : [acf.type])[0] ?? null } : {}),
     headerImage: header,
     gallery: images(acf.gallery_images_data),

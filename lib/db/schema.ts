@@ -217,6 +217,16 @@ export const places = pgTable('places', {
   /** When the nightly match last looked, found or not, so an unmatched venue is retried monthly rather than every night. */
   googleCheckedAt: timestamp('google_checked_at', { withTimezone: true }),
   googleLocked: boolean('google_locked').notNull().default(false),
+  /** Its listing on Tripadvisor, from Visit Jersey's record (their "tripadvisor" field), for the rating on its page. */
+  tripadvisorId: text('tripadvisor_id'),
+  /**
+   * Its Tripadvisor rating as the Content API last gave it: refreshed weekly
+   * (lib/integrations/tripadvisor), shown with Tripadvisor's own rating
+   * image and a link to their page, as their terms ask. Null until fetched,
+   * or when the listing is not found.
+   */
+  tripadvisor: jsonb('tripadvisor').$type<{ rating: number; reviews: number; url: string; ratingImage: string } | null>(),
+  tripadvisorCheckedAt: timestamp('tripadvisor_checked_at', { withTimezone: true }),
   /** Addresses it had before two listings of it were merged into this one: they lead here. */
   formerSlugs: text('former_slugs').array().notNull().default([]),
 

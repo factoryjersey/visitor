@@ -6,7 +6,8 @@
  *                                          jersey-bulls, jersey-rfc, island-ticket-hut, gigzhub, stock (pictures only),
  *                                          print-lines (the guide's snippets for events and tours only), venue-lines (venues' one-liners only),
  *                                          pictures (text check only), nightlife (evening events at pubs and bars only),
- *                                          third-person (Visit Jersey's short descriptions in the third person only)
+ *                                          third-person (Visit Jersey's short descriptions in the third person only),
+ *                                          tripadvisor (venues' Tripadvisor ratings only)
  *   pnpm import:events --only ticketsolve-artscentre --fixture tests/fixtures/ticketsolve-shows.xml
  *
  * Each source's records are kept whole in source_records, like Visit
@@ -54,6 +55,7 @@ import { fillThirdPerson } from '@/lib/integrations/claude/fill-third-person';
 import { checkEventPictures } from '@/lib/integrations/claude/image-text';
 import { fillProviderCodes } from '@/lib/db/provider-codes';
 import { matchGooglePlaces } from '@/lib/integrations/google/match';
+import { fillTripadvisor } from '@/lib/integrations/tripadvisor/ratings';
 import { SITES as TRIBE_SITES, eventsUrl, toEvent as fromTribe, type TribeEvent, type TribeSite } from '@/lib/integrations/tribe-events/parse';
 import { joinRuns } from '@/lib/domain/join-runs';
 import { WHATS_ON as GIGZHUB_WHATS_ON, parseGigs, toEvent as fromGig } from '@/lib/integrations/gigzhub/parse';
@@ -496,6 +498,16 @@ if (!values.only || values.only === 'google') {
   } catch (e) {
     failed += 1;
     console.error(`google places failed: ${(e as Error).message}`);
+  }
+}
+// Each venue's Tripadvisor rating, a week at a time, with TRIPADVISOR_API_KEY set.
+if (!values.only || values.only === 'tripadvisor') {
+  try {
+    const t = await fillTripadvisor();
+    console.log(`tripadvisor: ${t.rated} of ${t.looked} rated${t.failed ? `, ${t.failed} refused (key or limit)` : ''}`);
+  } catch (e) {
+    failed += 1;
+    console.error(`tripadvisor failed: ${(e as Error).message}`);
   }
 }
 // A key code for every tour provider, so each tour points to the guide's key.
