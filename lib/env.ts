@@ -37,6 +37,9 @@ const envSchema = z.object({
   GOOGLE_MAPS_API_KEY: z.string().optional(),
   /** Tripadvisor Content API, for venues' ratings (lib/integrations/tripadvisor). */
   TRIPADVISOR_API_KEY: z.string().optional(),
+  /** A Google OAuth client (Web application) for writing the guide's InDesign package to Drive: its redirect URI is <app>/admin/guide/drive/callback. */
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
   // The sender: an address on a domain verified in Resend.
   EMAIL_FROM: z.string().default('Visitor <hello@visitor.je>'),
   // Who hears about new claims, comma-separated. Unset: every staff account.

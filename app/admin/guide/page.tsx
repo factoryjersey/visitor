@@ -8,6 +8,7 @@ import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/d
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
+import { DrivePanel } from './drive-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,6 +132,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <Link href="/admin/guide/maps" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100">Maps</Link>
           <a href={`/admin/guide/export/package.zip?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} className="rounded border border-stone-300 bg-stone-50 px-3 py-1 font-medium hover:bg-stone-100" title="The CSVs, every picture at full size in Links/, the edition's swatches and notes, in one zip">InDesign package (.zip)</a>
           <span className="self-center text-xs text-stone-500">Colours: {palette === 'classic' ? '2026 editions (to issue 36)' : 'Jersey palette (from issue 37)'}</span>
+          <DrivePanel query={`${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} back={`/admin/guide?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} note={one(sp.drive)} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="ml-auto self-center text-xs text-stone-500">For print (PDF):</span>
