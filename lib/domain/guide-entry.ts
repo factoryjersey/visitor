@@ -148,18 +148,27 @@ export function copyOptions(e: CopySource): string[] {
   const theirs = tidy(e.sourceWords);
   const longer = tidy(e.sourceLonger);
   const snippet = tidy(e.printLine);
+  const cuts = (texts: string[]) => {
+    const prefixes = new Set<string>();
+    for (const text of texts) {
+      let out = '';
+      for (const s of sentences(text)) {
+        out = `${out} ${s}`.trim();
+        if (out.length > 600) break;
+        if (!trailsOff(out)) prefixes.add(out);
+      }
+    }
+    return [...prefixes].sort((a, b) => b.length - a.length);
+  };
+  // Visit Jersey's words (in the third person) come first in print: when neither version fits whole, they are cut
+  // sentence by sentence before anything else is tried, and the listing's own description is not used at all;
+  // only the print snippet follows, for the smallest boxes.
+  if (theirs) {
+    return [...new Set([...(ours ? [ours] : []), ...(longer ? [longer] : []), theirs, ...cuts([ours, longer, theirs]), ...(snippet ? cuts([snippet]) : []), ''])].filter((t, i, all) => t || i === all.length - 1);
+  }
   // The snippet sums the listing up for print: whole, or its first sentence alone.
   const texts = snippet ? [snippet] : [tidy(e.description), tidy(e.summary)];
-  const prefixes = new Set<string>();
-  for (const text of [ours, ...texts]) {
-    let out = '';
-    for (const s of sentences(text)) {
-      out = `${out} ${s}`.trim();
-      if (out.length > 600) break;
-      if (!trailsOff(out)) prefixes.add(out);
-    }
-  }
-  return [...new Set([...(ours ? [ours] : []), ...(longer ? [longer] : []), ...(theirs ? [theirs] : []), ...[...prefixes].sort((a, b) => b.length - a.length), ''])];
+  return [...new Set([...(ours ? [ours] : []), ...cuts([ours, ...texts]), ''])];
 }
 
 /** Copy the source cut short ("…", "..."): never printed. */
@@ -801,8 +810,6 @@ export function tourOptions(x: CopySource): string[] {
 /** A tour's box on the grid: when (dated tours only: the on-demand pages say so on their marker), its title, the copy, then the provider's code and the duration. The code points to the key. */
 /** The tour grids' type against the standard boxes' 8.5pt: six at 7pt, twelve at 7.5pt, sixteen at 7pt (app/globals.css). */
 const TOUR_SCALE: Record<Exclude<TourLayout, 'columns'>, number> = { grid6: 7 / 8.5, grid8: 1, grid12: 7.5 / 8.5, grid16: 7 / 8.5 };
-/** The grids with room for an organiser's own short description whole; on the smaller ones a tour keeps its short lines. */
-const ROOM_FOR_THEIRS: Exclude<TourLayout, 'columns'>[] = ['grid6', 'grid8'];
 const tourBox = (grid: Exclude<TourLayout, 'columns'>) => ({ height: GRID[grid].height, picture: false, scale: TOUR_SCALE[grid] });
 export const tourWhen = (t: Pick<GuideTour, 'kind' | 'dates' | 'genre'>) => (t.kind === 'dated' ? t.dates : '');
 
@@ -823,8 +830,8 @@ export function tourGroups(tours: GuideTour[], layouts: Pick<GuideLayouts, 'tour
 export function gridTours(tours: GuideTour[], grid: Exclude<TourLayout, 'columns'> = 'grid8'): GuideTour[][] {
   return gridPages(tours, GRID[grid].cells, {
     listing: (given) => {
-      // Visit Jersey's own words go on the bigger grids only; on the grid of twelve or sixteen a tour keeps its short lines.
-      const t = given.theirs && !ROOM_FOR_THEIRS.includes(grid) ? { ...given, options: given.options.filter((o) => !given.theirs!.includes(o)) } : given;
+      // Visit Jersey's own words first on every grid: whole where they fit, cut by sentences where not.
+      const t = given;
       const room = copyBudget({ dates: tourWhen(t), times: t.times, title: t.title, price: '', venue: t.code ? '' : t.provider, address: '', contact: '', website: [t.code, t.duration].filter(Boolean).join('  ') }, tourBox(grid));
       // What fits by the estimate; failing that, the shortest sentence it has, so no tour goes without one (the proof measures and flags any overset).
       const shortest = [...t.options].reverse().find(Boolean) ?? '';

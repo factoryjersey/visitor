@@ -285,16 +285,27 @@ describe("Visit Jersey's words on the tour grids", () => {
   it('prints them on the grid of six', () => {
     expect(gridTours([t()], 'grid6')[0]![0]!.copy).toBe(theirs);
   });
-  it('keeps the short lines on the grid of twelve', () => {
-    expect(gridTours([t()], 'grid12')[0]![0]!.copy).toBe('A low-tide walk.');
+  it('prints them first on the grid of twelve too, where they fit', () => {
+    expect(gridTours([t()], 'grid12')[0]![0]!.copy).toBe(theirs);
   });
   it('fills the grid of six with the longer version, and falls back to theirs where it will not fit', () => {
     const longer = `${theirs} The guide leads the way across the seabed, past gullies and rock pools, explaining the reef's wildlife and history.`;
     const both = t({ options: [longer, theirs, 'A low-tide walk.', ''], theirs: [longer, theirs] });
     expect(gridTours([both], 'grid6')[0]![0]!.copy).toBe(longer);
-    expect(gridTours([both], 'grid12')[0]![0]!.copy).toBe('A low-tide walk.');
+    expect(gridTours([both], 'grid12')[0]![0]!.copy).not.toBe('A low-tide walk.');
     const tooLong = t({ options: [`${theirs} ${'More words about the walk. '.repeat(20)}`.trim(), theirs, ''], theirs: [theirs] });
     expect(gridTours([tooLong], 'grid6')[0]![0]!.copy).toBe(theirs);
+  });
+});
+
+describe('copyOptions: Visit Jersey first', () => {
+  it('cuts their third-person words by sentences before anything else, and never uses the listing’s own description', () => {
+    const o = copyOptions({ guideCopy: null, summary: 'We run it.', description: 'We are delighted to host. Come along.', sourceWords: 'A walk to the beacon. It is tidal.', sourceLonger: 'A walk to the beacon. It is tidal. The guide explains the reef.', printLine: 'A low-tide walk.' });
+    expect(o).toEqual(['A walk to the beacon. It is tidal. The guide explains the reef.', 'A walk to the beacon. It is tidal.', 'A walk to the beacon.', 'A low-tide walk.', '']);
+    expect(o.some((x) => /\bWe\b/.test(x))).toBe(false);
+  });
+  it('keeps the listing’s own words for everything else', () => {
+    expect(copyOptions({ guideCopy: null, summary: null, description: 'A fair. With stalls.', sourceWords: null })).toEqual(['A fair. With stalls.', 'A fair.', '']);
   });
 });
 
