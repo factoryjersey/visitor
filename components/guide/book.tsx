@@ -553,6 +553,8 @@ export function GuideBook(props: {
   firstPage: number;
   /** One section's pages only, by its tab's name, for that section's PDF; numbered as in the whole guide. */
   only?: string | null;
+  /** Where that section starts in the edition, when staff set it: its pages numbered (and sided) from there. */
+  onlyStart?: number | null;
   /** For the printer: each page on its own sheet, with 3mm bleed, a 6mm slug and crop marks, rather than in spreads. Its words name the job in the slug. */
   sheets?: string | null;
   /** Its colours: the 2026 editions' to issue 36, the Jersey palette from issue 37 (lib/domain/guide-colours). */
@@ -798,7 +800,8 @@ export function GuideBook(props: {
   }
 
   // Into spreads: the first page faces left or right by its number.
-  const numbered = pages.map((p, i) => ({ page: p, n: props.firstPage + i })).filter((x) => !props.only || x.page.section.name === props.only);
+  const laidOut = pages.map((p, i) => ({ page: p, n: props.firstPage + i })).filter((x) => !props.only || x.page.section.name === props.only);
+  const numbered = props.only && props.onlyStart ? laidOut.map((x, i) => ({ ...x, n: props.onlyStart! + i })) : laidOut;
   const spreads: (typeof numbered[number] | null)[][] = [];
   let k = 0;
   if (numbered[0] && numbered[0].n % 2 === 1) spreads.push([null, numbered[k++]!]);

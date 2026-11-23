@@ -8,7 +8,7 @@ import { budgetFor, layoutsFrom, layoutsQuery, type GuideLayouts } from '@/lib/d
 import { includeDraft } from '@/app/actions';
 import { buildGuide, editions, isDraft, windowFrom } from '@/lib/guide';
 import { one, type SearchParams } from '@/lib/params';
-import { DrivePanel } from './drive-panel';
+import { DrivePanel, SectionExport } from './drive-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +38,8 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
   const palette = paletteFor(window, askedPalette);
   const qs = `from=${window.from}&to=${window.to}${draft ? '&draft=1' : ''}${tq ? `&${tq}` : ''}${askedPalette ? `&palette=${palette}` : ''}`;
   // A section's PDF: the same pages, that section alone (or the whole guide), and the print dialog once they are laid out.
-  const pdf = one(sp.pdf) ?? null;
+  // A section's PDF from the one-section form names it in section=, with its start page in start=.
+  const pdf = (one(sp.pdf) === 'section' ? one(sp.section) : one(sp.pdf)) ?? null;
   const pdfHref = (name: string) => `/admin/guide?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}&pdf=${encodeURIComponent(name)}`;
   const year = Number(window.from.slice(0, 4));
   // Where What's On starts in the printed guide; the 2026 editions open it on page 36.
@@ -133,6 +134,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
           <a href={`/admin/guide/export/package.zip?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} className="rounded border border-stone-300 bg-stone-50 px-3 py-1 font-medium hover:bg-stone-100" title="The CSVs, every picture at full size in Links/, the edition's swatches and notes, in one zip">InDesign package (.zip)</a>
           <span className="self-center text-xs text-stone-500">Colours: {palette === 'classic' ? '2026 editions (to issue 36)' : 'Jersey palette (from issue 37)'}</span>
           <DrivePanel query={`${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} back={`/admin/guide?${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} note={one(sp.drive)} />
+          <SectionExport query={`${qs}${firstPage !== 36 ? `&page=${firstPage}` : ''}`} sections={[EVENTS.name, TOURS.name, ...guide.sections.map((s) => s.section)]} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="ml-auto self-center text-xs text-stone-500">For print (PDF):</span>
@@ -180,7 +182,7 @@ export default async function Guide({ searchParams }: { searchParams: SearchPara
         <p className="guide-empty no-print">Nothing selected for these dates. Choose events on <Link href="/admin/whats-on">What&apos;s on</Link>, or look at the draft.</p>
       )}
       {pdf && <PrintWhenReady title={`Visitor Guide ${window.from} to ${window.to}: ${pdf === 'all' ? 'whole guide' : pdf}`} />}
-      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} sheets={pdf ? `Visitor Guide ${window.from} to ${window.to}` : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} palette={palette} opener={layouts.opener ?? null} />
+      <GuideBook only={pdf && pdf !== 'all' ? pdf : null} onlyStart={pdf && pdf !== 'all' ? Number(one(sp.start)) || null : null} sheets={pdf ? `Visitor Guide ${window.from} to ${window.to}` : null} key={`${window.from}-${window.to}-${draft}-${firstPage}-${tq}-${pdf ?? ''}-${one(sp.start) ?? ''}`} highlights={highlights} events={events} pages={pages} ongoingPages={guide.ongoingPages} layout={layout} tours={tours} tourGrid={tourPages} tourLayouts={{ tours: layouts.tours, ongoing: layouts.ongoing }} providers={providers} venues={venues} venueSections={sections} doSection={guide.doSection} lookingAhead={guide.lookingAhead} newThisSeason={guide.newThisSeason} firstPage={firstPage} palette={palette} opener={layouts.opener ?? null} />
 
     </>
   );

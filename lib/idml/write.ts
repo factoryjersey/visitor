@@ -199,13 +199,14 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     + '<RootObjectStyleGroup Self="u8a"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Graphics Frame]" Name="$ID/[Normal Graphics Frame]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Text Frame]" Name="$ID/[Normal Text Frame]"/></RootObjectStyleGroup>'
     + '</idPkg:Styles>';
 
-  const prefs = `<idPkg:Preferences xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><DocumentPreference PageHeight="${fmt(H)}" PageWidth="${fmt(W)}" PagesPerDocument="${pageCount}" FacingPages="true" DocumentBleedTopOffset="${fmt(3 * MM)}" DocumentBleedBottomOffset="${fmt(3 * MM)}" DocumentBleedInsideOrLeftOffset="${fmt(3 * MM)}" DocumentBleedOutsideOrRightOffset="${fmt(3 * MM)}" DocumentBleedUniformSize="true" SlugTopOffset="${fmt(6 * MM)}" SlugBottomOffset="${fmt(6 * MM)}" SlugInsideOrLeftOffset="${fmt(6 * MM)}" SlugRightOrOutsideOffset="${fmt(6 * MM)}" DocumentSlugUniformSize="true" AllowPageShuffle="true" PageBinding="LeftToRight" Intent="PrintIntent" StartPageNumber="${doc.firstPage}"/><ViewPreference HorizontalMeasurementUnits="Millimeters" VerticalMeasurementUnits="Millimeters" RulerOrigin="SpreadOrigin"/></idPkg:Preferences>`;
+  const prefs = `<idPkg:Preferences xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><DocumentPreference PageHeight="${fmt(H)}" PageWidth="${fmt(W)}" PagesPerDocument="1" FacingPages="true" DocumentBleedTopOffset="${fmt(3 * MM)}" DocumentBleedBottomOffset="${fmt(3 * MM)}" DocumentBleedInsideOrLeftOffset="${fmt(3 * MM)}" DocumentBleedOutsideOrRightOffset="${fmt(3 * MM)}" DocumentBleedUniformSize="true" SlugTopOffset="${fmt(6 * MM)}" SlugBottomOffset="${fmt(6 * MM)}" SlugInsideOrLeftOffset="${fmt(6 * MM)}" SlugRightOrOutsideOffset="${fmt(6 * MM)}" DocumentSlugUniformSize="true" AllowPageShuffle="true" PageBinding="LeftToRight" Intent="PrintIntent"/><ViewPreference HorizontalMeasurementUnits="Millimeters" VerticalMeasurementUnits="Millimeters" RulerOrigin="SpreadOrigin"/></idPkg:Preferences>`;
 
   const fonts = `<idPkg:Fonts xmlns:idPkg="${PKG}" DOMVersion="${DOM}"/>`;
   const backing = `<idPkg:BackingStory xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><XmlStory Self="ubs"><ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/$ID/[No paragraph style]"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"/></ParagraphStyleRange></XmlStory></idPkg:BackingStory>`;
   const tags = `<idPkg:Tags xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><XMLTag Self="XMLTag/Root" Name="Root"/></idPkg:Tags>`;
 
-  // Numbered as the book's documents are, automatically, so the book paginates it; on its own it opens at its page in the edition (StartPageNumber), on the side it was laid out for.
+  // Numbered from its page in the edition (a section start, as staff set it), so it falls on the side it was laid out for, alone or in the book.
+  // As InDesign's own export: one page to start from (the spreads bring the rest) and no StartPageNumber, either of which can make InDesign add blank pages before them.
   const designmap = `<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="18.0(XX)" ?>\n<Document xmlns:idPkg="${PKG}" DOMVersion="${DOM}" Self="d" StoryList="${stories.join(' ')}" ZeroPoint="0 0" ActiveLayer="uL" CMYKProfile="Coated FOGRA39 (ISO 12647-2:2004)" RGBProfile="sRGB IEC61966-2.1" SolidColorIntent="UseColorSettings" AfterBlendingIntent="UseColorSettings" DefaultImageIntent="UseColorSettings" RGBPolicy="PreserveEmbeddedProfiles" CMYKPolicy="CombinationOfPreserveAndSafeCmyk" AccurateLABSpots="false">`
     + '<idPkg:Graphic src="Resources/Graphic.xml"/><idPkg:Fonts src="Resources/Fonts.xml"/><idPkg:Styles src="Resources/Styles.xml"/><idPkg:Preferences src="Resources/Preferences.xml"/><idPkg:Tags src="XML/Tags.xml"/>'
     // The ears and folio on a layer of their own, above the pages', so a picture to the edge does not cover them.
@@ -213,7 +214,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     + '<Layer Self="uL" Name="Layer 1" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"><Properties><LayerColor type="enumeration">LightBlue</LayerColor></Properties></Layer>'
     + masterFiles.map(([path]) => `<idPkg:MasterSpread src="${path}"/>`).join('')
     + spreadFiles.map((s) => `<idPkg:Spread src="Spreads/Spread_${s}.xml"/>`).join('')
-    + `<Section Self="sec" Length="${pageCount}" Name="" ContinueNumbering="true" IncludeSectionPrefix="false" PageNumberStyle="Arabic" PageStart="${firstPageId[0] ?? 'n'}" SectionPrefix="" Marker=""/>`
+    + `<Section Self="sec" Length="${pageCount}" Name="" ContinueNumbering="false" IncludeSectionPrefix="false" PageNumberStyle="Arabic" PageStart="${firstPageId[0] ?? 'n'}" PageNumberStart="${doc.firstPage}" SectionPrefix="" Marker=""/>`
     + '<idPkg:BackingStory src="XML/BackingStory.xml"/>'
     + stories.map((s) => `<idPkg:Story src="Stories/Story_${s}.xml"/>`).join('')
     + '</Document>';

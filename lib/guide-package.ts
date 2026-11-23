@@ -16,7 +16,15 @@ import { ZipWriter } from '@/lib/zip';
 import { bookDocument, guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
 import { idmlFiles } from '@/lib/idml/write';
 import { updateBookScript } from '@/lib/idml/update-book';
+import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import { asJpeg, imageSize } from '@/lib/idml/image-size';
+
+/** A section's document as the book names it: What's On and Tours as the merge files did, a venue section vjvg_<section>_<issue>. */
+export function sectionFile(section: string, issue: string): string {
+  if (section === EVENTS.name) return `whatson_events_${issue}.idml`;
+  if (section === TOURS.name) return `whatson_tours_${issue}.idml`;
+  return `vjvg_${section.toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}_${issue}.idml`;
+}
 
 export type PackageFile = (path: string, bytes: Uint8Array) => Promise<void> | void;
 
@@ -32,6 +40,9 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
   const palette = paletteFor(window, sp.get('palette'));
   const guide = await buildGuide(window, { draft: isDraft(sp.get('draft')), layouts: layoutsFrom((k) => sp.get(k)) });
   const { job, issue } = packageNames(sp);
+  // One section on its own, from the page staff set for it: its document and its pictures only.
+  const only = sp.get('section') || null;
+  const start = Math.max(0, Math.min(400, Number(sp.get('start')) || 0)) || null;
 
   // One file a picture, named from what it shows, the same name wherever it is used.
   const links = new Map<string, string>();
@@ -66,7 +77,7 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
     }))],
   ];
 
-  for (const [name, csv] of csvs) await emit(name, utf16le(csv));
+  if (!only) for (const [name, csv] of csvs) await emit(name, utf16le(csv));
   const group = palette === 'classic' ? 'Visitor Guide 2026 editions (to issue 36)' : 'Visitor Guide Jersey palette (from issue 37)';
   await emit('swatches.ase', aseFile(group, paletteSwatches(palette)));
   const missing: string[] = [];
@@ -74,7 +85,11 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
   for (const e of [...guide.highlights, ...events]) if (e.imageUrl) link(e.imageUrl, e.title);
   for (const t of guide.tours) if (t.imageUrl) link(t.imageUrl, t.title);
   for (const v of guide.venues) if (v.imageUrl) link(v.imageUrl, v.name);
-  const queue = [...links.entries()];
+  // A section on its own fetches only the pictures its pages use.
+  const used = only
+    ? new Set(only === EVENTS.name ? [...guide.highlights, ...events].map((e) => e.imageUrl) : only === TOURS.name ? guide.tours.map((t) => t.imageUrl) : guide.venues.filter((v) => v.section === only).map((v) => v.imageUrl))
+    : null;
+  const queue = [...links.entries()].filter(([url]) => !used || used.has(url));
   const pictures = new Map<string, Picture>();
   const fetchOne = async ([url, path]: [string, string]) => {
     try {
@@ -97,9 +112,9 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
   const firstPage = Math.max(1, Math.min(400, Number(sp.get('page')) || 36));
   const sectionNames = guide.sections.map((s) => s.section);
   // The book's documents, as the editions name them (vjvg_26_4: the fourth of 2026, winter): What's On and Tours to replace the merge files, the venue sections, and the whole run in one.
-  const laid = guidePages({ guide, palette, firstPage, pictures, opener: sp.get('opener') });
+  const laid = guidePages({ guide, palette, firstPage, pictures, opener: sp.get('opener'), starts: only && start ? { [only]: start } : undefined });
   const shared = { ...styles(palette), swatches: swatches(palette, sectionNames) };
-  const docs: [string, ReturnType<typeof bookDocument>][] = [
+  const docs: [string, ReturnType<typeof bookDocument>][] = only ? [[sectionFile(only, issue), bookDocument(laid, { section: only })]] : [
     [`whatson_events_${issue}.idml`, bookDocument(laid, ['events'])],
     [`whatson_tours_${issue}.idml`, bookDocument(laid, ['tours'])],
     [`vjvg_venues_${issue}.idml`, bookDocument(laid, ['venues'])],

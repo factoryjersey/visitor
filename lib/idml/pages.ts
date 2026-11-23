@@ -17,7 +17,15 @@ import { PAGE_H, PAGE_W, type CharStyle, type IdmlMaster, type IdmlPage, type It
  */
 
 export type Picture = { path: string; px?: number; py?: number };
-export type LayoutInput = { guide: Guide; palette: GuidePalette; firstPage: number; pictures: Map<string, Picture>; opener?: string | null };
+export type LayoutInput = {
+  guide: Guide;
+  palette: GuidePalette;
+  firstPage: number;
+  pictures: Map<string, Picture>;
+  opener?: string | null;
+  /** Where a section starts in the edition, by its name, when staff set it: it starts there rather than after the one before. */
+  starts?: Record<string, number>;
+};
 
 const INK = 'Ink';
 const LEFT_MARGIN = (left: boolean) => (left ? 7.9 : 12);
@@ -101,13 +109,21 @@ export function swatches(palette: GuidePalette, sections: string[]): Swatch[] {
 
 /** Which document of the book a page is for: What's On, Tours and experiences, or the venue sections. */
 export type GuidePart = 'events' | 'tours' | 'venues';
-export type GuidePage = IdmlPage & { part: GuidePart };
+export type GuidePage = IdmlPage & { part: GuidePart; section: string };
 
 export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: IdmlMaster[] } {
   const { guide, palette, pictures } = input;
   const page = pageSwatches(palette);
   const pages: GuidePage[] = [];
-  let n = input.firstPage;
+  let n = input.starts?.[EVENTS.name] ?? input.firstPage;
+  let sectionName = EVENTS.name;
+  /** A section begins at the page staff set for it, or on the next left-hand page. */
+  const begin = (section: { name: string; colour: string }, after: { name: string; colour: string }) => {
+    const at = input.starts?.[section.name];
+    if (at) n = at;
+    else startLeft(after);
+    sectionName = section.name;
+  };
   const left = () => n % 2 === 0;
   const pic = (url: string) => (url ? pictures.get(url) : undefined);
 
@@ -169,7 +185,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   };
   let part: GuidePart = 'events';
   const push = (items: Item[]) => {
-    pages.push({ n, items, master: current, part });
+    pages.push({ n, items, master: current, part, section: sectionName });
     current = 'umA';
     n += 1;
   };
@@ -267,7 +283,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   // Tours: from a left-hand page, the key, then the grid pages.
   const tours = { ...TOURS, colour: page.tours.name };
   if (guide.tours.length) {
-    startLeft(events);
+    begin(TOURS, events);
     part = 'tours';
     if (guide.providers.length) {
       const perPage = 34;
@@ -312,7 +328,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
 
   function venueSection(vs: VenueSection) {
     const section = { name: vs.section, colour: sectionSwatch(vs.section, palette).name };
-    startLeft(section);
+    begin(section, section);
     part = 'venues';
     const s = SIZES[vs.grid] ?? SIZES.grid8!;
     const areaFoot = (on: GuideVenue[]) => {
@@ -405,12 +421,12 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
  * One document of the book: its pages, and the parent pages they use with the
  * ones those are based on, in order.
  */
-export function bookDocument(all: { pages: GuidePage[]; masters: IdmlMaster[] }, parts: GuidePart[]): { pages: IdmlPage[]; masters: IdmlMaster[]; firstPage: number } | null {
-  const pages = all.pages.filter((p) => parts.includes(p.part));
+export function bookDocument(all: { pages: GuidePage[]; masters: IdmlMaster[] }, parts: GuidePart[] | { section: string }): { pages: IdmlPage[]; masters: IdmlMaster[]; firstPage: number } | null {
+  const pages = all.pages.filter((p) => (Array.isArray(parts) ? parts.includes(p.part) : p.section === parts.section));
   if (!pages.length) return null;
   const used = new Set<string>();
   for (const p of pages) for (let m: string | undefined = p.master; m && !used.has(m); m = all.masters.find((x) => x.id === m)?.basedOn) used.add(m);
-  return { pages: pages.map(({ part: _p, ...page }) => page), masters: all.masters.filter((m) => used.has(m.id)), firstPage: pages[0]!.n };
+  return { pages: pages.map(({ part: _p, section: _s, ...page }) => page), masters: all.masters.filter((m) => used.has(m.id)), firstPage: pages[0]!.n };
 }
 
 const spanRows = (c: VenueCell, rows: number) => {

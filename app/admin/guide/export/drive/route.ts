@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/session';
-import { buildPackage, packageNames } from '@/lib/guide-package';
+import { buildPackage, packageNames, sectionFile } from '@/lib/guide-package';
 import { drive, driveLink } from '@/lib/integrations/google/drive';
 
 export const dynamic = 'force-dynamic';
@@ -18,19 +18,22 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  */
 export async function POST(request: NextRequest) {
   await requireStaff();
-  const sp = request.nextUrl.searchParams;
+  // The edition from the address; a section and its start page from the form, when sent one section at a time.
+  const sp = new URLSearchParams(request.nextUrl.searchParams);
+  const form = await request.formData().catch(() => null);
+  for (const [k, v] of form?.entries() ?? []) if (typeof v === 'string' && v) sp.set(k, v);
   const link = await driveLink();
   const d = await drive();
   const head = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Sending to Drive</title><body style="font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:46rem;color:#1c1917;background:#fff">';
   if (!d || !link?.folderId) {
     return new Response(`${head}<p>Connect Google Drive and choose its folder on the guide’s page first.</p><p><a href="/admin/guide">Back to the guide</a></p>`, { status: 409, headers: { 'content-type': 'text/html; charset=utf-8' } });
   }
-  const { job } = packageNames(sp);
+  const { job, issue } = packageNames(sp);
   const enc = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const say = (html: string) => controller.enqueue(enc.encode(html));
-      say(`${head}<h1 style="font-size:18px">Sending ${esc(job)} to Drive${link.email ? ` as ${esc(link.email)}` : ''}</h1><ol style="font-size:13px;color:#57534e">`);
+      say(`${head}<h1 style="font-size:18px">Sending ${sp.get('section') ? `${esc(sectionFile(sp.get('section')!, issue))} (from page ${esc(sp.get('start') || 'as laid out')}) in ` : ''}${esc(job)} to Drive${link.email ? ` as ${esc(link.email)}` : ''}</h1><ol style="font-size:13px;color:#57534e">`);
       let sent = 0;
       const failed: string[] = [];
       try {

@@ -21,14 +21,17 @@ export function updateBookScript(issue: string): string {
   // The book's documents this updates: the IDML's name, and the names of what it replaces in the book.
   var DOCS = [
     { idml: 'whatson_events_' + ISSUE + '.idml', replaces: /^whatson_(merge_)?events_/i },
-    { idml: 'whatson_tours_' + ISSUE + '.idml', replaces: /^whatson_(merge_)?tours_/i }
-    // The venue sections too, once the book takes them from guide.je:
-    // , { idml: 'vjvg_venues_' + ISSUE + '.idml', replaces: /^vjvg_venues_/i }
+    { idml: 'whatson_tours_' + ISSUE + '.idml', replaces: /^whatson_(merge_)?tours_/i },
+    // Pubs & bars, in place of the book's Out Out pages.
+    { idml: 'vjvg_pubs_bars_' + ISSUE + '.idml', replaces: /^vjvg_(outout|pubs_bars)_/i }
+    // Other venue sections, as the book takes them from guide.je, e.g.:
+    // , { idml: 'vjvg_eat_' + ISSUE + '.idml', replaces: /^vjvg_(26_\\d_)?eat/i }
   ];
 
+  // Sent one section at a time, the folder holds whichever were sent: those are the ones updated.
   var here = File($.fileName).parent;
-  if (!File(here + '/' + DOCS[0].idml).exists) {
-    here = Folder.selectDialog('Choose the guide.je package folder (it holds ' + DOCS[0].idml + ')');
+  if (!anyIn(here)) {
+    here = Folder.selectDialog('Choose the guide.je package folder (it holds whatson_events_' + ISSUE + '.idml or another section)');
     if (!here) return;
   }
   var working = here.parent;
@@ -40,7 +43,7 @@ export function updateBookScript(issue: string): string {
   try {
     for (var i = 0; i < DOCS.length; i++) {
       var idml = File(here + '/' + DOCS[i].idml);
-      if (!idml.exists) { report.push('Not in the package: ' + DOCS[i].idml); continue; }
+      if (!idml.exists) continue;
       var target = File(working + '/' + DOCS[i].idml.replace(/\\.idml$/i, '.indd'));
       closeIfOpen(target);
       var doc = app.open(idml, false);
@@ -56,7 +59,7 @@ export function updateBookScript(issue: string): string {
     return;
   }
   app.scriptPreferences.userInteractionLevel = before;
-  if (!saved.length) { alert(report.join('\\n')); return; }
+  if (!saved.length) { alert('None of the book\\'s documents for ' + ISSUE + ' are in ' + here.fsName); return; }
 
   // The book: open already, or vjvg_<issue>.indb in the working folder, or chosen.
   var book = null;
@@ -88,6 +91,11 @@ export function updateBookScript(issue: string): string {
   book.save();
   report.push('', 'Book saved. To restyle from your style source, use Synchronize Book in the Book panel (styles and swatches; leave parent pages unticked to keep guide.je\\'s ears).');
   alert(report.join('\\n'));
+
+  function anyIn(folder) {
+    for (var a = 0; a < DOCS.length; a++) if (File(folder + '/' + DOCS[a].idml).exists) return true;
+    return false;
+  }
 
   /** A document open from the same file is closed first, unsaved, so the new one can take its place. */
   function closeIfOpen(file) {

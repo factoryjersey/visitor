@@ -38,3 +38,28 @@ export async function DrivePanel({ query, back, note }: { query: string; back: s
     </div>
   );
 }
+
+/**
+ * One section at a time, from the page staff set for it: What's On, Tours, or
+ * a venue section, as its own document with its pictures, downloaded or sent
+ * into the edition's folder in Drive beside any sent before.
+ */
+export async function SectionExport({ query, sections }: { query: string; sections: string[] }) {
+  const link = driveConfigured() ? await driveLink() : null;
+  const hidden = [...new URLSearchParams(query).entries()];
+  return (
+    <form method="get" action="/admin/guide/export/package.zip" className="flex flex-wrap items-center gap-2 text-xs">
+      {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+      <span className="text-stone-500">One section:</span>
+      <select name="section" className="rounded border border-stone-300 px-2 py-1">
+        {sections.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <label className="flex items-center gap-1 text-stone-600">from page <input type="number" name="start" min={1} max={400} placeholder="as laid" className="w-16 rounded border border-stone-300 px-2 py-1" /></label>
+      <button className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100" title="That section's InDesign document and its pictures, in a zip">InDesign</button>
+      <button formAction="/admin/guide" formTarget="_blank" name="pdf" value="section" className="rounded border border-stone-300 px-3 py-1 hover:bg-stone-100" title="That section as a print PDF, its pages numbered from the start page">PDF</button>
+      {link?.folderId && (
+        <button formAction={`/admin/guide/export/drive?${query}`} formMethod="post" formTarget="_blank" className="rounded border border-stone-300 bg-stone-50 px-3 py-1 hover:bg-stone-100" title="That section's InDesign document and its pictures, into the edition's folder in Drive">Send to Drive</button>
+      )}
+    </form>
+  );
+}
