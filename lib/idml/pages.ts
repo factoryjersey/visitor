@@ -104,7 +104,7 @@ const SIZES: Record<string, { when: number; title: number; copy: number; small: 
 
 export function fonts(palette: GuidePalette) {
   return palette === 'classic'
-    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', italic: 'Regular Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
+    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
     : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
