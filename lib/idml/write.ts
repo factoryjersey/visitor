@@ -29,7 +29,7 @@ export type InlineShape = { width: number; height: number; shapes: { subpaths: S
 /** A run of text; or the page number; or a right indent tab (what follows sits against the frame's right edge); or a shape inline. */
 export type Run = { text: string; char?: string; size?: number; pageNumber?: boolean; rightTab?: boolean; inline?: InlineShape };
 /** A paragraph in a named style; a size or colour (and tint) set on it applies to its runs, as InDesign takes them, the colour to those without a character style of their own. */
-export type Para = { style: string; runs: Run[]; size?: number; colour?: string; tint?: number };
+export type Para = { style: string; runs: Run[]; size?: number; leading?: number; colour?: string; tint?: number };
 export type Box = { x: number; y: number; w: number; h: number };
 export type Item =
   | (Box & { kind: 'rect'; fill: string; tint?: number })
@@ -45,7 +45,7 @@ export type IdmlPage = { n: number; items: Item[]; master?: string };
  */
 export type IdmlMaster = { id: string; prefix: string; name: string; basedOn?: string; left: Item[]; right: Item[] };
 
-export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; tint?: number; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean; align?: 'center' | 'right'; basedOn?: string };
+export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; tint?: number; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean; align?: 'center' | 'right'; basedOn?: string; ruleBelow?: { colour: string; weight: number; offset: number } };
 export type CharStyle = { name: string; font?: string; style?: string; size?: number; colour?: string; tint?: number; caps?: boolean };
 export type Swatch = { name: string; cmyk: readonly [number, number, number, number] };
 
@@ -98,11 +98,11 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     const st = styleOf.get(p.style);
     if (!st) return p.style;
     const size = p.size && p.size !== st.size ? p.size : undefined;
-    if (!size && !p.colour && p.tint === undefined) return p.style;
-    const name = [p.style, size ? `${fmt(size)}pt` : '', p.colour ?? '', p.tint !== undefined ? `${p.tint}%` : ''].filter(Boolean).join(' ');
+    if (!size && !p.leading && !p.colour && p.tint === undefined) return p.style;
+    const name = [p.style, size || p.leading ? `${fmt(size ?? st.size)}${p.leading ? `/${fmt(p.leading)}` : ''}pt` : '', p.colour ?? '', p.tint !== undefined ? `${p.tint}%` : ''].filter(Boolean).join(' ');
     if (!paraVariants.has(name)) {
       const s2 = size ?? st.size;
-      paraVariants.set(name, { ...st, name, size: s2, leading: ((st.leading ?? st.size * 1.15) * s2) / st.size, colour: p.colour ?? st.colour, ...(p.tint !== undefined ? { tint: p.tint } : {}), basedOn: st.name });
+      paraVariants.set(name, { ...st, name, size: s2, leading: p.leading ?? ((st.leading ?? st.size * 1.15) * s2) / st.size, colour: p.colour ?? st.colour, ...(p.tint !== undefined ? { tint: p.tint } : {}), basedOn: st.name });
     }
     return name;
   };
@@ -234,7 +234,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     + [...doc.charStyles, ...charVariants.values()].map((c) => `<CharacterStyle Self="${id('CharacterStyle', c.name)}" Name="${esc(c.name)}"${c.style ? ` FontStyle="${esc(c.style)}"` : ''}${c.size ? ` PointSize="${c.size}"` : ''}${c.colour ? ` FillColor="${colourRef(c.colour)}"` : ''}${c.tint !== undefined ? ` FillTint="${c.tint}"` : ''}${c.caps ? ' Capitalization="AllCaps"' : ''}>${c.font ? fontProps(c.font) : ''}</CharacterStyle>`).join('')
     + '</RootCharacterStyleGroup>'
     + '<RootParagraphStyleGroup Self="u78"><ParagraphStyle Self="ParagraphStyle/$ID/[No paragraph style]" Name="$ID/[No paragraph style]" Imported="false"/><ParagraphStyle Self="ParagraphStyle/$ID/NormalParagraphStyle" Name="$ID/NormalParagraphStyle" Imported="false"/>'
-    + [...doc.paraStyles, ...paraVariants.values()].map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}"${p.tint !== undefined ? ` FillTint="${p.tint}"` : ''} SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''}${p.align ? ` Justification="${p.align === 'center' ? 'CenterAlign' : 'RightAlign'}"` : ''} Hyphenation="false"><Properties>${p.basedOn ? `<BasedOn type="object">${id('ParagraphStyle', p.basedOn)}</BasedOn>` : '<BasedOn type="string">$ID/[No paragraph style]</BasedOn>'}<AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
+    + [...doc.paraStyles, ...paraVariants.values()].map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}"${p.tint !== undefined ? ` FillTint="${p.tint}"` : ''} SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''}${p.align ? ` Justification="${p.align === 'center' ? 'CenterAlign' : 'RightAlign'}"` : ''}${p.ruleBelow ? ` RuleBelow="true" RuleBelowColor="${colourRef(p.ruleBelow.colour)}" RuleBelowWeight="${fmt(p.ruleBelow.weight)}" RuleBelowOffset="${fmt(p.ruleBelow.offset)}" RuleBelowWidth="ColumnWidth"` : ''} Hyphenation="false"><Properties>${p.basedOn ? `<BasedOn type="object">${id('ParagraphStyle', p.basedOn)}</BasedOn>` : '<BasedOn type="string">$ID/[No paragraph style]</BasedOn>'}<AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
     + '</RootParagraphStyleGroup>'
     + '<RootObjectStyleGroup Self="u8a"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Graphics Frame]" Name="$ID/[Normal Graphics Frame]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Text Frame]" Name="$ID/[Normal Text Frame]"/></RootObjectStyleGroup>'
     + '</idPkg:Styles>';

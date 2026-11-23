@@ -2,7 +2,7 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { MapPin } from 'lucide-react';
+import { BadgeCheck, Clock, MapPin } from 'lucide-react';
 import { iconsFor, type Icon } from '@/components/guide/key-icons';
 import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
 import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -139,7 +139,8 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Running head', f.regular, 7.5, {}),
       p('Footer', f.medium, 7, {}),
       p('Key heading', f.headStyle, 12, { font: f.head, after: 1 }),
-      p('Key line', f.regular, 8, { leading: 10 }),
+      // The provider index: each guide on a line, a hairline in the tours' light green under it, as the proof rules them.
+      p('Key line', f.regular, 8, { leading: 10, after: 0.3, ruleBelow: { colour: pageSwatches(palette).toursLight.name, weight: 0.5, offset: 2.2 } }),
       p('Index heading', f.headStyle, 11, { font: f.head, before: 2, after: 1.5 }),
       p('Index line', f.medium, 7.5, { leading: 9 }),
       p('Index more', f.light, 7, { leading: 8.4 }),
@@ -186,7 +187,7 @@ export function parasHeight(paras: Para[], widthMm: number, style: Map<string, P
   for (const p of paras) {
     const st = style.get(p.style);
     const size = p.size ?? st?.size ?? 8;
-    const lead = (st?.leading ?? (st?.size ?? 8) * 1.15) * (size / (st?.size ?? size));
+    const lead = p.leading ?? (st?.leading ?? (st?.size ?? 8) * 1.15) * (size / (st?.size ?? size));
     const text = p.runs.map((r) => (r.inline ? 'MM' : r.rightTab ? '' : r.text)).join('');
     h += (st?.before ?? 0) + linesOf(st?.caps ? text.toUpperCase() : text, size, widthMm, narrow) * lead * MM_PER_PT + (st?.after ?? 0);
   }
@@ -419,7 +420,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
       const keyPages = Math.max(1, Math.ceil(guide.providers.length / perPage));
       const keyLines: Para[] = [
         { style: 'Key heading', runs: [{ text: 'Tour Guides & Activity Providers' }] },
-        ...guide.providers.map((p): Para => ({ style: 'Key line', runs: [{ text: p.code || '??', char: 'Code' }, { text: `  ${p.name}  ` }, ...(p.contact ? [{ text: `${p.contact}  `, char: 'Price' }] : []), ...(p.website ? [{ text: p.website, char: 'Times' }] : [])] })),
+        ...guide.providers.map((p): Para => ({ style: 'Key line', runs: [{ text: '', inline: iconShape({ label: 'Tour guide', Icon: BadgeCheck }, 2.8) }, { text: '\u2009' }, { text: p.code || '??', char: 'Code' }, { text: `  ${p.name}  ` }, ...(p.contact ? [{ text: `${p.contact}  `, char: 'Price' }] : []), ...(p.website ? [{ text: p.website, char: 'Times' }] : [])] })),
       ];
       for (let i = 0; i < keyPages; i += 1) {
         const items: Item[] = [];
@@ -440,11 +441,14 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         items.push({ kind: 'line', x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y, stroke: page.toursLight.name, weight: 0.6 });
         const when = t.kind === 'dated' ? t.dates : '';
         items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: fitted(t.options.length ? t.options : [t.copy], (copy) => [
-          ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, tint: 50, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(t))] }] : []),
+          // Tour dates in 80% grey, as the editor set them.
+          ...(when ? [{ style: 'When', size: s.when, colour: INK, tint: 80, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(t))] }] : []),
           { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }, ...(when ? [] : iconRuns(iconsFor(t)))] },
           ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
-          ...(copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: copy }] }] : []),
-          { style: 'Tour meta', size: s.small, runs: [{ text: t.code || t.provider, char: 'Code' }, ...(t.duration ? [{ text: `   ${t.duration}` }] : [])] },
+          // Tours' copy 7.5 on 8, as the editor set it.
+          ...(copy ? [{ style: 'listing body', size: 7.5, leading: 8, runs: [{ text: copy }] }] : []),
+          // The provider's code with the tour guide badge (found in the index), and the duration with a clock, as the proof prints them.
+          { style: 'Tour meta', size: s.small, runs: [...(t.code ? [{ text: '', inline: iconShape({ label: 'Tour guide', Icon: BadgeCheck }, 2.6) }, { text: '\u2009' }] : []), { text: t.code || t.provider, char: 'Code' }, ...(t.duration ? [{ text: '\u2002' }, { text: '', inline: iconShape({ label: 'Duration', Icon: Clock }, 2.6) }, { text: `\u2009${t.duration}` }] : [])] },
         ], b.w, b.h - 1.2) });
       });
       footer(items, indexLine);
