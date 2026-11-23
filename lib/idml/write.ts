@@ -45,7 +45,7 @@ export type IdmlPage = { n: number; items: Item[]; master?: string };
  */
 export type IdmlMaster = { id: string; prefix: string; name: string; basedOn?: string; left: Item[]; right: Item[] };
 
-export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean; align?: 'center' | 'right' };
+export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; tint?: number; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean; align?: 'center' | 'right'; basedOn?: string };
 export type CharStyle = { name: string; font?: string; style?: string; size?: number; colour?: string; tint?: number; caps?: boolean };
 export type Swatch = { name: string; cmyk: readonly [number, number, number, number] };
 
@@ -85,6 +85,35 @@ export type IdmlInput = {
 export function idmlFiles(doc: IdmlInput): [string, string][] {
   const files: [string, string][] = [];
   const styleOf = new Map(doc.paraStyles.map((p) => [p.name, p]));
+  const charOf = new Map(doc.charStyles.map((c) => [c.name, c]));
+  /*
+   * No local overrides: a paragraph set at another size or in a colour gets a
+   * style of its own, named for the difference ("listing body 7pt", "When 8pt
+   * coral 50%") and based on its parent, with the leading kept in proportion;
+   * a run at another size, a character style likewise ("Times 6.8pt").
+   */
+  const paraVariants = new Map<string, ParaStyle>();
+  const charVariants = new Map<string, CharStyle>();
+  const paraStyleFor = (p: Para): string => {
+    const st = styleOf.get(p.style);
+    if (!st) return p.style;
+    const size = p.size && p.size !== st.size ? p.size : undefined;
+    if (!size && !p.colour && p.tint === undefined) return p.style;
+    const name = [p.style, size ? `${fmt(size)}pt` : '', p.colour ?? '', p.tint !== undefined ? `${p.tint}%` : ''].filter(Boolean).join(' ');
+    if (!paraVariants.has(name)) {
+      const s2 = size ?? st.size;
+      paraVariants.set(name, { ...st, name, size: s2, leading: ((st.leading ?? st.size * 1.15) * s2) / st.size, colour: p.colour ?? st.colour, ...(p.tint !== undefined ? { tint: p.tint } : {}), basedOn: st.name });
+    }
+    return name;
+  };
+  const charStyleFor = (r: Run): string | undefined => {
+    if (!r.char || !r.size) return r.char;
+    const c = charOf.get(r.char);
+    if (!c || c.size === r.size) return r.char;
+    const name = `${r.char} ${fmt(r.size)}pt`;
+    if (!charVariants.has(name)) charVariants.set(name, { ...c, name, size: Math.round(r.size * 100) / 100 });
+    return name;
+  };
   const stories: string[] = [];
   let seq = 0;
   const next = (p: string) => `${p}${(seq++).toString(36)}`;
@@ -202,10 +231,10 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
   const fontProps = (font: string) => `<Properties><AppliedFont type="string">${esc(font)}</AppliedFont></Properties>`;
   const styles = `<idPkg:Styles xmlns:idPkg="${PKG}" DOMVersion="${DOM}">`
     + '<RootCharacterStyleGroup Self="u79"><CharacterStyle Self="CharacterStyle/$ID/[No character style]" Imported="false" Name="$ID/[No character style]"/>'
-    + doc.charStyles.map((c) => `<CharacterStyle Self="${id('CharacterStyle', c.name)}" Name="${esc(c.name)}"${c.style ? ` FontStyle="${esc(c.style)}"` : ''}${c.size ? ` PointSize="${c.size}"` : ''}${c.colour ? ` FillColor="${colourRef(c.colour)}"` : ''}${c.tint !== undefined ? ` FillTint="${c.tint}"` : ''}${c.caps ? ' Capitalization="AllCaps"' : ''}>${c.font ? fontProps(c.font) : ''}</CharacterStyle>`).join('')
+    + [...doc.charStyles, ...charVariants.values()].map((c) => `<CharacterStyle Self="${id('CharacterStyle', c.name)}" Name="${esc(c.name)}"${c.style ? ` FontStyle="${esc(c.style)}"` : ''}${c.size ? ` PointSize="${c.size}"` : ''}${c.colour ? ` FillColor="${colourRef(c.colour)}"` : ''}${c.tint !== undefined ? ` FillTint="${c.tint}"` : ''}${c.caps ? ' Capitalization="AllCaps"' : ''}>${c.font ? fontProps(c.font) : ''}</CharacterStyle>`).join('')
     + '</RootCharacterStyleGroup>'
     + '<RootParagraphStyleGroup Self="u78"><ParagraphStyle Self="ParagraphStyle/$ID/[No paragraph style]" Name="$ID/[No paragraph style]" Imported="false"/><ParagraphStyle Self="ParagraphStyle/$ID/NormalParagraphStyle" Name="$ID/NormalParagraphStyle" Imported="false"/>'
-    + doc.paraStyles.map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}" SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''}${p.align ? ` Justification="${p.align === 'center' ? 'CenterAlign' : 'RightAlign'}"` : ''} Hyphenation="false"><Properties><BasedOn type="string">$ID/[No paragraph style]</BasedOn><AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
+    + [...doc.paraStyles, ...paraVariants.values()].map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}"${p.tint !== undefined ? ` FillTint="${p.tint}"` : ''} SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''}${p.align ? ` Justification="${p.align === 'center' ? 'CenterAlign' : 'RightAlign'}"` : ''} Hyphenation="false"><Properties>${p.basedOn ? `<BasedOn type="object">${id('ParagraphStyle', p.basedOn)}</BasedOn>` : '<BasedOn type="string">$ID/[No paragraph style]</BasedOn>'}<AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
     + '</RootParagraphStyleGroup>'
     + '<RootObjectStyleGroup Self="u8a"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Graphics Frame]" Name="$ID/[Normal Graphics Frame]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Text Frame]" Name="$ID/[Normal Text Frame]"/></RootObjectStyleGroup>'
     + '</idPkg:Styles>';
@@ -256,15 +285,12 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
 
   function storyXml(sid: string, paras: Para[]): string {
     const body = paras.map((p, i) => {
-      // Size, leading and colour on each run: InDesign reads them from the character ranges, not the paragraph's.
-      // A paragraph set smaller or larger than its style keeps the style's proportion of leading, as the proof's line-height does.
-      const st = styleOf.get(p.style);
-      const leading = p.size && st && p.size !== st.size ? `<Properties><Leading type="unit">${fmt((p.size * (st.leading ?? st.size * 1.15)) / st.size)}</Leading></Properties>` : '';
-      const runAttrs = (r: Run) => `${r.size ?? p.size ? ` PointSize="${fmt((r.size ?? p.size)!)}"` : ''}${p.colour && !r.char ? ` FillColor="${colourRef(p.colour)}"${p.tint !== undefined ? ` FillTint="${p.tint}"` : ''}` : ''}`;
+      // Its style says its size, leading and colour (a variant style where they differ from the named one): the text carries no overrides.
+      const style = paraStyleFor(p);
       // Special characters go inside the text, as InDesign writes them: the page number (ACE 18), a right indent tab (ACE 8).
-      const runs = p.runs.map((r) => `<CharacterStyleRange AppliedCharacterStyle="${r.char ? id('CharacterStyle', r.char) : 'CharacterStyle/$ID/[No character style]'}"${runAttrs(r)}>${leading}${r.pageNumber ? '<Content><?ACE 18?></Content>' : r.rightTab ? '<Content><?ACE 8?></Content>' : r.inline ? inlineXml(r.inline) : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`).join('');
-      const brk = i < paras.length - 1 ? `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"${p.size ? ` PointSize="${p.size}"` : ''}>${leading}<Br/></CharacterStyleRange>` : '';
-      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', p.style)}">${runs}${brk}</ParagraphStyleRange>`;
+      const runs = p.runs.map((r) => { const cs = charStyleFor(r); return `<CharacterStyleRange AppliedCharacterStyle="${cs ? id('CharacterStyle', cs) : 'CharacterStyle/$ID/[No character style]'}">${r.pageNumber ? '<Content><?ACE 18?></Content>' : r.rightTab ? '<Content><?ACE 8?></Content>' : r.inline ? inlineXml(r.inline) : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`; }).join('');
+      const brk = i < paras.length - 1 ? '<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Br/></CharacterStyleRange>' : '';
+      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', style)}">${runs}${brk}</ParagraphStyleRange>`;
     }).join('');
     return xml(`<idPkg:Story xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><Story Self="${sid}" AppliedTOCStyle="n" TrackChanges="false" StoryTitle="$ID/" AppliedNamedGrid="n"><StoryPreference OpticalMarginAlignment="false" OpticalMarginSize="12" FrameType="TextFrameType" StoryOrientation="Horizontal" StoryDirection="LeftToRightDirection"/>${body}</Story></idPkg:Story>`);
   }
