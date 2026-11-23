@@ -6,7 +6,7 @@ import { drive, driveLink } from '@/lib/integrations/google/drive';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-const MIME: Record<string, string> = { idml: 'application/vnd.adobe.indesign-idml-package', csv: 'text/csv', txt: 'text/plain', ase: 'application/octet-stream', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', tif: 'image/tiff', tiff: 'image/tiff' };
+const MIME: Record<string, string> = { idml: 'application/vnd.adobe.indesign-idml-package', csv: 'text/csv', txt: 'text/plain', ase: 'application/octet-stream', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', tif: 'image/tiff', tiff: 'image/tiff', jsx: 'text/plain' };
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /**

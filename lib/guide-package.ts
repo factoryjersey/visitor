@@ -15,6 +15,7 @@ import { buildGuide, EVENT_COLUMNS, HIGHLIGHT_COLUMNS, isDraft, PROVIDER_COLUMNS
 import { ZipWriter } from '@/lib/zip';
 import { bookDocument, guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
 import { idmlFiles } from '@/lib/idml/write';
+import { updateBookScript } from '@/lib/idml/update-book';
 import { asJpeg, imageSize } from '@/lib/idml/image-size';
 
 export type PackageFile = (path: string, bytes: Uint8Array) => Promise<void> | void;
@@ -119,6 +120,7 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
     '',
     `whatson_events_${issue}.idml and whatson_tours_${issue}.idml: What's On and Tours and experiences, for the book in place of the merge files; vjvg_venues_${issue}.idml: the venue sections; ${job}.idml: all of them in one. Open each in InDesign (File > Open) and save as .indd. Every frame is in place, text in named paragraph styles, pictures linked from Links/. Copy is fitted by estimate: check for overset text. Fonts: ${palette === 'classic' ? 'Proxima Nova Condensed' : 'Google Sans Flex and GT Flaire Extra'}.`,
     `The ears are parent pages, on their own layer (Ears) above the pages': A-Folio carries the folio; each section's parent (E-What's On, T-Tours…) its tab, based on A; each marker's (E1, T1…) its marker tab, based on its section's. Change an ear once on its parent and every page follows; they stay on the outside edge whichever side a page falls in the book. Each document is numbered automatically, as the book's are, and laid out from its page in the edition (What's On from ${firstPage}, a left-hand page): in the book, start What's On and Tours on an even page. Styles the book's What's On has keep its names (listing body, listings title, photo caption, Page Tab CAPs): load the book's styles to restyle.`,
+    `update-book.jsx: run it in InDesign (File > Scripts > Browse…, then this file) to save whatson_events_${issue} and whatson_tours_${issue} as .indd in the folder above this one and swap them into vjvg_${issue}.indb in place of the merge files (or last time's), then repaginate and save the book. Re-running after a new send replaces them again.`,
     'highlights.csv, whats-on.csv, tours.csv, providers.csv, venues.csv: Data Merge sources (UTF-16), in page order.',
     'The @Picture column names each picture in Links/: keep Links/ beside the CSVs and Data Merge places them.',
     `swatches.ase: the edition's colours (${group}), as global CMYK swatches. Swatches panel > Load Swatches. CMYK converted from RGB: check before press.`,
@@ -128,5 +130,7 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
     '',
   ].join('\r\n');
   await emit('README.txt', new TextEncoder().encode(readme));
+  // The InDesign script that brings the documents into the book, beside them.
+  await emit('update-book.jsx', new TextEncoder().encode(updateBookScript(issue)));
   return { job, issue, pictures: links.size, missing: missing.length };
 }
