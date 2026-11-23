@@ -10,6 +10,8 @@
  * puts a spread's origin on its spine, halfway down.
  */
 
+import type { Anchor, Subpath } from './vector';
+
 export const MM = 72 / 25.4;
 export const PAGE_W = 115;
 export const PAGE_H = 165;
@@ -18,7 +20,14 @@ const H = PAGE_H * MM;
 const DOM = '18.0';
 const PKG = 'http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging';
 
-export type Run = { text: string; char?: string; pageNumber?: boolean };
+/**
+ * A shape in the text, anchored inline as the book's icons are: one or more
+ * drawn paths (a group when more), in points, its box from (0, -height) to
+ * (width, 0) so it sits on the baseline.
+ */
+export type InlineShape = { width: number; height: number; shapes: { subpaths: Subpath[]; stroke?: string; strokeTint?: number; weight?: number; fill?: string; fillTint?: number }[] };
+/** A run of text; or the page number; or a right indent tab (what follows sits against the frame's right edge); or a shape inline. */
+export type Run = { text: string; char?: string; pageNumber?: boolean; rightTab?: boolean; inline?: InlineShape };
 export type Para = { style: string; runs: Run[]; size?: number; colour?: string };
 export type Box = { x: number; y: number; w: number; h: number };
 export type Item =
@@ -35,8 +44,8 @@ export type IdmlPage = { n: number; items: Item[]; master?: string };
  */
 export type IdmlMaster = { id: string; prefix: string; name: string; basedOn?: string; left: Item[]; right: Item[] };
 
-export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean };
-export type CharStyle = { name: string; font?: string; style?: string; size?: number; colour?: string; caps?: boolean };
+export type ParaStyle = { name: string; font: string; style: string; size: number; leading?: number; colour: string; caps?: boolean; before?: number; after?: number; tracking?: number; italic?: boolean; align?: 'center' | 'right' };
+export type CharStyle = { name: string; font?: string; style?: string; size?: number; colour?: string; tint?: number; caps?: boolean };
 export type Swatch = { name: string; cmyk: readonly [number, number, number, number] };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -74,6 +83,7 @@ export type IdmlInput = {
 /** The package's files, path to contents, mimetype first. */
 export function idmlFiles(doc: IdmlInput): [string, string][] {
   const files: [string, string][] = [];
+  const styleOf = new Map(doc.paraStyles.map((p) => [p.name, p]));
   const stories: string[] = [];
   let seq = 0;
   const next = (p: string) => `${p}${(seq++).toString(36)}`;
@@ -191,10 +201,10 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
   const fontProps = (font: string) => `<Properties><AppliedFont type="string">${esc(font)}</AppliedFont></Properties>`;
   const styles = `<idPkg:Styles xmlns:idPkg="${PKG}" DOMVersion="${DOM}">`
     + '<RootCharacterStyleGroup Self="u79"><CharacterStyle Self="CharacterStyle/$ID/[No character style]" Imported="false" Name="$ID/[No character style]"/>'
-    + doc.charStyles.map((c) => `<CharacterStyle Self="${id('CharacterStyle', c.name)}" Name="${esc(c.name)}"${c.style ? ` FontStyle="${esc(c.style)}"` : ''}${c.size ? ` PointSize="${c.size}"` : ''}${c.colour ? ` FillColor="${colourRef(c.colour)}"` : ''}${c.caps ? ' Capitalization="AllCaps"' : ''}>${c.font ? fontProps(c.font) : ''}</CharacterStyle>`).join('')
+    + doc.charStyles.map((c) => `<CharacterStyle Self="${id('CharacterStyle', c.name)}" Name="${esc(c.name)}"${c.style ? ` FontStyle="${esc(c.style)}"` : ''}${c.size ? ` PointSize="${c.size}"` : ''}${c.colour ? ` FillColor="${colourRef(c.colour)}"` : ''}${c.tint !== undefined ? ` FillTint="${c.tint}"` : ''}${c.caps ? ' Capitalization="AllCaps"' : ''}>${c.font ? fontProps(c.font) : ''}</CharacterStyle>`).join('')
     + '</RootCharacterStyleGroup>'
     + '<RootParagraphStyleGroup Self="u78"><ParagraphStyle Self="ParagraphStyle/$ID/[No paragraph style]" Name="$ID/[No paragraph style]" Imported="false"/><ParagraphStyle Self="ParagraphStyle/$ID/NormalParagraphStyle" Name="$ID/NormalParagraphStyle" Imported="false"/>'
-    + doc.paraStyles.map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}" SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''} Hyphenation="false"><Properties><BasedOn type="string">$ID/[No paragraph style]</BasedOn><AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
+    + doc.paraStyles.map((p) => `<ParagraphStyle Self="${id('ParagraphStyle', p.name)}" Name="${esc(p.name)}" FontStyle="${esc(p.style)}" PointSize="${p.size}" FillColor="${colourRef(p.colour)}" SpaceBefore="${fmt((p.before ?? 0) * MM)}" SpaceAfter="${fmt((p.after ?? 0) * MM)}"${p.caps ? ' Capitalization="AllCaps"' : ''}${p.tracking ? ` Tracking="${p.tracking}"` : ''}${p.align ? ` Justification="${p.align === 'center' ? 'CenterAlign' : 'RightAlign'}"` : ''} Hyphenation="false"><Properties><BasedOn type="string">$ID/[No paragraph style]</BasedOn><AppliedFont type="string">${esc(p.font)}</AppliedFont><Leading type="unit">${fmt(p.leading ?? p.size * 1.15)}</Leading></Properties></ParagraphStyle>`).join('')
     + '</RootParagraphStyleGroup>'
     + '<RootObjectStyleGroup Self="u8a"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Graphics Frame]" Name="$ID/[Normal Graphics Frame]"/><ObjectStyle Self="ObjectStyle/$ID/[Normal Text Frame]" Name="$ID/[Normal Text Frame]"/></RootObjectStyleGroup>'
     + '</idPkg:Styles>';
@@ -233,11 +243,23 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
     ...files,
   ];
 
+  /** An inline shape: a polygon (compound, when it has several subpaths), or a group of them, anchored inline just under the baseline. */
+  function inlineXml(shape: InlineShape): string {
+    const anchored = '<AnchoredObjectSetting AnchoredPosition="InlinePosition" AnchorYoffset="-0.7"/>';
+    const pts = (a: Anchor) => `<PathPointType Anchor="${fmt(a.anchor[0])} ${fmt(a.anchor[1] - shape.height)}" LeftDirection="${fmt(a.left[0])} ${fmt(a.left[1] - shape.height)}" RightDirection="${fmt(a.right[0])} ${fmt(a.right[1] - shape.height)}"/>`;
+    const poly = (sh: InlineShape['shapes'][number], own: boolean) => `<Polygon Self="${next('po')}" ContentType="Unassigned" StrokeWeight="${fmt(sh.weight ?? 0)}" StrokeColor="${sh.stroke ? colourRef(sh.stroke) : 'Swatch/None'}"${sh.strokeTint !== undefined ? ` StrokeTint="${sh.strokeTint}"` : ''} FillColor="${sh.fill ? colourRef(sh.fill) : 'Swatch/None'}"${sh.fillTint !== undefined ? ` FillTint="${sh.fillTint}"` : ''} EndCap="RoundEndCap" EndJoin="RoundEndJoin" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0"><Properties><PathGeometry>${sh.subpaths.map((sp) => `<GeometryPathType PathOpen="${sp.open}"><PathPointArray>${sp.points.map(pts).join('')}</PathPointArray></GeometryPathType>`).join('')}</PathGeometry></Properties>${own ? anchored : ''}</Polygon>`;
+    if (shape.shapes.length === 1) return poly(shape.shapes[0]!, true);
+    return `<Group Self="${next('gr')}" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">${anchored}${shape.shapes.map((sh) => poly(sh, false)).join('')}</Group>`;
+  }
+
   function storyXml(sid: string, paras: Para[]): string {
     const body = paras.map((p, i) => {
-      const runs = p.runs.map((r) => `<CharacterStyleRange AppliedCharacterStyle="${r.char ? id('CharacterStyle', r.char) : 'CharacterStyle/$ID/[No character style]'}">${r.pageNumber ? '<?ACE 18?>' : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`).join('');
+      const runs = p.runs.map((r) => `<CharacterStyleRange AppliedCharacterStyle="${r.char ? id('CharacterStyle', r.char) : 'CharacterStyle/$ID/[No character style]'}">${r.pageNumber ? '<?ACE 18?>' : r.rightTab ? '<?ACE 8?>' : r.inline ? inlineXml(r.inline) : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`).join('');
       const brk = i < paras.length - 1 ? '<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Br/></CharacterStyleRange>' : '';
-      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', p.style)}"${p.size ? ` PointSize="${p.size}"` : ''}${p.colour ? ` FillColor="${colourRef(p.colour)}"` : ''}>${runs}${brk}</ParagraphStyleRange>`;
+      // A paragraph set smaller or larger than its style keeps the style's proportion of leading, as the proof's line-height does.
+      const st = styleOf.get(p.style);
+      const leading = p.size && st && p.size !== st.size ? `<Properties><Leading type="unit">${fmt((p.size * (st.leading ?? st.size * 1.15)) / st.size)}</Leading></Properties>` : '';
+      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', p.style)}"${p.size ? ` PointSize="${p.size}"` : ''}${p.colour ? ` FillColor="${colourRef(p.colour)}"` : ''}>${leading}${runs}${brk}</ParagraphStyleRange>`;
     }).join('');
     return xml(`<idPkg:Story xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><Story Self="${sid}" AppliedTOCStyle="n" TrackChanges="false" StoryTitle="$ID/" AppliedNamedGrid="n"><StoryPreference OpticalMarginAlignment="false" OpticalMarginSize="12" FrameType="TextFrameType" StoryOrientation="Horizontal" StoryDirection="LeftToRightDirection"/>${body}</Story></idPkg:Story>`);
   }

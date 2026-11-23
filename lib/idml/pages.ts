@@ -2,7 +2,9 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { PAGE_H, PAGE_W, type CharStyle, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
+import { iconsFor, type Icon } from '@/components/guide/key-icons';
+import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
+import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
 
 /**
  * The guide's pages as InDesign frames, placed as the proof places them
@@ -28,6 +30,54 @@ export type LayoutInput = {
 };
 
 const INK = 'Ink';
+/** Tripadvisor's green, for their bubbles: a swatch of its own, to match their artwork. */
+const TA_GREEN = 'Tripadvisor green';
+
+/** A website icon as an inline shape: its lines, as the proof draws them (1.75 on its 24-unit grid), in the ink at 80%. */
+const iconShapes = new Map<string, InlineShape>();
+function iconShape(icon: Icon, mm: number): InlineShape {
+  const key = `${icon.label}@${mm}`;
+  const had = iconShapes.get(key);
+  if (had) return had;
+  const size = mm * MM;
+  const scale = size / 24;
+  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: INK, strokeTint: 80, weight: 1.75 * scale }] };
+  iconShapes.set(key, shape);
+  return shape;
+}
+
+/** A listing's icons against the frame's right edge, as the proof floats them: a right indent tab, then each icon. */
+function iconRuns(icons: Icon[]): Run[] {
+  if (!icons.length) return [];
+  return [{ text: '', rightTab: true }, ...icons.flatMap((ic, i): Run[] => [...(i ? [{ text: '\u2009' }] : []), { text: '', inline: iconShape(ic, 3) }])];
+}
+
+/** Tripadvisor's bubble rating, drawn: five rings in their green, filled to the rating by halves. */
+function bubbles(rating: number): InlineShape {
+  const d = 2.1 * MM, gap = 0.35 * MM, w = 0.45;
+  const r = d / 2 - w / 2;
+  const shapes: InlineShape['shapes'] = [];
+  const halves = Math.round(rating * 2);
+  for (let i = 0; i < 5; i += 1) {
+    const cx = d / 2 + i * (d + gap), cy = d / 2;
+    const full = halves >= (i + 1) * 2, half = halves === i * 2 + 1;
+    shapes.push({ subpaths: [ellipse(cx, cy, r, r)], stroke: TA_GREEN, weight: w, ...(full ? { fill: TA_GREEN } : {}) });
+    if (half) shapes.push({ subpaths: [leftHalfDisc(cx, cy, r)], fill: TA_GREEN });
+  }
+  return { width: 5 * d + 4 * gap, height: d, shapes };
+}
+
+/** The page's key down its outer edge, under the tab or the marker: each icon its listings use, once, with its name. */
+function pageKey(items: Item[], icons: Icon[], left: boolean, belowMarker: boolean) {
+  const seen = new Map<string, Icon>();
+  for (const i of icons) if (!seen.has(i.label)) seen.set(i.label, i);
+  if (!seen.size) return;
+  const top = belowMarker ? 74.6 : 44;
+  items.push({
+    kind: 'text', x: left ? 0 : PAGE_W - 3.9, y: top, w: 3.9, h: PAGE_H - 18 - top, vertical: true, centre: true,
+    paras: [{ style: 'Page key', runs: [...seen.values()].flatMap((ic, i): Run[] => [...(i ? [{ text: '\u2003' }] : []), { text: '', inline: iconShape(ic, 2.8) }, { text: `\u2009${ic.label}` }]) }],
+  });
+}
 const LEFT_MARGIN = (left: boolean) => (left ? 7.9 : 12);
 const COL = 45.5;
 const GUTTER = 3.9;
@@ -53,8 +103,8 @@ const SIZES: Record<string, { when: number; title: number; copy: number; small: 
 
 export function fonts(palette: GuidePalette) {
   return palette === 'classic'
-    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', medium: 'Semibold', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
-    : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', medium: 'Medium', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
+    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', medium: 'Semibold', mediumItalic: 'Medium Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
+    : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', medium: 'Medium', mediumItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
 /**
@@ -67,21 +117,23 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
   const p = (name: string, style: string, size: number, o: Partial<ParaStyle> = {}): ParaStyle => ({ name, font: f.body, style, size, colour: INK, ...o });
   return {
     paraStyles: [
-      p('When', f.bold, 9, { caps: true, leading: 10 }),
-      p('listings title', f.medium, 9, { leading: 10, before: 0.2, after: 0.3 }),
-      p('listing body', f.light, 8.5, { leading: 9.5 }),
-      p('Venue', f.medium, 7.5, { before: 2, leading: 8.6 }),
-      p('Address', f.medium, 7.5, { leading: 8.6 }),
-      p('Contact', f.regular, 7.5, { leading: 8.6 }),
-      p('Web', f.medium, 7.5, { caps: true, before: 1.2, leading: 8.6 }),
-      p('Venue name', f.medium, 9, { leading: 10, after: 0.4 }),
+      // Leading at the proof's 1.08 line height for listings; a box set smaller keeps the proportion.
+      p('When', f.bold, 9, { caps: true, leading: 9.7 }),
+      p('listings title', f.medium, 9, { leading: 9.7, before: 0.2, after: 0.3 }),
+      p('listing body', f.light, 8.5, { leading: 9.2 }),
+      p('Venue', f.medium, 7.5, { before: 2, leading: 8.1 }),
+      p('Address', f.medium, 7.5, { leading: 8.1 }),
+      p('Contact', f.regular, 7.5, { leading: 8.1 }),
+      p('Web', f.medium, 7.5, { caps: true, before: 1.2, leading: 8.1 }),
+      p('Venue name', f.medium, 9, { leading: 9.7, after: 0.4 }),
       p('Tour meta', f.medium, 7, { before: 0.6, leading: 8 }),
       p('Highlight title', f.headStyle, 15, { font: f.head, leading: 15.8, before: 0.5, after: 2 }),
       p('Highlight copy', f.light, 8.5, { leading: 9.8, after: 1.5 }),
       p('Opener title', f.headStyle, 30, { font: f.head, caps: true, leading: 30, colour: 'Paper' }),
       p('photo caption', f.medium, 5.5, { colour: 'Paper', leading: 6.5 }),
-      p('Page Tab CAPs', f.medium, 5.2, { caps: true, colour: 'Paper', tracking: 60 }),
-      p('Folio', f.medium, 6, { colour: 'Paper' }),
+      p('Page Tab CAPs', f.medium, 5.2, { caps: true, colour: 'Paper', tracking: 60, align: 'center' }),
+      p('Folio', f.medium, 6, { colour: 'Paper', align: 'center' }),
+      p('Page key', f.medium, 5, { caps: true, tracking: 20 }),
       p('Running head', f.regular, 7.5, {}),
       p('Footer', f.medium, 7, {}),
       p('Key heading', f.headStyle, 12, { font: f.head, after: 1 }),
@@ -91,11 +143,12 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Index more', f.light, 7, { leading: 8.4 }),
     ],
     charStyles: [
-      { name: 'Times', style: f.regular, colour: INK },
+      { name: 'Times', style: f.mediumItalic, colour: INK, tint: 80 },
       { name: 'Price', style: f.medium, colour: INK },
       { name: 'Tag', style: f.medium, size: 5.5, caps: true },
       { name: 'Code', style: f.bold },
       { name: 'Accent', style: f.medium },
+      { name: 'Rating', style: f.medium, size: 6.5 },
     ],
   };
 }
@@ -104,7 +157,7 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
 export function swatches(palette: GuidePalette, sections: string[]): Swatch[] {
   const page = pageSwatches(palette);
   const all = [...sections.map((s) => sectionSwatch(s, palette)), page.events, page.tours, page.toursLight, page.new];
-  return [{ name: INK, cmyk: PALETTE.deepBlue.cmyk }, ...[...new Map(all.map((w) => [w.name, w])).values()].map((w) => ({ name: w.name, cmyk: w.cmyk }))];
+  return [{ name: INK, cmyk: PALETTE.deepBlue.cmyk }, { name: TA_GREEN, cmyk: [85, 0, 75, 0] }, ...[...new Map(all.map((w) => [w.name, w])).values()].map((w) => ({ name: w.name, cmyk: w.cmyk }))];
 }
 
 /** Which document of the book a page is for: What's On, Tours and experiences, or the venue sections. */
@@ -268,13 +321,14 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         ...(e.website ? [{ style: 'Web', size: s.small, runs: [{ text: e.website }] }] : []),
       ];
       items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: [
-        { style: 'When', size: s.when, colour: events.colour, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times' }] : [])] },
+        { style: 'When', size: s.when, colour: events.colour, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times' }] : []), ...iconRuns(iconsFor(e))] },
         { style: 'listings title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
         ...(e.copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: e.copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
         ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: e.venue }] }] : []),
         ...small,
       ] });
     });
+    pageKey(items, cells.filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e)), left(), !!marker);
     push(items);
   };
   for (const cells of guide.pages) eventPage(cells);
@@ -311,14 +365,15 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         items.push({ kind: 'line', x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y, stroke: page.toursLight.name, weight: 0.6 });
         const when = t.kind === 'dated' ? t.dates : '';
         items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: [
-          ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times' }] : [])] }] : []),
-          { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }] },
+          ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times' }] : []), ...iconRuns(iconsFor(t))] }] : []),
+          { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }, ...(when ? [] : iconRuns(iconsFor(t)))] },
           ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
           ...(t.copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: t.copy }] }] : []),
           { style: 'Tour meta', size: s.small, runs: [{ text: t.code || t.provider, char: 'Code' }, ...(t.duration ? [{ text: `   ${t.duration}` }] : [])] },
         ] });
       });
       footer(items, indexLine);
+      pageKey(items, cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)), left(), true);
       push(items);
     }
   }
@@ -385,7 +440,9 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
           }
         }
       }
-      if (vs.grid !== 'grid12' && vs.grid !== 'grid16') footer(items, areaFoot(on));
+      // Tripadvisor's attribution where a page prints their ratings, as their brand rules ask: whose, and when.
+      const credit = on.some((v) => v.tripadvisor) ? `Tripadvisor traveller ratings, ${RATED_ON}` : '';
+      footer(items, [vs.grid !== 'grid12' && vs.grid !== 'grid16' ? areaFoot(on) : '', credit].filter(Boolean).join('      '));
       push(items);
     }
     // Its index: the directory lines, by area, flowing over as many pages as they need.
@@ -429,6 +486,8 @@ export function bookDocument(all: { pages: GuidePage[]; masters: IdmlMaster[] },
   return { pages: pages.map(({ part: _p, section: _s, ...page }) => page), masters: all.masters.filter((m) => used.has(m.id)), firstPage: pages[0]!.n };
 }
 
+const RATED_ON = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
 const spanRows = (c: VenueCell, rows: number) => {
   const share = c.frame === 'three-quarters' ? 3 / 4 : c.frame === 'half' ? 1 / 2 : 1 / 4;
   return c.frame === 'quarter' ? Math.ceil(share * rows) : Math.floor(share * rows);
@@ -437,7 +496,7 @@ const spanRows = (c: VenueCell, rows: number) => {
 function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }): Para[] {
   const contact = [v.address, v.phone].filter(Boolean).join(' · ');
   return [
-    { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: `  Tripadvisor ${v.tripadvisor.rating.toFixed(1)}`, char: 'Tag' }] : [])] },
+    { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
     ...(v.copy ? [{ style: 'listing body', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
     ...(contact ? [{ style: 'Address', size: s.small, runs: [{ text: contact }] }] : []),
     ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
