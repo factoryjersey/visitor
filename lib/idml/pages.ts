@@ -2,6 +2,7 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
+import { MapPin } from 'lucide-react';
 import { iconsFor, type Icon } from '@/components/guide/key-icons';
 import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
 import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -35,13 +36,13 @@ const TA_GREEN = 'Tripadvisor green';
 
 /** A website icon as an inline shape: its lines, as the proof draws them (1.75 on its 24-unit grid), in the ink at 80%. */
 const iconShapes = new Map<string, InlineShape>();
-function iconShape(icon: Icon, mm: number): InlineShape {
-  const key = `${icon.label}@${mm}`;
+function iconShape(icon: Icon, mm: number, stroke = 1.75): InlineShape {
+  const key = `${icon.label}@${mm}@${stroke}`;
   const had = iconShapes.get(key);
   if (had) return had;
   const size = mm * MM;
   const scale = size / 24;
-  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: INK, strokeTint: 80, weight: 1.75 * scale }] };
+  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: INK, strokeTint: 80, weight: stroke * scale }] };
   iconShapes.set(key, shape);
   return shape;
 }
@@ -103,8 +104,8 @@ const SIZES: Record<string, { when: number; title: number; copy: number; small: 
 
 export function fonts(palette: GuidePalette) {
   return palette === 'classic'
-    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', medium: 'Semibold', mediumItalic: 'Medium Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
-    : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', medium: 'Medium', mediumItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
+    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', italic: 'Regular Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
+    : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
 /**
@@ -122,8 +123,9 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('listings title', f.medium, 9, { leading: 9.7, before: 0.2, after: 0.3 }),
       p('listing body', f.light, 8.5, { leading: 9.2 }),
       p('Venue', f.medium, 7.5, { before: 2, leading: 8.1 }),
-      p('Address', f.medium, 7.5, { leading: 8.1 }),
-      p('Contact', f.regular, 7.5, { leading: 8.1 }),
+      // Address and contact in italic, as the proof sets them.
+      p('Address', f.semiboldItalic, 7.5, { leading: 8.1 }),
+      p('Contact', f.italic, 7.5, { leading: 8.1 }),
       p('Web', f.medium, 7.5, { caps: true, before: 1.2, leading: 8.1 }),
       p('Venue name', f.medium, 9, { leading: 9.7, after: 0.4 }),
       p('Tour meta', f.medium, 7, { before: 0.6, leading: 8 }),
@@ -321,10 +323,10 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         ...(e.website ? [{ style: 'Web', size: s.small, runs: [{ text: e.website }] }] : []),
       ];
       items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: [
-        { style: 'When', size: s.when, colour: events.colour, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times' }] : []), ...iconRuns(iconsFor(e))] },
+        { style: 'When', size: s.when, colour: events.colour, tint: 50, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(e))] },
         { style: 'listings title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
         ...(e.copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: e.copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
-        ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: e.venue }] }] : []),
+        ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: '', inline: iconShape({ label: 'Venue', Icon: MapPin }, 2.4, 2.4) }, { text: `\u2009${e.venue}` }] }] : []),
         ...small,
       ] });
     });
@@ -365,7 +367,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         items.push({ kind: 'line', x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y, stroke: page.toursLight.name, weight: 0.6 });
         const when = t.kind === 'dated' ? t.dates : '';
         items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: [
-          ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times' }] : []), ...iconRuns(iconsFor(t))] }] : []),
+          ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, tint: 50, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(t))] }] : []),
           { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }, ...(when ? [] : iconRuns(iconsFor(t)))] },
           ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
           ...(t.copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: t.copy }] }] : []),

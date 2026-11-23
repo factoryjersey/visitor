@@ -27,8 +27,9 @@ const PKG = 'http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging';
  */
 export type InlineShape = { width: number; height: number; shapes: { subpaths: Subpath[]; stroke?: string; strokeTint?: number; weight?: number; fill?: string; fillTint?: number }[] };
 /** A run of text; or the page number; or a right indent tab (what follows sits against the frame's right edge); or a shape inline. */
-export type Run = { text: string; char?: string; pageNumber?: boolean; rightTab?: boolean; inline?: InlineShape };
-export type Para = { style: string; runs: Run[]; size?: number; colour?: string };
+export type Run = { text: string; char?: string; size?: number; pageNumber?: boolean; rightTab?: boolean; inline?: InlineShape };
+/** A paragraph in a named style; a size or colour (and tint) set on it applies to its runs, as InDesign takes them, the colour to those without a character style of their own. */
+export type Para = { style: string; runs: Run[]; size?: number; colour?: string; tint?: number };
 export type Box = { x: number; y: number; w: number; h: number };
 export type Item =
   | (Box & { kind: 'rect'; fill: string; tint?: number })
@@ -245,7 +246,8 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
 
   /** An inline shape: a polygon (compound, when it has several subpaths), or a group of them, anchored inline just under the baseline. */
   function inlineXml(shape: InlineShape): string {
-    const anchored = '<AnchoredObjectSetting AnchoredPosition="InlinePosition" AnchorYoffset="-0.7"/>';
+    // Centred on the capitals' middle (about 3.2pt up at the listings' sizes), so a 3mm icon sits level with the date beside it.
+    const anchored = `<AnchoredObjectSetting AnchoredPosition="InlinePosition" AnchorYoffset="${fmt(3.2 - shape.height / 2)}"/>`;
     const pts = (a: Anchor) => `<PathPointType Anchor="${fmt(a.anchor[0])} ${fmt(a.anchor[1] - shape.height)}" LeftDirection="${fmt(a.left[0])} ${fmt(a.left[1] - shape.height)}" RightDirection="${fmt(a.right[0])} ${fmt(a.right[1] - shape.height)}"/>`;
     const poly = (sh: InlineShape['shapes'][number], own: boolean) => `<Polygon Self="${next('po')}" ContentType="Unassigned" StrokeWeight="${fmt(sh.weight ?? 0)}" StrokeColor="${sh.stroke ? colourRef(sh.stroke) : 'Swatch/None'}"${sh.strokeTint !== undefined ? ` StrokeTint="${sh.strokeTint}"` : ''} FillColor="${sh.fill ? colourRef(sh.fill) : 'Swatch/None'}"${sh.fillTint !== undefined ? ` FillTint="${sh.fillTint}"` : ''} EndCap="RoundEndCap" EndJoin="RoundEndJoin" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0"><Properties><PathGeometry>${sh.subpaths.map((sp) => `<GeometryPathType PathOpen="${sp.open}"><PathPointArray>${sp.points.map(pts).join('')}</PathPointArray></GeometryPathType>`).join('')}</PathGeometry></Properties>${own ? anchored : ''}</Polygon>`;
     if (shape.shapes.length === 1) return poly(shape.shapes[0]!, true);
@@ -254,12 +256,15 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
 
   function storyXml(sid: string, paras: Para[]): string {
     const body = paras.map((p, i) => {
-      const runs = p.runs.map((r) => `<CharacterStyleRange AppliedCharacterStyle="${r.char ? id('CharacterStyle', r.char) : 'CharacterStyle/$ID/[No character style]'}">${r.pageNumber ? '<?ACE 18?>' : r.rightTab ? '<?ACE 8?>' : r.inline ? inlineXml(r.inline) : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`).join('');
-      const brk = i < paras.length - 1 ? '<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Br/></CharacterStyleRange>' : '';
+      // Size, leading and colour on each run: InDesign reads them from the character ranges, not the paragraph's.
       // A paragraph set smaller or larger than its style keeps the style's proportion of leading, as the proof's line-height does.
       const st = styleOf.get(p.style);
       const leading = p.size && st && p.size !== st.size ? `<Properties><Leading type="unit">${fmt((p.size * (st.leading ?? st.size * 1.15)) / st.size)}</Leading></Properties>` : '';
-      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', p.style)}"${p.size ? ` PointSize="${p.size}"` : ''}${p.colour ? ` FillColor="${colourRef(p.colour)}"` : ''}>${leading}${runs}${brk}</ParagraphStyleRange>`;
+      const runAttrs = (r: Run) => `${r.size ?? p.size ? ` PointSize="${fmt((r.size ?? p.size)!)}"` : ''}${p.colour && !r.char ? ` FillColor="${colourRef(p.colour)}"${p.tint !== undefined ? ` FillTint="${p.tint}"` : ''}` : ''}`;
+      // Special characters go inside the text, as InDesign writes them: the page number (ACE 18), a right indent tab (ACE 8).
+      const runs = p.runs.map((r) => `<CharacterStyleRange AppliedCharacterStyle="${r.char ? id('CharacterStyle', r.char) : 'CharacterStyle/$ID/[No character style]'}"${runAttrs(r)}>${leading}${r.pageNumber ? '<Content><?ACE 18?></Content>' : r.rightTab ? '<Content><?ACE 8?></Content>' : r.inline ? inlineXml(r.inline) : `<Content>${text(r.text)}</Content>`}</CharacterStyleRange>`).join('');
+      const brk = i < paras.length - 1 ? `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"${p.size ? ` PointSize="${p.size}"` : ''}>${leading}<Br/></CharacterStyleRange>` : '';
+      return `<ParagraphStyleRange AppliedParagraphStyle="${id('ParagraphStyle', p.style)}">${runs}${brk}</ParagraphStyleRange>`;
     }).join('');
     return xml(`<idPkg:Story xmlns:idPkg="${PKG}" DOMVersion="${DOM}"><Story Self="${sid}" AppliedTOCStyle="n" TrackChanges="false" StoryTitle="$ID/" AppliedNamedGrid="n"><StoryPreference OpticalMarginAlignment="false" OpticalMarginSize="12" FrameType="TextFrameType" StoryOrientation="Horizontal" StoryDirection="LeftToRightDirection"/>${body}</Story></idPkg:Story>`);
   }
