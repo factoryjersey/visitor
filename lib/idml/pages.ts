@@ -68,7 +68,7 @@ function bubbles(rating: number): InlineShape {
   return { width: 5 * d + 4 * gap, height: d, shapes };
 }
 
-/** The page's key down its outer edge, under the tab or the marker: each icon its listings use, once, with its name. */
+/** The key down a page's outer edge, under the tab or the marker: each icon once, an en space, its name. */
 function pageKey(items: Item[], icons: Icon[], left: boolean, belowMarker: boolean) {
   const seen = new Map<string, Icon>();
   for (const i of icons) if (!seen.has(i.label)) seen.set(i.label, i);
@@ -76,7 +76,7 @@ function pageKey(items: Item[], icons: Icon[], left: boolean, belowMarker: boole
   const top = belowMarker ? 74.6 : 44;
   items.push({
     kind: 'text', x: left ? 0 : PAGE_W - 3.9, y: top, w: 3.9, h: PAGE_H - 18 - top, vertical: true, centre: true,
-    paras: [{ style: 'Page key', runs: [...seen.values()].flatMap((ic, i): Run[] => [...(i ? [{ text: '\u2003' }] : []), { text: '', inline: iconShape(ic, 2.8) }, { text: `\u2009${ic.label}` }]) }],
+    paras: [{ style: 'Page key', runs: [...seen.values()].flatMap((ic, i): Run[] => [...(i ? [{ text: '\u2003' }] : []), { text: '', inline: iconShape(ic, 2.8) }, { text: `\u2002${ic.label}` }]) }],
   });
 }
 const LEFT_MARGIN = (left: boolean) => (left ? 7.9 : 12);
@@ -162,6 +162,37 @@ export function swatches(palette: GuidePalette, sections: string[]): Swatch[] {
   return [{ name: INK, cmyk: PALETTE.deepBlue.cmyk }, { name: TA_GREEN, cmyk: [85, 0, 75, 0] }, ...[...new Map(all.map((w) => [w.name, w])).values()].map((w) => ({ name: w.name, cmyk: w.cmyk }))];
 }
 
+/*
+ * Copy fitted as the proof fits it: each box tries its wordings, fullest
+ * first, and takes the first whose paragraphs, wrapped at the box's width
+ * in their styles' sizes and leading, fit its height. InDesign cannot be
+ * asked, so the lines are estimated from average letter widths, a little
+ * wide and the height a little short, so a chosen wording should not overset.
+ */
+const MM_PER_PT = 25.4 / 72;
+const advance = (c: string) => (c === ' ' ? 0.26 : /[A-Z0-9]/.test(c) ? 0.62 : /[il.'’,:;|!]/.test(c) ? 0.25 : /[mwMW]/.test(c) ? 0.8 : 0.52);
+function linesOf(text: string, pt: number, widthMm: number, narrow: number): number {
+  let lines = 1, at = 0;
+  const em = pt * MM_PER_PT * narrow;
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const w = [...word].reduce((n, c) => n + advance(c), 0) * em;
+    const space = advance(' ') * em;
+    if (at > 0 && at + space + w > widthMm) { lines += 1; at = w; } else at += (at > 0 ? space : 0) + w;
+  }
+  return lines;
+}
+export function parasHeight(paras: Para[], widthMm: number, style: Map<string, ParaStyle>, narrow: number): number {
+  let h = 0;
+  for (const p of paras) {
+    const st = style.get(p.style);
+    const size = p.size ?? st?.size ?? 8;
+    const lead = (st?.leading ?? (st?.size ?? 8) * 1.15) * (size / (st?.size ?? size));
+    const text = p.runs.map((r) => (r.inline ? 'MM' : r.rightTab ? '' : r.text)).join('');
+    h += (st?.before ?? 0) + linesOf(st?.caps ? text.toUpperCase() : text, size, widthMm, narrow) * lead * MM_PER_PT + (st?.after ?? 0);
+  }
+  return h;
+}
+
 /** Which document of the book a page is for: What's On, Tours and experiences, or the venue sections. */
 export type GuidePart = 'events' | 'tours' | 'venues';
 export type GuidePage = IdmlPage & { part: GuidePart; section: string };
@@ -181,6 +212,19 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   };
   const left = () => n % 2 === 0;
   const pic = (url: string) => (url ? pictures.get(url) : undefined);
+  const styleMap = new Map(styles(palette).paraStyles.map((p) => [p.name, p]));
+  // Letter widths checked against the proof's sans in the browser (40 of the guide's own texts, each within a line); InDesign's
+  // Proxima Nova Condensed set as wide in the 2026 pages, so no allowance is made for it being narrower.
+  const narrow = 1;
+  /** The fullest wording whose paragraphs fit the box, else the shortest. */
+  const fitted = (options: string[], build: (copy: string) => Para[], w: number, h: number): Para[] => {
+    const tries = [...new Set(options.filter(Boolean))];
+    for (const copy of tries) {
+      const paras = build(copy);
+      if (parasHeight(paras, w, styleMap, narrow) <= h * 0.97) return paras;
+    }
+    return build(tries.at(-1) ?? '');
+  };
 
   /*
    * The ears and folio are parent pages (masters), so they are drawn once and
@@ -235,8 +279,37 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   };
   /** The page's parent: its section's, or its marker's. The page itself carries only its content. */
   let current = 'umA';
-  const furniture = (_items: Item[], section: { name: string; colour: string }, marker?: string) => {
-    current = (marker ? markerMaster(section, marker) : sectionMaster(section)).id;
+  /*
+   * The icon key down the outer edge, on a parent page of its own (based on
+   * the section's or the marker's): every icon the section's listings use,
+   * under the tab or, on a marked page, under the marker. Event and tour
+   * grid pages take it; the opener and highlights do not.
+   */
+  const sectionKeys = new Map<string, Icon[]>([
+    [EVENTS.name, [...guide.events, ...guide.ongoing].filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e))],
+    [TOURS.name, guide.tours.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t))],
+  ]);
+  const keyedMaster = (section: { name: string; colour: string }, marker?: string) => {
+    const base = marker ? markerMaster(section, marker) : sectionMaster(section);
+    const icons = sectionKeys.get(section.name) ?? [];
+    if (!icons.length) return base;
+    const key = `${section.name}\u0000${marker ?? ''}\u0000key`;
+    const known = masterOf.get(key);
+    if (known) return known;
+    let prefix = `${base.prefix}K`.slice(0, 4);
+    for (let i = 2; prefixes.has(prefix); i += 1) prefix = `${base.prefix.slice(0, 2)}K${i}`;
+    prefixes.add(prefix);
+    const m: IdmlMaster = { id: `um${prefix}`, prefix, name: `${base.name} key`, basedOn: base.id, ...sides((l) => {
+      const items: Item[] = [];
+      pageKey(items, icons, l, !!marker);
+      return items;
+    }) };
+    masters.push(m);
+    masterOf.set(key, m);
+    return m;
+  };
+  const furniture = (_items: Item[], section: { name: string; colour: string }, marker?: string, keyed = false) => {
+    current = (keyed ? keyedMaster(section, marker) : marker ? markerMaster(section, marker) : sectionMaster(section)).id;
   };
   let part: GuidePart = 'events';
   const push = (items: Item[]) => {
@@ -302,7 +375,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   const layout: Layout = guide.layout;
   const eventPage = (cells: GuideEvent[], marker?: string) => {
     const items: Item[] = [];
-    furniture(items, events, marker);
+    furniture(items, events, marker, true);
     const grid = layout === 'top' ? 'top' : layout;
     const s = SIZES[grid] ?? SIZES.top!;
     cells.forEach((e, i) => {
@@ -322,15 +395,14 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         ...(e.contact ? [{ style: 'Contact', size: s.small, runs: [{ text: e.contact }] }] : []),
         ...(e.website ? [{ style: 'Web', size: s.small, runs: [{ text: e.website }] }] : []),
       ];
-      items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: [
+      items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: fitted(e.options.length ? e.options : [e.copy], (copy) => [
         { style: 'When', size: s.when, colour: events.colour, tint: 50, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(e))] },
         { style: 'listings title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
-        ...(e.copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: e.copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
+        ...(copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
         ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: '', inline: iconShape({ label: 'Venue', Icon: MapPin }, 2.4, 2.4) }, { text: `\u2009${e.venue}` }] }] : []),
         ...small,
-      ] });
+      ], b.w, b.y + b.h - top) });
     });
-    pageKey(items, cells.filter((e) => e.frame !== 'image').flatMap((e) => iconsFor(e)), left(), !!marker);
     push(items);
   };
   for (const cells of guide.pages) eventPage(cells);
@@ -359,23 +431,22 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     for (const cells of guide.tourPages ?? []) {
       const items: Item[] = [];
       const grid = cells[0]?.grid ?? 'grid8';
-      furniture(items, tours, cells[0]?.kind === 'dated' ? 'On specific dates' : 'On demand');
+      furniture(items, tours, cells[0]?.kind === 'dated' ? 'On specific dates' : 'On demand', true);
       const s = SIZES[grid] ?? SIZES.grid8!;
       cells.forEach((t: GuideTour, i) => {
         const b = cell(grid, i % 2, Math.floor(i / 2));
         if (t.frame === 'image') return image(items, t.imageUrl, b);
         items.push({ kind: 'line', x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y, stroke: page.toursLight.name, weight: 0.6 });
         const when = t.kind === 'dated' ? t.dates : '';
-        items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: [
+        items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: fitted(t.options.length ? t.options : [t.copy], (copy) => [
           ...(when ? [{ style: 'When', size: s.when, colour: tours.colour, tint: 50, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(t))] }] : []),
           { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }, ...(when ? [] : iconRuns(iconsFor(t)))] },
           ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
-          ...(t.copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: t.copy }] }] : []),
+          ...(copy ? [{ style: 'listing body', size: s.copy, runs: [{ text: copy }] }] : []),
           { style: 'Tour meta', size: s.small, runs: [{ text: t.code || t.provider, char: 'Code' }, ...(t.duration ? [{ text: `   ${t.duration}` }] : [])] },
-        ] });
+        ], b.w, b.h - 1.2) });
       });
       footer(items, indexLine);
-      pageKey(items, cells.filter((t) => t.frame !== 'image').flatMap((t) => iconsFor(t)), left(), true);
       push(items);
     }
   }
@@ -438,7 +509,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
             if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: b.w, h: ph });
             items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s) });
           } else {
-            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: venueParas(c, 'listing', vs.grid === 'grid16' ? { ...s, copy: 6.5 } : s) });
+            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s), b.w, b.h - 1.6) });
           }
         }
       }

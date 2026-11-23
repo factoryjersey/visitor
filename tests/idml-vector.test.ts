@@ -32,3 +32,14 @@ describe('IDML vectors', () => {
     expect(subs.every((s) => s.points.length > 1)).toBe(true);
   });
 });
+
+describe('IDML copy fitting', async () => {
+  const { parasHeight, styles } = await import('@/lib/idml/pages');
+  const style = new Map(styles('classic').paraStyles.map((p) => [p.name, p]));
+  it('grows with the words, a line at a time', () => {
+    const one = parasHeight([{ style: 'listing body', runs: [{ text: 'A short line.' }] }], 45.5, style, 1);
+    const more = parasHeight([{ style: 'listing body', runs: [{ text: 'A festive literary salon pairing a Christmas story with seasonal fare. Expect a cosy evening in the heart of St Helier.' }] }], 45.5, style, 1);
+    expect(one).toBeCloseTo(9.2 * 25.4 / 72, 1);
+    expect(more).toBeGreaterThan(2.5 * one);
+  });
+});
