@@ -213,9 +213,10 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
   const left = () => n % 2 === 0;
   const pic = (url: string) => (url ? pictures.get(url) : undefined);
   const styleMap = new Map(styles(palette).paraStyles.map((p) => [p.name, p]));
-  // Letter widths checked against the proof's sans in the browser (40 of the guide's own texts, each within a line); InDesign's
-  // Proxima Nova Condensed set as wide in the 2026 pages, so no allowance is made for it being narrower.
-  const narrow = 1;
+  // Letter widths checked against the proof's sans in the browser (40 of the guide's own texts, each within a line).
+  // InDesign sets the 2026 editions in Proxima Nova Condensed, narrower: its lines in the winter pages fit at 0.82 of
+  // the estimate at most (a 45.5mm column taking "woodland, rock and sand, making a family-friendly" at 7pt), so 0.8.
+  const narrow = palette === 'classic' ? 0.8 : 1;
   /** The fullest wording whose paragraphs fit the box, else the shortest. */
   const fitted = (options: string[], build: (copy: string) => Para[], w: number, h: number): Para[] => {
     const tries = [...new Set(options.filter(Boolean))];
