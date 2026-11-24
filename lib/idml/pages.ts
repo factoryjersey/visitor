@@ -2,7 +2,7 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { BadgeCheck, Clock, MapPin } from 'lucide-react';
+import { BadgeCheck, Bus, Clock, MapPin } from 'lucide-react';
 import { iconsFor, type Icon } from '@/components/guide/key-icons';
 import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
 import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -36,13 +36,13 @@ const TA_GREEN = 'Tripadvisor green';
 
 /** A website icon as an inline shape: its lines, as the proof draws them (1.75 on its 24-unit grid), in the ink at 80%. */
 const iconShapes = new Map<string, InlineShape>();
-function iconShape(icon: Icon, mm: number, stroke = 1.75, colour?: string): InlineShape {
-  const key = `${icon.label}@${mm}@${stroke}@${colour ?? ''}`;
+function iconShape(icon: Icon, mm: number, stroke = 1.75, colour?: string, tint?: number): InlineShape {
+  const key = `${icon.label}@${mm}@${stroke}@${colour ?? ''}@${tint ?? ''}`;
   const had = iconShapes.get(key);
   if (had) return had;
   const size = mm * MM;
   const scale = size / 24;
-  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: colour ?? INK, strokeTint: colour ? undefined : 80, weight: stroke * scale }] };
+  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: colour ?? INK, strokeTint: colour ? tint : 80, weight: stroke * scale }] };
   iconShapes.set(key, shape);
   return shape;
 }
@@ -107,8 +107,8 @@ export const textColour = (palette: GuidePalette) => (palette === 'classic' ? 'B
 
 export function fonts(palette: GuidePalette) {
   return palette === 'classic'
-    ? { body: 'Proxima Nova Condensed', narrow: 'Proxima Nova Extra Condensed', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
-    : { body: 'Google Sans Flex', narrow: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
+    ? { body: 'Proxima Nova Condensed', plain: 'Proxima Nova', narrow: 'Proxima Nova Extra Condensed', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
+    : { body: 'Google Sans Flex', plain: 'Google Sans Flex', narrow: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
 /**
@@ -138,6 +138,12 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Contact', f.italic, 7.5, { font: f.narrow, leading: 8, tracking: -20, colour: accent }),
       p('Web', f.bold, 7.5, { caps: true, before: 1, leading: 8.5, tint: 80 }),
       p('Venue name', f.medium, 9, { leading: 9.7, after: 0.4 }),
+      // The bigger venue entries, as the 2026 Visit pages set them.
+      p('Venue title', f.bold, 14, { leading: 15, tracking: -25, after: 1.2 }),
+      p('Venue copy', f.regular, 7.5, { font: f.plain, leading: 9, after: 1.6 }),
+      p('Venue info', f.regular, 8, { font: f.plain, leading: 9, tint: 80 }),
+      p('Venue phone', f.bold, 10, { leading: 12, tracking: -20, before: 1.4 }),
+      p('Venue web', f.bold, 9, { leading: 10 }),
       p('Tour meta', f.medium, 7, { before: 0.6, leading: 8 }),
       p('Highlight title', f.headStyle, 15, { font: f.head, leading: 15.8, before: 0.5, after: 2 }),
       p('Highlight copy', f.light, 8.5, { leading: 9.8, after: 1.5 }),
@@ -167,6 +173,9 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       { name: 'Code', style: f.bold },
       { name: 'Accent', style: f.medium },
       { name: 'Ahead when', style: f.medium, caps: true },
+      { name: 'Standfirst', style: f.bold },
+      { name: 'Info bold', font: f.body, style: f.bold },
+      { name: 'Email', font: f.body, style: f.italic, size: 7.5, colour: text, tint: 80 },
       { name: 'Rating', style: f.medium, size: 6.5 },
     ],
   };
@@ -496,7 +505,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         const v = p.venue;
         const x = LEFT_MARGIN(left());
         if (v.imageUrl) image(items, v.imageUrl, { x, y: 8.5, w: 94.9, h: 62 });
-        items.push({ kind: 'text', x, y: v.imageUrl ? 73.5 : 8.5, w: 94.9, h: v.imageUrl ? 70 : 135, paras: venueParas(v, 'full', s, section.colour) });
+        items.push({ kind: 'text', x, y: v.imageUrl ? 73.5 : 8.5, w: 94.9, h: v.imageUrl ? 70 : 135, paras: venueParas(v, 'full', s, section.colour, textColour(palette)) });
       } else {
         const rows = vs.grid === 'grid16' ? VENUE_GRID16 : ROWS[vs.grid] ?? ROWS.grid8!;
         const gap = vs.grid === 'grid16' ? 1 : 2;
@@ -524,13 +533,13 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
           if (c.frame === 'quarter') {
             const half = (b.w - 3) / 2;
             if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: half, h: b.h - 1.6 });
-            items.push({ kind: 'text', x: b.x + half + 3, y: b.y + 1.6, w: half, h: b.h - 1.6, paras: venueParas(c, c.frame, s, section.colour) });
+            items.push({ kind: 'text', x: b.x + half + 3, y: b.y + 1.6, w: half, h: b.h - 1.6, paras: venueParas(c, c.frame, s, section.colour, textColour(palette)) });
           } else if (c.frame === 'half' || c.frame === 'three-quarters') {
             const ph = c.frame === 'half' ? 38 : 62;
             if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: b.w, h: ph });
-            items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s, section.colour) });
+            items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s, section.colour, textColour(palette)) });
           } else {
-            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s, section.colour), b.w, b.h - 1.6) });
+            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s, section.colour, textColour(palette)), b.w, b.h - 1.6) });
           }
         }
       }
@@ -607,14 +616,36 @@ const spanRows = (c: VenueCell, rows: number) => {
   return c.frame === 'quarter' ? Math.ceil(share * rows) : Math.floor(share * rows);
 };
 
-/** A venue's paragraphs; its contact lines in its section's colour, as the events' take the events'. */
-function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }, accent?: string): Para[] {
-  const contact = [v.address, v.phone].filter(Boolean).join(' · ');
+/**
+ * A venue's paragraphs. A listing box keeps the listings' styles. The bigger
+ * entries are set as the 2026 Visit pages set them (vjvg_26_4_visit): the name
+ * in Condensed Bold in the section's colour, the copy in Proxima Nova with its
+ * first sentence in Bold, then how to visit in 80% black, each line behind its
+ * icon (hours, buses, address), the phone in Condensed Bold and the website in
+ * the section's colour, the email in italic.
+ */
+export function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }, accent?: string, text = INK): Para[] {
+  if (frame === 'listing') {
+    const contact = [v.address, v.phone].filter(Boolean).join(' · ');
+    return [
+      { style: 'Venue name', size: s.title, runs: [{ text: v.printName ?? v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
+      ...(v.copy ? [{ style: 'listing body', size: s.copy, runs: [...(v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
+      ...(contact ? [{ style: 'Address', size: s.small, ...(accent ? { colour: accent } : {}), runs: [{ text: contact }] }] : []),
+      ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
+    ];
+  }
+  const colour = accent ? { colour: accent } : {};
+  const icon = (Icon: Icon['Icon'], label: string): Run[] => [{ text: '', inline: iconShape({ label, Icon }, 2.6, 1.75, text, 80) }, { text: '\u2009' }];
+  // Its first sentence leads, in Bold, as the 2026 pages open each entry.
+  const first = v.copy.match(/^.+?[.!?](?=\s|$)/)?.[0] ?? '';
+  const rest = v.copy.slice(first.length).trim();
   return [
-    { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
-    ...(v.copy ? [{ style: 'listing body', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
-    ...(contact ? [{ style: 'Address', size: s.small, ...(accent ? { colour: accent } : {}), runs: [{ text: contact }] }] : []),
-    ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
-    ...(v.bus ? [{ style: 'Contact', size: s.small, ...(accent ? { colour: accent } : {}), runs: [{ text: `Bus ${v.bus}` }] }] : []),
+    { style: 'Venue title', size: frame === 'full' ? 14 : 12, ...colour, runs: [{ text: v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
+    ...(v.copy ? [{ style: 'Venue copy', runs: [...(first ? [{ text: rest ? `${first} ` : first, char: 'Standfirst' }] : []), ...(rest || !first ? [{ text: rest || v.copy }] : [])] }] : []),
+    ...(v.opening ? [{ style: 'Venue info', runs: [...icon(Clock, 'Opening'), { text: v.opening }] }] : []),
+    ...(v.bus ? [{ style: 'Venue info', runs: [...icon(Bus, 'Bus'), { text: v.bus }] }] : []),
+    ...(v.address ? [{ style: 'Venue info', runs: [...icon(MapPin, 'Address'), { text: v.address, char: 'Info bold' }] }] : []),
+    ...(v.phone || v.email ? [{ style: 'Venue phone', ...colour, runs: [...(v.phone ? [{ text: v.phone }] : []), ...(v.email ? [{ text: `${v.phone ? '  ' : ''}${v.email}`, char: 'Email' }] : [])] }] : []),
+    ...(v.website ? [{ style: 'Venue web', ...colour, runs: [{ text: v.website.toLowerCase() }] }] : []),
   ];
 }

@@ -43,3 +43,15 @@ describe('IDML copy fitting', async () => {
     expect(more).toBeGreaterThan(2.5 * one);
   });
 });
+
+describe('IDML venue entries as the 2026 Visit pages', async () => {
+  const { venueParas } = await import('@/lib/idml/pages');
+  const v = { section: 'Visit', area: 'St. Lawrence', name: 'Jersey War Tunnels', label: '', size: 'full', isNew: false, copy: 'Jersey War Tunnels tells the true story of wartime Jersey. The hardship, the heartache and the heroism.', address: 'Les Charrières Malorey, JE3 1FU', phone: '+44 (0) 1534 860808', email: 'info@jerseywartunnels.com', website: 'JERSEYWARTUNNELS.COM', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: 'Daily 10:00–17:00', bus: '8, 28' } as never;
+  it('leads with the name, a bold first sentence, then hours, buses, address, phone and website', () => {
+    const paras = venueParas(v, 'full', { when: 9, title: 9, copy: 8.5, small: 7.5 }, 'plum', 'Black');
+    expect(paras.map((p) => p.style)).toEqual(['Venue title', 'Venue copy', 'Venue info', 'Venue info', 'Venue info', 'Venue phone', 'Venue web']);
+    expect(paras[0]!.size).toBe(14);
+    expect(paras[1]!.runs[0]).toMatchObject({ text: 'Jersey War Tunnels tells the true story of wartime Jersey. ', char: 'Standfirst' });
+    expect(paras.at(-1)!.runs[0]!.text).toBe('jerseywartunnels.com');
+  });
+});
