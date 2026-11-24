@@ -1,6 +1,6 @@
 # vjvg_26_4: changes by page
 
-Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draft5.pdf`; PDF page numbers), and where it came from:
+Every change made since the packaged edition, by printed page of draft5 (`vjvg_26_4_draft5.pdf`), and where it came from:
 
 - **Elliott (Visit Jersey):** his marked-up proofs of 19 November (events, tours, provider index) and his opening-hours notes of 23 November.
 - **Our proofread:** the IDML proofread of 24 November, applied to the corrected documents in `vjvg_26_4_packaged/proofed`.
@@ -20,20 +20,20 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 |---|---|---|---|
 | Cover | “Winter 2026” → “Winter 2026/27” | Our proofread | In draft5 |
 
-## Page 12
+## Page 10
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Credits | “award winning” → “award-winning” | Our proofread | In draft5 |
 | Credits | “Registered in Jersey  no 89716” → “Registered in Jersey No. 89716” | Our proofread | In draft5 |
 
-## Page 14
+## Page 12
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Art: 16 New Street | Tue–Sat 10:00–13:00, Mar–Oct (was Apr–Oct) | Elliott (Visit Jersey) | guide.je data (shows in guide.je exports) |
 
-## Page 17
+## Page 15
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -41,38 +41,38 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Welcome | “Pounds Sterling is” → “Pound sterling is” | Our proofread | In draft5 |
 | Welcome | “Channel Islands; Guernsey” → “Channel Islands: Guernsey” | Our proofread | In draft5 |
 
-## Page 18
+## Page 16
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Visitor Information Centre | “renovation and due to reopen in Spring 2027” → “renovation and is due to reopen in spring 2027” | Our proofread | In draft5 |
 
-## Page 19
+## Page 17
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Visitor Information Centre | “attendence” → “attendance” | Our proofread | In draft5 |
 
-## Page 20
+## Page 18
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Be a local | “ship building” → “shipbuilding” | Our proofread | In draft5 |
 | Be a local | “Bon Nuit Bay” → “Bonne Nuit Bay” | Our proofread | In draft5 |
 
-## Page 21
+## Page 19
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Be a local | “yelow” → “yellow” | Our proofread | In draft5 |
 
-## Page 23
+## Page 21
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Dialect | “Mont Orguiel” → “Mont Orgueil” | Our proofread | In draft5 |
 
-## Page 24
+## Page 22
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -81,82 +81,82 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Get set | “that give you” → “that gives you” | Our proofread | In draft5 |
 | Get set | “and then valid for” → “and are then valid for” | Our proofread | In draft5 |
 
-## Page 26
+## Page 24
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Get set | “permissable” → “permissible” | Our proofread | In draft5 |
 | Get set | “left hand side” → “left-hand side” | Our proofread | In draft5 |
 
-## Page 28
+## Page 26
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Get set | “see P31” → “see p31” | Our proofread | In draft5 |
 | Get set | “On street parking” → “On-street parking” | Our proofread | In draft5 |
 
-## Page 30
+## Page 28
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Get set | “They offers” → “They offer” | Our proofread | In draft5 |
 | Get set | “All our wheelchairs” → “All their wheelchairs” | Our proofread | In draft5 |
 
-## Page 32
+## Page 30
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Get set | “no matter ability” → “no matter their ability” | Our proofread | In draft5 |
 
-## Page 33
+## Page 31
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Get set | “Mon to Sun, 9 am to 5 pm” → “Mon to Sun, 09:00 - 17:00” | Our proofread | In draft5 |
 
-## Page 35
+## Page 33
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Cycling | “E-Bike” → “e-bike” (the one left is in an advertiser’s copy) | Our proofread | Old text still printed |
 
-## Page 39
+## Page 37
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | What’s On: Sundown Sessions | Wharf Street, JE2 → 4 Wharf Street, JE2 3NR; phone +44 (0) 1534 875788 added | Our proofread (fixed in guide.je) | In draft5 |
 
-## Page 40
+## Page 38
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Visit: Botanic Gardens at Samares Manor | Daily 10:00–16:30, open all year (was 09:30–16:30, Mar–Dec) | Elliott (Visit Jersey) | guide.je data (shows in guide.je exports) |
 
-## Page 42
+## Page 40
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | What’s On: Festive Wreath Making Workshop | Hugos, 19 halket Street, JE2 → Hugo’s, 19 Halkett Street, JE2 4WJ | Our proofread (fixed in guide.je) | In draft5 |
 
-## Page 43
+## Page 41
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | What’s On: Sip, Shop & Socialise | Phone +44 (0) 7797752232 → +44 (0) 7797 752232 | Our proofread (fixed in guide.je) | In draft5 |
 
-## Page 45
+## Page 43
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | What’s On: The Candyapples at the Blue Note | Minden Place, 20 Broad St → 20 Broad Street, JE2 3RR | Our proofread (fixed in guide.je) | In draft5 |
 
-## Page 52
+## Page 50
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Visit | “expererience” → “experience” | Our proofread | In draft5 |
 
-## Page 54
+## Page 52
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -164,7 +164,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | What’s On: Royal Charters | Times 10:00–16:00 (was 10:00–17:00) | Elliott (Visit Jersey) | In draft5 |
 | What’s On: La Tèrr'rie | Times 10:00–16:00 (was 10:00–17:00) | Elliott (Visit Jersey) | In draft5 |
 
-## Page 55
+## Page 53
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -173,14 +173,14 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | What’s On: Celts | Times 10:00–16:00 (was 10:00–17:00) | Elliott (Visit Jersey) | In draft5 |
 | What’s On: Titanic | Times 10:00–16:00 (was 10:00–17:00) | Elliott (Visit Jersey) | In draft5 |
 
-## Page 57
+## Page 55
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Visit | “slow moving” → “slow-moving” | Our proofread | In draft5 |
 | Visit | “40 minute” → “40-minute” | Our proofread | In draft5 |
 
-## Page 58
+## Page 56
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -189,7 +189,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Visit | “our wonderful Pick-a-Pearl” → “its wonderful Pick-a-Pearl” | Our proofread | In draft5 |
 | Visit | “indulge on” → “indulge in” | Our proofread | In draft5 |
 
-## Page 59
+## Page 57
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -202,7 +202,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Visit | “Maritime past” → “maritime past” | Our proofread | In draft5 |
 | Visit | “Harbour .” → “harbour.” | Our proofread | In draft5 |
 
-## Page 60
+## Page 58
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -211,26 +211,26 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Art | “'Discovery Trail' feed” → “'Discovery Trail', feed” | Our proofread | In draft5 |
 | Visit: Jersey Lavender Farm | Daily 10:00–17:00, Apr–Oct (was Tue–Sun, May–Sep) | Elliott (Visit Jersey) | guide.je data (shows in guide.je exports) |
 
-## Page 61
+## Page 59
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Art | “This year there are plenty” → “This season there are plenty” | Our proofread | In draft5 |
 
-## Page 62
+## Page 60
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Art | “Philips Street” → “Phillips Street” | Our proofread | In draft5 |
 
-## Page 63
+## Page 61
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Art | “and currently based” → “and is currently based” | Our proofread | In draft5 |
 | Tours: provider index | The Harbour Gallery Jersey → Harbour Gallery Jersey | Elliott (Visit Jersey) | In draft5 |
 
-## Page 65
+## Page 63
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -238,7 +238,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | See | “+44 (0) 1534 853392” → “+44 (0) 1534 853292” | Our proofread | In draft5 |
 | See | “Rene Lalique” → “René Lalique” | Our proofread | In draft5 |
 
-## Page 66
+## Page 64
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -248,14 +248,14 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | See | “five mile road” → “Five Mile Road” | Our proofread | In draft5 |
 | See | “09.00-17.00” → “09:00 - 17:00” | Our proofread | In draft5 |
 
-## Page 67
+## Page 65
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | See | “Les Blanche Banques” → “Les Blanches Banques” | Our proofread | In draft5 |
 | See | “an other worldly” → “an otherworldly” | Our proofread | In draft5 |
 
-## Page 68
+## Page 66
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -265,14 +265,14 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | See | “09.00 - 16.00” → “09:00 - 16:00” | Our proofread | In draft5 |
 | Tours: provider index | Channel Islands Occupation Society X Jersey War Tours → CI Occupation Society | Elliott (Visit Jersey) | In draft5 |
 
-## Page 70
+## Page 68
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Beachlife | “beach cafe” → “beach café” | Our proofread | In draft5 |
 | Beachlife | “Ouaisne” → “Ouaisné” | Our proofread | In draft5 |
 
-## Page 71
+## Page 69
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -282,26 +282,26 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Beachlife | “make Long Beach a local favourite” → “make the bay a local favourite” | Our proofread | In draft5 |
 | Beachlife | “beach cafes” → “beach cafés” | Our proofread | In draft5 |
 
-## Page 72
+## Page 70
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Do | “actiivites” → “activities” | Our proofread | In draft5 |
 | Do | “activites” → “activities” | Our proofread | In draft5 |
 
-## Page 74
+## Page 72
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Do | “five mile road” → “Five Mile Road” | Our proofread | In draft5 |
 
-## Page 75
+## Page 73
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Do | “passtime” → “pastime” | Our proofread | In draft5 |
 
-## Page 76
+## Page 74
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -310,7 +310,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Do | “HORSERIDING” → “HORSE RIDING” | Our proofread | In draft5 |
 | Do | “state of the art gym” → “state-of-the-art gym” | Our proofread | In draft5 |
 
-## Page 77
+## Page 75
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -325,27 +325,27 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Do directory / provider index: Wild Adventures | Phone spaced +44 (0) 7797 886242 | Our proofread (fixed in guide.je) | In draft5 |
 | Do directory / provider index: Les Mielles Golf | +44 (01534) 482787 → +44 (0) 1534 482787 | Our proofread (fixed in guide.je) | In draft5 |
 
-## Page 88
+## Page 86
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Tours: provider index | St. Helier Walks: phone +44 (0) 7797 844358 and eventbrite.co.uk added | Elliott (Visit Jersey) | In draft5 |
 
-## Page 90
+## Page 88
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “independant” → “independent” | Our proofread | In draft5 |
 | Shopping out of town | “However, If you fancy” → “However, if you fancy” | Our proofread | In draft5 |
 
-## Page 91
+## Page 89
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Shopping out of town | “emersion” → “immersion” | Our proofread | In draft5 |
 | Shopping out of town | “unsurprsing” → “unsurprising” | Our proofread | In draft5 |
 
-## Page 92
+## Page 90
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -354,7 +354,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “VAT free” → “VAT-free” | Our proofread | In draft5 |
 | Buy | “family run” → “family-run” | Our proofread | In draft5 |
 
-## Page 93
+## Page 91
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -366,25 +366,25 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “Upper Midvale road” → “Upper Midvale Road” | Our proofread | In draft5 |
 | Buy | “Swiss style” → “Swiss-style” | Our proofread | In draft5 |
 
-## Page 94
+## Page 92
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “King Street/ Queen Street” → “King Street/Queen Street” | Our proofread | In draft5 |
 
-## Page 95
+## Page 93
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “Jerseymarkets.je” → “jerseymarkets.je” | Our proofread | In draft5 |
 
-## Page 96
+## Page 94
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “a behind the scenes glimpse of our master craftsmen” → “a behind-the-scenes glimpse of the master craftsmen” | Our proofread | In draft5 |
 
-## Page 97
+## Page 95
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -392,14 +392,14 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “Our Jersey prices are competititive” → “Jersey prices are competitive” | Our proofread | In draft5 |
 | Buy | “Macbook Pro” → “MacBook Pro” | Our proofread | In draft5 |
 
-## Page 98
+## Page 96
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “24.5 Queen Street” → “24½ Queen Street” | Our proofread | In draft5 |
 | Buy | “Our carefully chosen brands” → “Its carefully chosen brands” | Our proofread | In draft5 |
 
-## Page 99
+## Page 97
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -407,13 +407,13 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “Eexplore our collection” → “Explore its collection” | Our proofread | In draft5 |
 | Buy | “they  offer” → “they offer” | Our proofread | In draft5 |
 
-## Page 101
+## Page 99
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Buy | “Elizabeth ferry terminal” → “Elizabeth Harbour ferry terminal” | Our proofread | In draft5 |
 
-## Page 103
+## Page 101
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -421,7 +421,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “cooks ingredient” → “cook's ingredient” | Our proofread | In draft5 |
 | Buy | “lemon, pepper dulse” → “lemon, pepper, dulse” | Our proofread | In draft5 |
 
-## Page 104
+## Page 102
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -432,7 +432,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “silver.Rivoli” → “silver. Rivoli” | Our proofread | In draft5 |
 | Buy | “pandora-style” → “Pandora-style” | Our proofread | In draft5 |
 
-## Page 105
+## Page 103
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -440,7 +440,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Buy | “giftswith” → “gifts with” | Our proofread | In draft5 |
 | Buy | “£4255” → “£4,255” | Our proofread | In draft5 |
 
-## Page 106
+## Page 104
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -448,7 +448,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “houses little over” → “houses a little over” | Our proofread | In draft5 |
 | Eat | “five mile road” → “Five Mile Road” | Our proofread | In draft5 |
 
-## Page 107
+## Page 105
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -462,7 +462,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “AllPress” → “Allpress” | Our proofread | In draft5 |
 | Eat | “Jersey Musuem” → “Jersey Museum” | Our proofread | In draft5 |
 
-## Page 108
+## Page 106
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -472,19 +472,19 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “vlliage” → “village” | Our proofread | In draft5 |
 | Eat | “Pizze” → “Pizza” | Our proofread | In draft5 |
 
-## Page 109
+## Page 107
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “a la carte” → “à la carte” (the one left is in an advertiser’s copy) | Our proofread | Old text still printed |
 
-## Page 110
+## Page 108
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “a one of a kind venue” → “a one-of-a-kind venue” | Our proofread | In draft5 |
 
-## Page 111
+## Page 109
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -495,7 +495,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “Neapolitan style” → “Neapolitan-style” | Our proofread | In draft5 |
 | Eat | “flavors” → “flavours” | Our proofread | In draft5 |
 
-## Page 112
+## Page 110
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -508,7 +508,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “Paella Negro” → “Paella Negra” | Our proofread | In draft5 |
 | Eat | “donbri” → “donburi” | Our proofread | In draft5 |
 
-## Page 114
+## Page 112
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -516,20 +516,20 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “an infamous” → “a famous” | Our proofread | In draft5 |
 | Eat | “hand dived” → “hand-dived” | Our proofread | In draft5 |
 
-## Page 115
+## Page 113
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “MIssing” → “Missing” | Our proofread | In draft5 |
 
-## Page 116
+## Page 114
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “they honour our surroundings” → “they honour their surroundings” | Our proofread | In draft5 |
 | Eat | “ambiance” → “ambience” | Our proofread | In draft5 |
 
-## Page 117
+## Page 115
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -539,25 +539,25 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Eat | “als serves” → “also serves” | Our proofread | In draft5 |
 | Eat | “Look out over our fabulous lighthouse” → “Look out over the island's famous lighthouse” | Our proofread | In draft5 |
 
-## Page 118
+## Page 116
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “A truly unique, family run café is located” → “This truly unique, family-run café is located” | Our proofread | In draft5 |
 
-## Page 120
+## Page 118
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “this autumn” → “this winter” | Our proofread | In draft5 |
 
-## Page 121
+## Page 119
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Eat | “on-the-go” → “on the go” | Our proofread | In draft5 |
 
-## Page 122
+## Page 120
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -565,7 +565,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Out Out | “speak-easy” → “speakeasy” | Our proofread | In draft5 |
 | Out Out | “Porters' Store” → “Porter's Store” | Our proofread | In draft5 |
 
-## Page 123
+## Page 121
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -574,31 +574,31 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Out Out | “the newly opened The Watchmaker” → “The Watchmaker” | Our proofread | In draft5 |
 | Out Out | “charcutie” → “charcuterie” | Our proofread | In draft5 |
 
-## Page 124
+## Page 122
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Tidal trail | “48 mile coastal route” → “48-mile coastal route” | Our proofread | In draft5 |
 
-## Page 125
+## Page 123
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Tidal trail | “accessibilty” → “accessibility” | Our proofread | In draft5 |
 
-## Page 127
+## Page 125
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Tidal trail | “coastal charm .Some” → “coastal charm. Some” | Our proofread | In draft5 |
 
-## Page 128
+## Page 126
 
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Island map | “Groznez” → “Grosnez” | Our proofread | In draft5 |
 
-## Page 131
+## Page 129
 
 | Item | Change | Source | Status |
 |---|---|---|---|
@@ -611,12 +611,12 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Item | Change | Source | Status |
 |---|---|---|---|
 | Tours: Battery Lothringen | “EVERY SUNDAY*”, “under-16s and CIOS members free”, “*Likely to be open most Sundays” | Elliott (Visit Jersey) | Not found in draft5 text |
-| Tours: provider index | Kula Yoga: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
-| Tours: provider index | Laneez: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
-| Tours: provider index | Next Level Surf: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
-| Tours: provider index | Vanessa Garrett: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
-| Tours: provider index | Wheatlands: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
-| Tours: provider index | Alpha Course: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory) |
+| Tours: provider index | Kula Yoga: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
+| Tours: provider index | Laneez: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
+| Tours: provider index | Next Level Surf: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
+| Tours: provider index | Vanessa Garrett: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
+| Tours: provider index | Wheatlands: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
+| Tours: provider index | Alpha Course: taken out of the index | Elliott (Visit Jersey) | Gone from the Tours index (still in the old Do directory, p75) |
 | Tours: provider index | Wrong info@jersey.com email taken off Geotourist | Elliott (Visit Jersey) | In draft5 |
 | What’s On and Tours (rule, every page) | Dates written “5, 6, 20 DEC”, “1-31 DEC”: no “UNTIL”, “&” or “6/20” | Elliott (Visit Jersey) | Rule in guide.je export |
 | What’s On and Tours (rule, every page) | Times on the date line; none printed where there are more than two | Elliott (Visit Jersey) | Rule in guide.je export |
