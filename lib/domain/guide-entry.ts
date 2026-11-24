@@ -456,6 +456,8 @@ export type GuideVenue = {
   /** Its name as a listing box prints it, shorter ("Locke’s" for "Locke’s Coffee & Grub"), and the "at …" its words open with. Listings only. */
   printName?: string;
   nameSub?: string;
+  /** Its parish as printed ("St. Lawrence"); the bigger entries give it a line of its own. */
+  parish?: string;
   /** Its admission price, from Visit Jersey ("£11 - £21"); printed in the bigger entries' details. */
   price?: string;
   /** A previous client (marked, booked space, or in the last edition): kept in a box on the small grids even when its name runs long. Not printed. */
@@ -548,6 +550,7 @@ export function guideVenue(p: Place): GuideVenue {
     // A beach's box keeps the Beach Guide's few sentences, fitted to it, as the events' are: which way it faces, the tide, the steps down.
     copy: p.listingSize === 'directory' ? '' : oneLine ? p.guideLine! : withNotes[0] ?? p.guideCopy ?? p.summary ?? '',
     address: [p.addressLine1, printAddress({ addressLine1: null, parish: p.parish, postcode: null })].filter(Boolean).join(', '),
+    ...(printAddress({ addressLine1: null, parish: p.parish, postcode: null }) ? { parish: printAddress({ addressLine1: null, parish: p.parish, postcode: null })! } : {}),
     phone: p.phone ?? '',
     email: p.email ?? '',
     website: printWebsite(p.website) ?? '',

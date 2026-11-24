@@ -55,3 +55,14 @@ describe('IDML venue entries as the 2026 Visit pages', async () => {
     expect(paras.at(-1)!.runs[0]!.text).toBe('jerseywartunnels.com');
   });
 });
+
+describe('IDML venue details with the book’s icons', async () => {
+  const { venueParts } = await import('@/lib/idml/pages');
+  const v = { section: 'Visit', area: 'West', name: 'Jersey War Tunnels', label: '', size: 'full', isNew: false, copy: 'A true story.', address: 'Les Charrières Malorey, St. Lawrence', parish: 'St. Lawrence', phone: '+44 (0) 1534 860808', email: 'info@jerseywartunnels.com', website: 'JERSEYWARTUNNELS.COM', imageUrl: '', preview: '', options: [], featured: false, printed: false, opening: 'Daily 10:00–17:00', bus: '8, 28', price: '£11 - £21' } as never;
+  it('puts an icon before each detail, and the parish on a line of its own', () => {
+    const { info } = venueParts(v, 'full', 'plum', 'Black');
+    const texts = info.map((p) => p.runs.filter((r) => r.text).map((r) => r.text).join('').trim());
+    expect(texts).toEqual(['£11 - £21', 'Daily 10:00–17:00', '8, 28', 'Les Charrières Malorey', 'St. Lawrence', '+44 (0) 1534 860808', 'info@jerseywartunnels.com']);
+    expect(info.slice(0, 6).every((p) => p.runs.some((r) => r.inline))).toBe(true);
+  });
+});

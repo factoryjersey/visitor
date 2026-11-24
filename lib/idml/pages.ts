@@ -2,7 +2,8 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { BadgeCheck, Bus, Clock, Info, MapPin, Ticket } from 'lucide-react';
+import { BadgeCheck, Bus, Clock, Compass, Info, MapPin, SquareCheck } from 'lucide-react';
+import { bookIcon, type BookIcon } from './book-icons';
 import { iconsFor, type Icon } from '@/components/guide/key-icons';
 import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
 import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -687,6 +688,9 @@ export function venueParas(v: GuideVenue, frame: string, s: { when: number; titl
 export function venueParts(v: GuideVenue, frame: string, accent?: string, text = INK): { main: Para[]; info: Para[]; web: Para[] } {
   const colour = accent ? { colour: accent } : {};
   const icon = (Icon: Icon['Icon'], label: string): Run[] => [{ text: '', inline: iconShape({ label, Icon }, 2.6, 1.75, text, 80) }, { text: '\u2009' }];
+  const book = (name: BookIcon): Run[] => [{ text: '', inline: bookIcon(name, 2.4, text, 80) }, { text: '\u2009' }];
+  // The address without its parish when the parish has a line of its own.
+  const street = v.parish ? v.address.replace(new RegExp(`,?\\s*${v.parish.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`), '') : v.address;
   // Its first sentence leads, in Bold, as the 2026 pages open each entry.
   const first = v.copy.match(/^.+?[.!?](?=\s|$)/)?.[0] ?? '';
   const rest = v.copy.slice(first.length).trim();
@@ -696,11 +700,13 @@ export function venueParts(v: GuideVenue, frame: string, accent?: string, text =
       ...(v.copy ? [{ style: 'Venue copy', runs: [...(first ? [{ text: rest ? `${first} ` : first, char: 'Standfirst' }] : []), ...(rest || !first ? [{ text: rest || v.copy }] : [])] }] : []),
     ],
     info: [
-      ...(v.price ? [{ style: 'Venue info', runs: [...icon(Ticket, 'Price'), { text: v.price }] }] : []),
-      ...(v.opening ? [{ style: 'Venue info', runs: [...icon(Clock, 'Opening'), { text: v.opening }] }] : []),
-      ...(v.bus ? [{ style: 'Venue info', runs: [...icon(Bus, 'Bus'), { text: v.bus }] }] : []),
-      ...(v.address ? [{ style: 'Venue info', runs: [...icon(MapPin, 'Address'), { text: v.address, char: 'Info bold' }] }] : []),
-      ...(v.phone ? [{ style: 'Venue phone', ...colour, runs: [{ text: v.phone }] }] : []),
+      // The 2026 editions' own icons for price, hours, bus and parish; a compass for the address; a ticked box for the phone.
+      ...(v.price ? [{ style: 'Venue info', runs: [...book('price'), { text: v.price }] }] : []),
+      ...(v.opening ? [{ style: 'Venue info', runs: [...book('clock'), { text: v.opening }] }] : []),
+      ...(v.bus ? [{ style: 'Venue info', runs: [...book('bus'), { text: v.bus }] }] : []),
+      ...(street ? [{ style: 'Venue info', runs: [...icon(Compass, 'Address'), { text: street, char: 'Info bold' }] }] : []),
+      ...(v.parish ? [{ style: 'Venue info', runs: [...book('parish'), { text: v.parish, char: 'Info bold' }] }] : []),
+      ...(v.phone ? [{ style: 'Venue phone', ...colour, runs: [{ text: '', inline: iconShape({ label: 'Phone', Icon: SquareCheck }, 2.8, 1.75, accent ?? text) }, { text: '\u2009' }, { text: v.phone }] }] : []),
       ...(v.email ? [{ style: 'Venue info', runs: [{ text: v.email, char: 'Email' }] }] : []),
     ],
     web: v.website ? [{ style: 'Venue web', ...colour, runs: [{ text: v.website.toLowerCase() }] }] : [],
