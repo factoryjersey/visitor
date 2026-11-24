@@ -37,3 +37,11 @@ export function facingWords(code: string): string {
   if (!/^[NSEW]{1,3}$/.test(c)) return code;
   return `Faces ${[...c].map((l) => POINTS[l]).join('-')}`;
 }
+
+/** The Beachlife opener's picture, the first of these with one; then the pictures with the introduction. */
+export const BEACH_OPENER = ['St. Ouen', 'Plémont', 'Portelet'];
+export const BEACH_PICTURES = ['Portelet', 'Plémont', 'Beauport', 'Green Island', 'Grève de Lecq', 'Rozel', 'St. Brelade'];
+
+/** Do's opening words, as the 2026 Do pages introduce the activities. */
+export const DO_INTRO =
+  'Jersey excels at providing experiences on and around its coastal playground. Whilst the winter months restrict some activities, others are improved as wind blows kites and tides bring waves. Join a group of surfers, blokarters or scuba divers, or simply climb the rocks or run the trails, taking in the distant views of France. The activities happen on demand: to join one, look up the provider initials beside it in the directory that follows.';

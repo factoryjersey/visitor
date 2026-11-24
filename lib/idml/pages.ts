@@ -1,6 +1,9 @@
 import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
-import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
+import { EVENTS, NEW, TOURS } from '@/lib/domain/guide-sections';
+import { BEACH_INTRO, BEACH_NOTES, BEACH_OPENER, DO_INTRO } from '@/lib/domain/beaches';
+import { BEACHES } from '@/lib/domain/guide-entry';
+import type { DoSection } from '@/lib/domain/do-section';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
 import { BadgeCheck, Bus, Clock, Compass, Info, MapPin, SquareCheck } from 'lucide-react';
 import { bookIcon, type BookIcon } from './book-icons';
@@ -167,6 +170,23 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Index heading', f.headStyle, 11, { font: f.head, before: 2, after: 1.5 }),
       p('Index line', f.medium, 7.5, { leading: 9 }),
       p('Index more', f.light, 7, { leading: 8.4 }),
+      /*
+       * Beachlife, Do and New this season, as the 2026 editions set them
+       * (vjvg_beachlife_26_1, vjvg_26_1_do, the Eat section's New Flavours).
+       */
+      p('Section title', f.headStyle, 20, { font: f.head, leading: 22, tracking: -10 }),
+      p('Section intro', f.regular, 9, { font: f.plain, leading: 11 }),
+      p('Beach name', f.bold, 9, { font: f.plain, leading: 10, tracking: -25 }),
+      p('Beach facing', f.bold, 7, { leading: 10, caps: true, tracking: -25, align: 'right' }),
+      p('Beach copy', f.regular, 7.5, { leading: 8 }),
+      p('Beach note', f.regular, 7.5, { font: f.plain, leading: 9, after: 2 }),
+      p('Do intro', f.regular, 8, { font: f.plain, leading: 10 }),
+      p('Activity', f.regular, 8, { font: f.plain, leading: 9.6, after: 1.4 }),
+      p('Directory label', f.bold, 7, { font: f.plain, caps: true, tracking: -10, after: 2 }),
+      p('Directory line', f.regular, 8, { leading: 9, after: 1.6 }),
+      p('New standfirst', f.regular, 12, { font: f.plain, leading: 14, tracking: -20 }),
+      p('New name', f.bold, 12, { font: f.plain, leading: 13, tracking: -25, before: 2.4 }),
+      p('New copy', f.regular, 8, { font: f.plain, leading: 9.6, tracking: -10 }),
     ],
     charStyles: [
       { name: 'Times', style: f.mediumItalic, colour: text, tint: 80 },
@@ -180,6 +200,13 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       { name: 'Info bold', font: f.body, style: f.bold },
       { name: 'Email', font: f.body, style: f.italic, size: 7.5, colour: text, tint: 80 },
       { name: 'Rating', style: f.medium, size: 6.5 },
+      { name: 'Bus routes', font: f.body, style: f.bold, tint: 80 },
+      { name: 'Activity name', font: f.plain, style: f.bold, caps: true, colour: sectionSwatch('Do', palette).name },
+      { name: 'Provider codes', font: f.body, style: f.regular, colour: sectionSwatch('Do', palette).name, tint: 80 },
+      { name: 'Provider code', font: f.body, style: f.bold, colour: sectionSwatch('Do', palette).name, tint: 80 },
+      { name: 'Provider phone', font: f.body, style: f.bold, colour: text },
+      { name: 'Provider web', font: f.narrow, style: f.italic, tint: 80 },
+      { name: 'New web', font: f.plain, style: f.bold },
     ],
   };
 }
@@ -187,7 +214,7 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
 /** The swatches the frames name: the edition's palette, and the ink. */
 export function swatches(palette: GuidePalette, sections: string[]): Swatch[] {
   const page = pageSwatches(palette);
-  const all = [...sections.map((s) => sectionSwatch(s, palette)), page.events, page.tours, page.toursLight, page.new];
+  const all = [...[...sections, 'Beaches', 'Do'].map((s) => sectionSwatch(s, palette)), page.events, page.tours, page.toursLight, page.new];
   return [{ name: INK, cmyk: PALETTE.deepBlue.cmyk }, { name: TA_GREEN, cmyk: [85, 0, 75, 0] }, ...[...new Map(all.map((w) => [w.name, w])).values()].map((w) => ({ name: w.name, cmyk: w.cmyk }))];
 }
 
@@ -203,6 +230,8 @@ const advance = (c: string) => (c === ' ' ? 0.26 : /[A-Z0-9]/.test(c) ? 0.62 : /
 function linesOf(text: string, pt: number, widthMm: number, narrow: number): number {
   let lines = 1, at = 0;
   const em = pt * MM_PER_PT * narrow;
+  // A forced line break starts a line of its own.
+  if (text.includes('\n')) return text.split('\n').reduce((n, part) => n + linesOf(part, pt, widthMm, narrow), 0);
   for (const word of text.split(/\s+/).filter(Boolean)) {
     const w = [...word].reduce((n, c) => n + advance(c), 0) * em;
     const space = advance(' ') * em;
@@ -491,8 +520,178 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     }
   }
 
+  // New this season, from a left-hand page, ahead of the venue sections.
+  if (guide.newThisSeason.length) newSection();
   // The venue sections: each from a left-hand page; full pages, grid pages, then its index.
   for (const vs of guide.sections) venueSection(vs);
+
+  /*
+   * New this season, as the 2026 Eat pages set New Flavours: a picture across
+   * the top, the title and a standfirst in the colour, then the places in two
+   * columns, each numbered in Bold, its copy and its website, flowing on.
+   */
+  function newSection() {
+    const section = { name: NEW.name, colour: page.new.name };
+    begin(section, pages.length ? { name: sectionName, colour: section.colour } : section);
+    part = 'venues';
+    const rows = guide.newThisSeason;
+    const paras: Para[] = rows.flatMap((r, i): Para[] => [
+      { style: 'New name', colour: section.colour, runs: [{ text: `${i + 1}. ${r.name}` }] },
+      { style: 'New copy', runs: [{ text: r.copy || r.line }, ...(r.website ? [{ text: `\n${r.website}`, char: 'New web' }] : [])] },
+    ]);
+    const lead = rows.find((r) => r.imageUrl);
+    const firstCols = lead ? 150 - 96 : 150 - 36;
+    const h = parasHeight(paras, COL, styleMap, narrow) * 1.1;
+    const count = 1 + Math.max(0, Math.ceil((h - 2 * firstCols) / (2 * 141.5)));
+    for (let i = 0; i < count; i += 1) {
+      const items: Item[] = [];
+      furniture(items, section);
+      items.push({ kind: 'rect', x: -3, y: -3, w: PAGE_W + 6, h: PAGE_H + 6, fill: section.colour, tint: 20 });
+      const x = LEFT_MARGIN(left());
+      let top = 8.5;
+      if (i === 0) {
+        if (lead) {
+          image(items, lead.imageUrl, { x, y: 8.5, w: 94.9, h: 56 });
+          items.push({ kind: 'text', x, y: 8.5 + 56 - 4, w: 60, h: 4, inset: 0.8, paras: [{ style: 'photo caption', runs: [{ text: lead.name }] }] });
+          top = 67;
+        }
+        items.push({ kind: 'text', x, y: top, w: 94.9, h: 9, paras: [{ style: 'Section title', colour: section.colour, runs: [{ text: 'New this season' }] }] });
+        items.push({ kind: 'text', x, y: top + 9.5, w: 94.9, h: 16, paras: [{ style: 'New standfirst', colour: section.colour, runs: [{ text: 'Opened since our last edition: new places to eat, drink, shop and explore.' }] }] });
+        top += 28;
+      }
+      for (let c = 0; c < 2; c += 1) items.push({ kind: 'text', x: x + c * (COL + GUTTER), y: top, w: COL, h: 150 - top, thread: 'new-this-season', paras: i === 0 && c === 0 ? paras : [] });
+      push(items);
+    }
+  }
+
+  /*
+   * Beachlife, as the 2026 edition opens its beaches: a page on sand with a
+   * beach across the top, the title, the introduction and the notes; then
+   * the beaches two to a row, each its picture, a rule, its name with the way
+   * it faces, and its copy ending with the buses, its size fitted to its box.
+   */
+  function beachPages(vs: VenueSection, section: { name: string; colour: string }) {
+    const beaches = vs.pages.flatMap((p) => (p.kind === 'full' ? [p.venue] : p.cells)) as GuideVenue[];
+    const sand = (items: Item[]) => items.push({ kind: 'rect', x: -3, y: -3, w: PAGE_W + 6, h: PAGE_H + 6, fill: section.colour, tint: 20 });
+    {
+      const items: Item[] = [];
+      furniture(items, section);
+      sand(items);
+      const x = LEFT_MARGIN(left());
+      const lead = BEACH_OPENER.map((n) => [...beaches, ...vs.directory].find((v) => v.name.startsWith(n) && v.imageUrl)).find(Boolean);
+      if (lead) {
+        image(items, lead.imageUrl, { x, y: 8.5, w: 94.9, h: 62 });
+        items.push({ kind: 'text', x, y: 8.5 + 62 - 4, w: 60, h: 4, inset: 0.8, paras: [{ style: 'photo caption', runs: [{ text: lead.name }] }] });
+      }
+      const top = lead ? 73 : 8.5;
+      items.push({ kind: 'text', x, y: top, w: 94.9, h: 9, paras: [{ style: 'Section title', colour: section.colour, runs: [{ text: 'BEACHLIFE' }] }] });
+      const last = BEACH_INTRO.lastIndexOf('. ');
+      items.push({ kind: 'text', x, y: top + 10, w: 94.9, h: 20, paras: [{ style: 'Section intro', runs: last > 0 ? [{ text: BEACH_INTRO.slice(0, last + 2) }, { text: BEACH_INTRO.slice(last + 2), char: 'Standfirst' }] : [{ text: BEACH_INTRO }] }] });
+      const notes = BEACH_NOTES.map((n): Para => ({ style: 'Beach note', runs: [{ text: `${n.title} `, char: 'Standfirst' }, { text: n.text }] }));
+      items.push({ kind: 'text', x, y: top + 32, w: COL, h: 150 - top - 32, thread: 'beach-notes', paras: notes });
+      items.push({ kind: 'text', x: x + COL + GUTTER, y: top + 32, w: COL, h: 150 - top - 32, thread: 'beach-notes', paras: [] });
+      push(items);
+    }
+    const pitch = 141.5 / 4;
+    for (let at = 0; at < beaches.length; at += 8) {
+      const items: Item[] = [];
+      const on = beaches.slice(at, at + 8);
+      const areas = vs.key.filter((k) => on.some((v) => v.area === k.area)).map((k) => k.area);
+      furniture(items, section, areas.length <= 2 ? areas.join(' · ') || undefined : `${areas[0]} – ${areas.at(-1)}`);
+      sand(items);
+      on.forEach((v, i) => {
+        const x = LEFT_MARGIN(left()) + (i % 2) * (COL + GUTTER);
+        const y = 8.5 + Math.floor(i / 2) * pitch;
+        let t = y;
+        if (v.imageUrl) {
+          image(items, v.imageUrl, { x, y, w: COL, h: 17 });
+          t = y + 17.5;
+        }
+        items.push({ kind: 'line', x1: x, y1: t, x2: x + COL, y2: t, stroke: section.colour, weight: 0.25 });
+        // The name on one line beside the way it faces: smaller, if it is long, as the 2026 pages set the longer names.
+        const nameW = COL - (v.label ? 6 : 0);
+        const name = v.printName ?? v.name;
+        const nameSize = [9, 8.5, 8, 7.5].find((pt) => parasHeight([{ style: 'Beach name', size: pt, runs: [{ text: name }] }], nameW, styleMap, narrow) <= 10 * MM_PER_PT * 1.01) ?? 7.5;
+        items.push({ kind: 'text', x, y: t + 0.5, w: nameW, h: 3.6, paras: [{ style: 'Beach name', size: nameSize, colour: section.colour, runs: [{ text: name }] }] });
+        if (v.label) items.push({ kind: 'text', x: x + COL - 6, y: t + 0.5, w: 6, h: 3.6, paras: [{ style: 'Beach facing', colour: section.colour, runs: [{ text: v.label }] }] });
+        const ch = y + pitch - 1.5 - (t + 4.5);
+        const build = (size: number) => (copy: string): Para[] => [{ style: 'Beach copy', size, leading: size + 0.5, runs: [{ text: copy }, ...(v.bus ? [{ text: ' ' }, { text: '', inline: bookIcon('bus', 1.8, textColour(palette)) }, { text: `\u2009${v.bus}`, char: 'Bus routes' }] : [])] }];
+        // The fullest copy that fits at any size down to 6.5pt, as the 2026 pages fitted each beach by hand; never a note on its own.
+        const options = [...new Set((v.options.length ? v.options : [v.copy]).filter((o) => o && !/^(Geopark|National Park)\b/.test(o)))];
+        let paras: Para[] = build(6.5)(options.at(-1) ?? v.copy);
+        search: for (const copy of options) {
+          for (const size of [8, 7.5, 7, 6.5]) {
+            const tryParas = build(size)(copy);
+            if (parasHeight(tryParas, COL, styleMap, narrow) <= ch * 0.97) { paras = tryParas; break search; }
+          }
+        }
+        items.push({ kind: 'text', x, y: t + 4.5, w: COL, h: ch, paras });
+      });
+      push(items);
+    }
+  }
+
+  /*
+   * Do, as the 2026 Do pages set it: the activities in a column beside their
+   * pictures, each its name in capitals, its copy, then the tick and the
+   * initials of who offers it; then the directory of providers, two columns.
+   */
+  function doPages(ds: DoSection, section: { name: string; colour: string }) {
+    const boxes = ds.pages.flatMap((p) => p.cells).filter((b) => b.frame !== 'image');
+    const tick = iconShape({ label: 'Provider', Icon: BadgeCheck }, 2.8, 1.75, section.colour, 80);
+    const entry = (b: (typeof boxes)[number]): Para => ({ style: 'Activity', runs: [{ text: b.name, char: 'Activity name' }, { text: ` ${b.blurb}` }, ...(b.codes.length ? [{ text: '  ' }, { text: '', inline: tick }, { text: ` ${b.codes.join(' ')}`, char: 'Provider codes' }] : [])] });
+    let i = 0;
+    let first = true;
+    while (i < boxes.length || first) {
+      const items: Item[] = [];
+      furniture(items, section, 'Activities');
+      const x = LEFT_MARGIN(left());
+      let y = 8.5;
+      if (first) {
+        const lead = boxes.find((b) => b.imageUrl);
+        if (lead) {
+          image(items, lead.imageUrl, { x, y: 8.5, w: 94.9, h: 55 });
+          y = 66;
+        }
+        items.push({ kind: 'text', x, y, w: 94.9, h: 8.5, paras: [{ style: 'Section title', colour: section.colour, runs: [{ text: 'DO / ' }, { text: 'activities.', char: 'Times' }] }] });
+        items.push({ kind: 'line', x1: x, y1: y + 9, x2: x + 94.9, y2: y + 9, stroke: section.colour, weight: 0.5 });
+        items.push({ kind: 'text', x, y: y + 11, w: 94.9, h: 20, paras: [{ style: 'Do intro', runs: [{ text: DO_INTRO }] }] });
+        y += 11 + parasHeight([{ style: 'Do intro', runs: [{ text: DO_INTRO }] }], 94.9, styleMap, narrow) * 1.2 + 4;
+        first = false;
+      }
+      for (; i < boxes.length; i += 1) {
+        const b = boxes[i]!;
+        const para = entry(b);
+        // Beside its picture, as the 2026 pages set them; across the column when it has none.
+        const tx = b.imageUrl ? 32 : 0;
+        const th = parasHeight([para], 94.9 - tx, styleMap, narrow) * 1.1;
+        const h = b.imageUrl ? Math.max(14, th) : th;
+        if (y + h > 150) break;
+        if (b.imageUrl) image(items, b.imageUrl, { x, y, w: 29, h: 14 });
+        items.push({ kind: 'text', x: x + tx, y, w: 94.9 - tx, h: Math.max(th, 6), paras: [para] });
+        y += h + 3;
+      }
+      push(items);
+      if (i < boxes.length && y === 8.5) i += 1; // a box taller than a page: never loop on it
+    }
+    if (!ds.providers.length) return;
+    const lines: Para[] = ds.providers.map((p): Para => ({ style: 'Directory line', runs: [
+      { text: '', inline: tick }, { text: ' ' }, { text: p.code, char: 'Provider code' }, { text: `  ${p.name}` },
+      ...(p.phone || p.website ? [{ text: '\n' }] : []),
+      ...(p.phone ? [{ text: p.phone, char: 'Provider phone' }] : []),
+      ...(p.website ? [{ text: `${p.phone ? '   ' : ''}${p.website}`, char: 'Provider web' }] : []),
+    ] }));
+    const dirH = parasHeight(lines, COL, styleMap, narrow);
+    const count = Math.max(1, Math.ceil((dirH * 1.05) / (2 * 132.5)));
+    for (let k = 0; k < count; k += 1) {
+      const items: Item[] = [];
+      furniture(items, section, 'Providers');
+      const x = LEFT_MARGIN(left());
+      if (k === 0) items.push({ kind: 'text', x, y: 8.5, w: 94.9, h: 4, paras: [{ style: 'Directory label', colour: section.colour, runs: [{ text: 'Activity provider directory' }] }] });
+      for (let c = 0; c < 2; c += 1) items.push({ kind: 'text', x: x + c * (COL + GUTTER), y: 17.5, w: COL, h: 132.5, thread: 'do-directory', paras: k === 0 && c === 0 ? lines : [] });
+      push(items);
+    }
+  }
 
   function venueSection(vs: VenueSection) {
     const section = { name: vs.section, colour: sectionSwatch(vs.section, palette).name };
@@ -507,7 +706,8 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
       const areas = vs.key.filter((k) => on.some((v) => v.area === k.area)).map((k) => k.area);
       return areas.length <= 2 ? areas.join(' · ') || undefined : `${areas[0]} – ${areas.at(-1)}`;
     };
-    for (const p of vs.pages) {
+    if (vs.section === BEACHES) beachPages(vs, section);
+    for (const p of vs.section === BEACHES ? [] : vs.pages) {
       const items: Item[] = [];
       const on = p.kind === 'full' ? [p.venue] : p.cells;
       furniture(items, section, marker(on));
@@ -613,6 +813,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         push(items);
       }
     }
+    if (vs.section === 'Do' && guide.doSection) doPages(guide.doSection, section);
     // Looking ahead, after Visit: the attractions closed for some of the edition, in the order they open again, as the proof sets them.
     if (vs.section === 'Visit' && guide.lookingAhead.length) {
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

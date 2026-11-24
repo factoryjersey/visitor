@@ -23,7 +23,11 @@ export function updateBookScript(issue: string): string {
     { idml: 'whatson_events_' + ISSUE + '.idml', replaces: /^whatson_(merge_)?events_/i },
     { idml: 'whatson_tours_' + ISSUE + '.idml', replaces: /^whatson_(merge_)?tours_/i },
     // Pubs & bars, in place of the book's Out Out pages.
-    { idml: 'vjvg_pubs_bars_' + ISSUE + '.idml', replaces: /^vjvg_(outout|pubs_bars)_/i }
+    { idml: 'vjvg_pubs_bars_' + ISSUE + '.idml', replaces: /^vjvg_(outout|pubs_bars)_/i },
+    // Beachlife and Do in place of the book's, and New this season, added for placing by hand.
+    { idml: 'vjvg_beaches_' + ISSUE + '.idml', replaces: /^vjvg_(beachlife|beaches)_/i },
+    { idml: 'vjvg_do_' + ISSUE + '.idml', replaces: /^vjvg_(\\d+_\\d+_)?do(_|\\.)/i },
+    { idml: 'vjvg_new_this_season_' + ISSUE + '.idml', replaces: /^vjvg_new_this_season_/i }
     // Other venue sections, as the book takes them from guide.je, e.g.:
     // , { idml: 'vjvg_eat_' + ISSUE + '.idml', replaces: /^vjvg_(26_\\d_)?eat/i }
   ];

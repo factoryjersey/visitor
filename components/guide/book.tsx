@@ -3,7 +3,7 @@
 import { BadgeCheck, Bus, Clock, Globe, MapPin, Phone } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { BEACHES, tourWhen, type GuideEvent, type GuideTour, type GuideVenue, type Layout, type TourLayout, type AreaKey, type VenueCell, type VenueSection } from '@/lib/domain/guide-entry';
-import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES } from '@/lib/domain/beaches';
+import { BEACH_INTRO, BEACH_KEY, BEACH_NOTES, BEACH_OPENER, BEACH_PICTURES } from '@/lib/domain/beaches';
 import type { GuideProvider, LookingAhead, NewPlace } from '@/lib/guide';
 import { monthName } from '@/lib/domain/opening';
 import { markerText, pageSwatches, sectionSwatch, tint, type GuidePalette } from '@/lib/domain/guide-colours';
@@ -378,8 +378,6 @@ function BeachIntro({ pictures }: { pictures: GuideVenue[] }) {
 }
 
 /** The beaches the Beachlife spread pictures: the opener's, then four for the right-hand page, each the first with its own photograph. */
-const BEACH_OPENER = ['St. Ouen', 'Plémont', 'Portelet'];
-const BEACH_PICTURES = ['Portelet', 'Plémont', 'Beauport', 'Green Island', 'Grève de Lecq', 'Rozel', 'St. Brelade'];
 
 /** A line in Looking ahead: the month it opens again, its name, its line, and how and when to visit; a client's picture beside. */
 function AheadRow({ r }: { r: LookingAhead }) {

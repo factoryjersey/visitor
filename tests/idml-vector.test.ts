@@ -66,3 +66,48 @@ describe('IDML venue details with the book’s icons', async () => {
     expect(info.slice(0, 6).every((p) => p.runs.some((r) => r.inline))).toBe(true);
   });
 });
+
+describe('IDML Do, Beachlife and New this season pages', async () => {
+  const { guidePages, parasHeight, styles } = await import('@/lib/idml/pages');
+  const style = new Map(styles('classic').paraStyles.map((p) => [p.name, p]));
+  const box = (slug: string, side: 'water' | 'land') => ({ slug, name: slug.toUpperCase(), side, blurb: 'An activity on the island, with a line or two about it.', codes: ['AA', 'JS'], imageUrl: '', thumb: '', frame: 'listing' as const });
+  const beach = (name: string) => ({ name, label: 'SW', copy: 'A sandy bay facing the sunset, with a café.', options: ['A sandy bay facing the sunset, with a café.', 'Geopark: granite.'], bus: '12a, 14', area: 'West', imageUrl: '' });
+  const guide = {
+    highlights: [], events: [], ongoing: [], pages: [], ongoingPages: [], tours: [], tourPages: [], providers: [], layout: 'grid8', lookingAhead: [],
+    newThisSeason: [{ name: 'Tallow', section: 'Eat', line: 'New on Weighbridge Place.', copy: 'New on Weighbridge Place. Local produce, cooked over fire.', thumb: '', imageUrl: '', address: '', phone: '', website: 'tallow.je' }],
+    sections: [
+      { section: 'Beaches', grid: 'grid8', pages: [{ kind: 'grid', cells: [beach('St. Ouen’s Bay'), beach('Plémont Bay')] }], directory: [], key: [{ area: 'West', code: 'W' }] },
+      { section: 'Do', grid: 'grid8', pages: [], directory: [], key: [] },
+    ],
+    doSection: { grid: 'grid8', activities: [], pages: [{ sides: ['water'], cells: [box('surf', 'water'), box('kayak', 'water')] }], providers: [{ code: 'AA', name: 'Absolute Adventures', phone: '+44 (0) 7829 881111', website: 'absoluteadventures.je', activities: ['surf'] }] },
+  } as unknown as import('@/lib/guide').Guide;
+  const laid = guidePages({ guide, palette: 'classic', firstPage: 68, pictures: new Map() });
+  const text = (section: string) => laid.pages.filter((p) => p.section === section).flatMap((p) => p.items.flatMap((i) => (i.kind === 'text' ? i.paras.flatMap((pa) => pa.runs.map((r) => r.text)) : []))).join(' ');
+
+  it('counts a forced line break as a line of its own', () => {
+    const one = parasHeight([{ style: 'Directory line', runs: [{ text: 'AA Absolute' }] }], 45.5, style, 0.8);
+    const two = parasHeight([{ style: 'Directory line', runs: [{ text: 'AA Absolute\n+44 (0) 7829 881111' }] }], 45.5, style, 0.8);
+    expect(two).toBeGreaterThan(one);
+  });
+  it('opens the beaches on sand with the title, and sets each beach with the way it faces and its buses', () => {
+    const t = text('Beaches');
+    expect(t).toContain('BEACHLIFE');
+    expect(t).toContain('St. Ouen’s Bay');
+    expect(t).toContain('SW');
+    expect(t).toContain('12a, 14');
+    expect(t).not.toContain('Geopark: granite.');
+  });
+  it('sets the activities with their providers’ initials, then the provider directory', () => {
+    const t = text('Do');
+    expect(t).toContain('activities.');
+    expect(t).toContain('SURF');
+    expect(t).toContain(' AA JS');
+    expect(t).toContain('Activity provider directory');
+    expect(t).toContain('+44 (0) 7829 881111');
+  });
+  it('numbers the places new this season, ahead of the venue sections', () => {
+    expect(text('New this season')).toContain('1. Tallow');
+    const first = laid.pages.findIndex((p) => p.section === 'New this season');
+    expect(first).toBeLessThan(laid.pages.findIndex((p) => p.section === 'Beaches'));
+  });
+});

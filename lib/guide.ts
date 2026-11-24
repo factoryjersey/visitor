@@ -69,7 +69,8 @@ export type GuideProvider = { code: string; name: string; contact: string; websi
 
 /** An attraction closed for part of the edition: when it opens again, and how to reach it. */
 /** A place new this season, as its page prints it: what it is, a line about it, a picture, and how to find it. */
-export type NewPlace = { name: string; section: string; line: string; thumb: string; imageUrl: string; address: string; phone: string; website: string };
+/** `copy` is the fuller third-person text, for print, where `line` is its first sentence. */
+export type NewPlace = { name: string; section: string; line: string; copy: string; thumb: string; imageUrl: string; address: string; phone: string; website: string };
 
 const SECTION_LABEL: Record<string, string> = { 'eat-drink': 'Eat', see: 'Visit', do: 'Do', shop: 'Buy', stay: 'Stay' };
 
@@ -291,6 +292,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
     name: p.name,
     section: p.guideSection ?? SECTION_LABEL[p.category] ?? '',
     line: p.guideLine && usableLine(p.guideLine) ? p.guideLine : (p.guideCopy ?? p.summary ?? p.description ?? '').replace(/\s+/g, ' ').split(/(?<=[.!?])\s/)[0] ?? '',
+    copy: (p.guideCopy ?? p.summary ?? p.description ?? '').replace(/\s+/g, ' ').trim(),
     thumb: printable(p.headerImage) ? webImage(p.headerImage!, 300, 300) : '',
     imageUrl: printable(p.headerImage) ? p.headerImage!.url : '',
     address: [p.addressLine1, printParish(p.parish)].filter(Boolean).join(', '),

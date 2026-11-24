@@ -16,7 +16,7 @@ import { ZipWriter } from '@/lib/zip';
 import { bookDocument, guidePages, styles, swatches, type Picture } from '@/lib/idml/pages';
 import { idmlFiles } from '@/lib/idml/write';
 import { updateBookScript } from '@/lib/idml/update-book';
-import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
+import { EVENTS, NEW, TOURS } from '@/lib/domain/guide-sections';
 import { asJpeg, imageSize } from '@/lib/idml/image-size';
 
 /** A section's document as the book names it: What's On and Tours as the merge files did, a venue section vjvg_<section>_<issue>. */
@@ -85,9 +85,11 @@ export async function buildPackage(sp: URLSearchParams, emit: PackageFile): Prom
   for (const e of [...guide.highlights, ...events]) if (e.imageUrl) link(e.imageUrl, e.title);
   for (const t of guide.tours) if (t.imageUrl) link(t.imageUrl, t.title);
   for (const v of guide.venues) if (v.imageUrl) link(v.imageUrl, v.name);
+  for (const r of guide.newThisSeason) if (r.imageUrl) link(r.imageUrl, r.name);
+  for (const b of guide.doSection?.pages.flatMap((pg) => pg.cells) ?? []) if (b.imageUrl) link(b.imageUrl, b.name);
   // A section on its own fetches only the pictures its pages use.
   const used = only
-    ? new Set(only === EVENTS.name ? [...guide.highlights, ...events].map((e) => e.imageUrl) : only === TOURS.name ? guide.tours.map((t) => t.imageUrl) : guide.venues.filter((v) => v.section === only).map((v) => v.imageUrl))
+    ? new Set(only === EVENTS.name ? [...guide.highlights, ...events].map((e) => e.imageUrl) : only === TOURS.name ? guide.tours.map((t) => t.imageUrl) : only === NEW.name ? guide.newThisSeason.map((r) => r.imageUrl) : [...guide.venues.filter((v) => v.section === only).map((v) => v.imageUrl), ...(only === 'Do' ? guide.doSection?.pages.flatMap((pg) => pg.cells.map((b) => b.imageUrl)) ?? [] : [])])
     : null;
   const queue = [...links.entries()].filter(([url]) => !used || used.has(url));
   const pictures = new Map<string, Picture>();
