@@ -660,7 +660,7 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Visit | “Suggested last entry to tunnels; 4pm” → “Suggested last entry to tunnels: 16:00” | Our proofread | Not found in draft5 text |
 | Visit | “Daily 10:00 to 5:30” → “Daily: 10:00 - 17:30” | Our proofread | Not found in draft5 text |
 | Visitor Information Centre | “FInd your feet” → “Find your feet” | Our proofread | Not found in draft5 text |
-| Do directory / provider index: Absolute Adventures | +1 (0) 7829 881111 → +44 (0) 7829 881111 | Our proofread (fixed in guide.je) | Not found in draft5 text |
+| Do directory / provider index: Absolute Adventures | +1 (0) 7829 881111 → +44 (0) 7829 881111 | Our proofread (fixed in guide.je) | In draft5 (old text gone) |
 | Do: Blokarting | Copy put in third person / updated (no “our”, “we”, “during lockdown”, “new skatepark”) | Our proofread (fixed in guide.je) | guide.je data (next Do export) |
 | Do: Boating | Copy put in third person / updated (no “our”, “we”, “during lockdown”, “new skatepark”) | Our proofread (fixed in guide.je) | guide.je data (next Do export) |
 | Do: Golf | Copy put in third person / updated (no “our”, “we”, “during lockdown”, “new skatepark”) | Our proofread (fixed in guide.je) | guide.je data (next Do export) |
@@ -671,6 +671,6 @@ Every change made since the packaged edition, by page of draft5 (`vjvg_26_4_draf
 | Do: Swim | Copy put in third person / updated (no “our”, “we”, “during lockdown”, “new skatepark”) | Our proofread (fixed in guide.je) | guide.je data (next Do export) |
 | Do: Take a RIB blast | Copy put in third person / updated (no “our”, “we”, “during lockdown”, “new skatepark”) | Our proofread (fixed in guide.je) | guide.je data (next Do export) |
 | What’s On: Titanic – The Jersey Story | Postcode JE2 3ND added | Our proofread (fixed in guide.je) | Not found in draft5 text |
-| What’s On: Vivaldi Four Seasons | Postcode JE24WH → JE2 4WH | Our proofread (fixed in guide.je) | Not found in draft5 text |
-| What’s On: Wace at Lunchtime | Postcode JE23UG → JE2 3UG | Our proofread (fixed in guide.je) | Not found in draft5 text |
+| What’s On: Vivaldi Four Seasons | Postcode JE24WH → JE2 4WH | Our proofread (fixed in guide.je) | In draft5 (old text gone) |
+| What’s On: Wace at Lunchtime | Postcode JE23UG → JE2 3UG | Our proofread (fixed in guide.je) | In draft5 (old text gone) |
 | What’s On: Wace: The Norman Conquests | Bath Street, JE2 → 94 Bath Street, JE2 4SU | Our proofread (fixed in guide.je) | Not found in draft5 text |
