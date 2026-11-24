@@ -39,7 +39,7 @@ describe('IDML copy fitting', async () => {
   it('grows with the words, a line at a time', () => {
     const one = parasHeight([{ style: 'listing body', runs: [{ text: 'A short line.' }] }], 45.5, style, 1);
     const more = parasHeight([{ style: 'listing body', runs: [{ text: 'A festive literary salon pairing a Christmas story with seasonal fare. Expect a cosy evening in the heart of St Helier.' }] }], 45.5, style, 1);
-    expect(one).toBeCloseTo(9.2 * 25.4 / 72, 1);
+    expect(one).toBeCloseTo(8 * 25.4 / 72, 1);
     expect(more).toBeGreaterThan(2.5 * one);
   });
 });

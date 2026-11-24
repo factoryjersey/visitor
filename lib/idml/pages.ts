@@ -36,13 +36,13 @@ const TA_GREEN = 'Tripadvisor green';
 
 /** A website icon as an inline shape: its lines, as the proof draws them (1.75 on its 24-unit grid), in the ink at 80%. */
 const iconShapes = new Map<string, InlineShape>();
-function iconShape(icon: Icon, mm: number, stroke = 1.75): InlineShape {
-  const key = `${icon.label}@${mm}@${stroke}`;
+function iconShape(icon: Icon, mm: number, stroke = 1.75, colour?: string): InlineShape {
+  const key = `${icon.label}@${mm}@${stroke}@${colour ?? ''}`;
   const had = iconShapes.get(key);
   if (had) return had;
   const size = mm * MM;
   const scale = size / 24;
-  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: INK, strokeTint: 80, weight: stroke * scale }] };
+  const shape: InlineShape = { width: size, height: size, shapes: [{ subpaths: placed(subpathsOf(iconNode(icon.Icon)), scale, 0, 0), stroke: colour ?? INK, strokeTint: colour ? undefined : 80, weight: stroke * scale }] };
   iconShapes.set(key, shape);
   return shape;
 }
@@ -102,10 +102,13 @@ const SIZES: Record<string, { when: number; title: number; copy: number; small: 
   grid16: { when: 6.5, title: 7.5, copy: 7, small: 6.5 },
 };
 
+/** The text's colour: black, as the 2026 editions print it; the Jersey palette's deep blue from issue 37. */
+export const textColour = (palette: GuidePalette) => (palette === 'classic' ? 'Black' : INK);
+
 export function fonts(palette: GuidePalette) {
   return palette === 'classic'
-    ? { body: 'Proxima Nova Condensed', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
-    : { body: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
+    ? { body: 'Proxima Nova Condensed', narrow: 'Proxima Nova Extra Condensed', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Semibold', mediumItalic: 'Medium Italic', semiboldItalic: 'Semibold Italic', bold: 'Bold', head: 'Proxima Nova Condensed', headStyle: 'Bold' }
+    : { body: 'Google Sans Flex', narrow: 'Google Sans Flex', light: 'Light', regular: 'Regular', italic: 'Italic', medium: 'Medium', mediumItalic: 'Medium Italic', semiboldItalic: 'Medium Italic', bold: 'Bold', head: 'GT Flaire Extra', headStyle: 'Regular' };
 }
 
 /**
@@ -115,18 +118,25 @@ export function fonts(palette: GuidePalette) {
  */
 export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charStyles: CharStyle[] } {
   const f = fonts(palette);
-  const p = (name: string, style: string, size: number, o: Partial<ParaStyle> = {}): ParaStyle => ({ name, font: f.body, style, size, colour: INK, ...o });
+  const text = textColour(palette);
+  const p = (name: string, style: string, size: number, o: Partial<ParaStyle> = {}): ParaStyle => ({ name, font: f.body, style, size, colour: text, ...o });
+  const accent = pageSwatches(palette).events.name;
   return {
     paraStyles: [
-      // Leading at the proof's 1.08 line height for listings; a box set smaller keeps the proportion.
-      p('When', f.bold, 9, { caps: true, leading: 9.7 }),
-      p('listings title', f.medium, 9, { leading: 9.7, before: 0.2, after: 0.3 }),
-      p('listing body', f.light, 8.5, { leading: 9.2 }),
-      p('Venue', f.medium, 7.5, { before: 2, leading: 8.1 }),
-      // Address and contact in italic, as the proof sets them.
-      p('Address', f.semiboldItalic, 7.5, { leading: 8.1 }),
-      p('Contact', f.italic, 7.5, { leading: 8.1 }),
-      p('Web', f.medium, 7.5, { caps: true, before: 1.2, leading: 8.1 }),
+      /*
+       * A listing as the 2026 editions set it (whatson_merge_events_26_3): the date
+       * Semibold caps 9/9 in black, the title Bold 9/9 in the section's colour, the
+       * copy Regular 8.5 on 8, the venue Bold on 8 and its address and phone in
+       * italic (Proxima Nova Extra Condensed) in the section's colour, the website
+       * Bold caps in 80% black. Pages set a section's colour on the lines that take it.
+       */
+      p('When', f.medium, 9, { caps: true, leading: 9 }),
+      p('listings title', f.bold, 9, { leading: 9, tracking: -10, before: 0.2, after: 0.2, colour: accent }),
+      p('listing body', f.regular, 8.5, { leading: 8 }),
+      p('Venue', f.bold, 7.5, { before: 1.6, leading: 8, tracking: -20, colour: accent }),
+      p('Address', f.semiboldItalic, 7.5, { font: f.narrow, leading: 8, colour: accent }),
+      p('Contact', f.italic, 7.5, { font: f.narrow, leading: 8, tracking: -20, colour: accent }),
+      p('Web', f.bold, 7.5, { caps: true, before: 1, leading: 8.5, tint: 80 }),
       p('Venue name', f.medium, 9, { leading: 9.7, after: 0.4 }),
       p('Tour meta', f.medium, 7, { before: 0.6, leading: 8 }),
       p('Highlight title', f.headStyle, 15, { font: f.head, leading: 15.8, before: 0.5, after: 2 }),
@@ -141,16 +151,22 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Key heading', f.headStyle, 12, { font: f.head, after: 1 }),
       // The provider index: each guide on a line, a hairline in the tours' light green under it, as the proof rules them.
       p('Key line', f.regular, 8, { leading: 10, after: 0.3, ruleBelow: { colour: pageSwatches(palette).toursLight.name, weight: 0.5, offset: 2.2 } }),
+      // Looking ahead: the month an attraction opens again hanging in its own column, then its name, its line, and how to visit; a hairline under each.
+      p('Ahead intro', f.italic, 9, { tint: 80, after: 3 }),
+      p('Ahead name', f.medium, 8, { leading: 10, before: 1.4, leftIndent: 22, firstIndent: -22 }),
+      p('Ahead line', f.regular, 8, { leading: 10, leftIndent: 22 }),
+      p('Ahead contact', f.italic, 7, { leading: 9, tint: 80, leftIndent: 22, after: 1.4, ruleBelow: { colour: sectionSwatch('Visit', palette).name, weight: 0.5, offset: 1.4 * 72 / 25.4 } }),
       p('Index heading', f.headStyle, 11, { font: f.head, before: 2, after: 1.5 }),
       p('Index line', f.medium, 7.5, { leading: 9 }),
       p('Index more', f.light, 7, { leading: 8.4 }),
     ],
     charStyles: [
-      { name: 'Times', style: f.mediumItalic, colour: INK, tint: 80 },
-      { name: 'Price', style: f.medium, colour: INK },
+      { name: 'Times', style: f.mediumItalic, colour: text, tint: 80 },
+      { name: 'Price', style: f.regular, colour: accent },
       { name: 'Tag', style: f.medium, size: 5.5, caps: true },
       { name: 'Code', style: f.bold },
       { name: 'Accent', style: f.medium },
+      { name: 'Ahead when', style: f.medium, caps: true },
       { name: 'Rating', style: f.medium, size: 6.5 },
     ],
   };
@@ -398,10 +414,10 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         ...(e.website ? [{ style: 'Web', size: s.small, runs: [{ text: e.website }] }] : []),
       ];
       items.push({ kind: 'text', x: b.x, y: top, w: b.w, h: b.y + b.h - top, paras: fitted(e.options.length ? e.options : [e.copy], (copy) => [
-        { style: 'When', size: s.when, colour: events.colour, tint: 50, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(e))] },
+        { style: 'When', size: s.when, runs: [{ text: e.dates }, ...(e.times ? [{ text: `  ${e.times}`, char: 'Times', size: s.when }] : []), ...iconRuns(iconsFor(e))] },
         { style: 'listings title', size: s.title, colour: events.colour, runs: [{ text: e.title }] },
         ...(copy || e.price ? [{ style: 'listing body', size: s.copy, runs: [{ text: copy }, ...(e.price ? [{ text: ` ${e.price}`, char: 'Price' }] : [])] }] : []),
-        ...(e.venue ? [{ style: 'Venue', size: s.small, runs: [{ text: '', inline: iconShape({ label: 'Venue', Icon: MapPin }, 2.4, 2.4) }, { text: `\u2009${e.venue}` }] }] : []),
+        ...(e.venue ? [{ style: 'Venue', size: s.small, colour: events.colour, runs: [{ text: '', inline: iconShape({ label: 'Venue', Icon: MapPin }, 2.4, 2.4, events.colour) }, { text: `\u2009${e.venue}` }] }] : []),
         ...small,
       ], b.w, b.y + b.h - top) });
     });
@@ -442,9 +458,9 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         const when = t.kind === 'dated' ? t.dates : '';
         items.push({ kind: 'text', x: b.x, y: b.y + 1.2, w: b.w, h: b.h - 1.2, paras: fitted(t.options.length ? t.options : [t.copy], (copy) => [
           // Tour dates in 80% grey, as the editor set them.
-          ...(when ? [{ style: 'When', size: s.when, colour: INK, tint: 80, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when * 0.85 }] : []), ...iconRuns(iconsFor(t))] }] : []),
+          ...(when ? [{ style: 'When', size: s.when, colour: textColour(palette), tint: 80, runs: [{ text: when }, ...(t.times ? [{ text: `  ${t.times}`, char: 'Times', size: s.when }] : []), ...iconRuns(iconsFor(t))] }] : []),
           { style: 'listings title', size: s.title, colour: tours.colour, runs: [{ text: t.title }, ...(when ? [] : iconRuns(iconsFor(t)))] },
-          ...(!when && t.times ? [{ style: 'Contact', size: s.small, runs: [{ text: t.times }] }] : []),
+          ...(!when && t.times ? [{ style: 'Contact', size: s.small, colour: textColour(palette), tint: 80, runs: [{ text: t.times }] }] : []),
           // Tours' copy 7.5 on 8, as the editor set it.
           ...(copy ? [{ style: 'listing body', size: 7.5, leading: 8, runs: [{ text: copy }] }] : []),
           // The provider's code with the tour guide badge (found in the index), and the duration with a clock, as the proof prints them.
@@ -480,7 +496,7 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         const v = p.venue;
         const x = LEFT_MARGIN(left());
         if (v.imageUrl) image(items, v.imageUrl, { x, y: 8.5, w: 94.9, h: 62 });
-        items.push({ kind: 'text', x, y: v.imageUrl ? 73.5 : 8.5, w: 94.9, h: v.imageUrl ? 70 : 135, paras: venueParas(v, 'full', s) });
+        items.push({ kind: 'text', x, y: v.imageUrl ? 73.5 : 8.5, w: 94.9, h: v.imageUrl ? 70 : 135, paras: venueParas(v, 'full', s, section.colour) });
       } else {
         const rows = vs.grid === 'grid16' ? VENUE_GRID16 : ROWS[vs.grid] ?? ROWS.grid8!;
         const gap = vs.grid === 'grid16' ? 1 : 2;
@@ -508,13 +524,13 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
           if (c.frame === 'quarter') {
             const half = (b.w - 3) / 2;
             if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: half, h: b.h - 1.6 });
-            items.push({ kind: 'text', x: b.x + half + 3, y: b.y + 1.6, w: half, h: b.h - 1.6, paras: venueParas(c, c.frame, s) });
+            items.push({ kind: 'text', x: b.x + half + 3, y: b.y + 1.6, w: half, h: b.h - 1.6, paras: venueParas(c, c.frame, s, section.colour) });
           } else if (c.frame === 'half' || c.frame === 'three-quarters') {
             const ph = c.frame === 'half' ? 38 : 62;
             if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: b.w, h: ph });
-            items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s) });
+            items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s, section.colour) });
           } else {
-            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s), b.w, b.h - 1.6) });
+            items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s, section.colour), b.w, b.h - 1.6) });
           }
         }
       }
@@ -547,6 +563,26 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
         push(items);
       }
     }
+    // Looking ahead, after Visit: the attractions closed for some of the edition, in the order they open again, as the proof sets them.
+    if (vs.section === 'Visit' && guide.lookingAhead.length) {
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const paras: Para[] = [
+        { style: 'Key heading', runs: [{ text: 'Looking ahead' }] },
+        { style: 'Ahead intro', runs: [{ text: 'Closed for the winter, these attractions open again in the new season.' }] },
+        ...guide.lookingAhead.flatMap((r): Para[] => [
+          { style: 'Ahead name', runs: [{ text: MONTHS[r.reopens - 1] ?? '', char: 'Ahead when' }, { text: '\t' }, { text: r.name }] },
+          ...(r.line ? [{ style: 'Ahead line', runs: [{ text: r.line }] }] : []),
+          { style: 'Ahead contact', runs: [{ text: [r.opening, r.phone, r.website].filter(Boolean).join(' · ') }] },
+        ]),
+      ];
+      const count = Math.max(1, Math.ceil((parasHeight(paras, 94.9 - 22, styleMap, narrow) * 1.08) / 141.5));
+      for (let i = 0; i < count; i += 1) {
+        const items: Item[] = [];
+        furniture(items, section, 'Looking ahead');
+        items.push({ kind: 'text', x: LEFT_MARGIN(left()), y: 8.5, w: 94.9, h: 141.5, thread: 'looking-ahead', paras: i === 0 ? paras : [] });
+        push(items);
+      }
+    }
   }
 
   return { pages, masters };
@@ -571,13 +607,14 @@ const spanRows = (c: VenueCell, rows: number) => {
   return c.frame === 'quarter' ? Math.ceil(share * rows) : Math.floor(share * rows);
 };
 
-function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }): Para[] {
+/** A venue's paragraphs; its contact lines in its section's colour, as the events' take the events'. */
+function venueParas(v: GuideVenue, frame: string, s: { when: number; title: number; copy: number; small: number }, accent?: string): Para[] {
   const contact = [v.address, v.phone].filter(Boolean).join(' · ');
   return [
     { style: 'Venue name', size: frame === 'full' ? 15 : frame === 'listing' ? s.title : 10.5, runs: [{ text: frame === 'listing' ? v.printName ?? v.name : v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.label ? [{ text: `  ${v.label}`, char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
     ...(v.copy ? [{ style: 'listing body', size: frame === 'listing' ? s.copy : 8.5, runs: [...(frame === 'listing' && v.nameSub ? [{ text: `${v.nameSub} `, char: 'Accent' }] : []), { text: v.copy }] }] : []),
-    ...(contact ? [{ style: 'Address', size: s.small, runs: [{ text: contact }] }] : []),
+    ...(contact ? [{ style: 'Address', size: s.small, ...(accent ? { colour: accent } : {}), runs: [{ text: contact }] }] : []),
     ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
-    ...(v.bus ? [{ style: 'Contact', size: s.small, runs: [{ text: `Bus ${v.bus}` }] }] : []),
+    ...(v.bus ? [{ style: 'Contact', size: s.small, ...(accent ? { colour: accent } : {}), runs: [{ text: `Bus ${v.bus}` }] }] : []),
   ];
 }
