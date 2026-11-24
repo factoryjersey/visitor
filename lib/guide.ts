@@ -126,6 +126,31 @@ async function visitJerseyWords(type: 'events' | 'tours-and-activities', ids: st
   return out;
 }
 
+/** A price as the guide prints it: "£11 - £21", "£10.25 - £15.50", "£8"; none when Visit Jersey gives none. */
+export function venuePrice(from: unknown, to: unknown): string {
+  const money = (x: unknown) => {
+    const n = Number(String(x ?? '').replace(/[£,\s]/g, ''));
+    return Number.isFinite(n) && n > 0 ? `£${Number.isInteger(n) ? n : n.toFixed(2)}` : '';
+  };
+  const a = money(from), b = money(to);
+  return a && b && a !== b ? `${a} - ${b}` : a || b;
+}
+
+/** Visit Jersey's admission prices for venues, from their listings' price fields. */
+async function visitJerseyPrices(ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!ids.length) return out;
+  for (const r of await db
+    .select({ id: sourceRecords.placeId, payload: sourceRecords.payload })
+    .from(sourceRecords)
+    .where(and(eq(sourceRecords.source, 'visit_jersey'), eq(sourceRecords.present, true), inArray(sourceRecords.placeId, ids)))) {
+    const acf = (r.payload as { acf?: { price_from?: unknown; price_to?: unknown } } | null)?.acf;
+    const price = venuePrice(acf?.price_from, acf?.price_to);
+    if (r.id && price) out.set(r.id, price);
+  }
+  return out;
+}
+
 /**
  * Everything included, as printed entries, in guide order: events by
  * their first date in the edition; dated tours by date, then
@@ -222,7 +247,9 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
       .filter((d) => !tourProviders.some((t) => t.code && t.code.toUpperCase() === d.code.toUpperCase()))
       .map((d) => ({ code: d.code, name: d.name, contact: d.phone, website: d.website })),
   ].sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
-  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map(guideVenue).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => venueGridFor(layouts, s), (s) => budgetFor(layouts, s));
+  // Admission prices from Visit Jersey, printed in the bigger entries' details as the 2026 Visit pages print them.
+  const prices = await visitJerseyPrices(selection.venues.map((p) => p.id));
+  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map((p) => ({ ...guideVenue(p), ...(prices.get(p.id) ? { price: prices.get(p.id) } : {}) })).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => venueGridFor(layouts, s), (s) => budgetFor(layouts, s));
   // Do prints even when every provider is in its index and no venue has a page of its own.
   if (doSet && !sections.some((s) => s.section === 'Do')) {
     const at = sections.findIndex((s) => VENUE_SECTION_ORDER.indexOf(s.section as never) > VENUE_SECTION_ORDER.indexOf('Do'));

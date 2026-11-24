@@ -456,6 +456,8 @@ export type GuideVenue = {
   /** Its name as a listing box prints it, shorter ("Locke’s" for "Locke’s Coffee & Grub"), and the "at …" its words open with. Listings only. */
   printName?: string;
   nameSub?: string;
+  /** Its admission price, from Visit Jersey ("£11 - £21"); printed in the bigger entries' details. */
+  price?: string;
   /** A previous client (marked, booked space, or in the last edition): kept in a box on the small grids even when its name runs long. Not printed. */
   client?: boolean;
   /** When it opens: the months, unless all year, then the hours. Empty when the source does not say. */

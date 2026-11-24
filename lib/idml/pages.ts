@@ -2,7 +2,7 @@ import type { Guide } from '@/lib/guide';
 import { PALETTE, pageSwatches, sectionSwatch, type GuidePalette } from '@/lib/domain/guide-colours';
 import { EVENTS, TOURS } from '@/lib/domain/guide-sections';
 import type { GuideEvent, GuideTour, GuideVenue, Layout, VenueCell, VenueSection } from '@/lib/domain/guide-entry';
-import { BadgeCheck, Bus, Clock, MapPin } from 'lucide-react';
+import { BadgeCheck, Bus, Clock, Info, MapPin, Ticket } from 'lucide-react';
 import { iconsFor, type Icon } from '@/components/guide/key-icons';
 import { ellipse, iconNode, leftHalfDisc, placed, subpathsOf } from './vector';
 import { MM, PAGE_H, PAGE_W, type CharStyle, type InlineShape, type Run, type IdmlMaster, type IdmlPage, type Item, type Para, type ParaStyle, type Swatch } from './write';
@@ -144,6 +144,7 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       p('Venue info', f.regular, 8, { font: f.plain, leading: 9, tint: 80 }),
       p('Venue phone', f.bold, 10, { leading: 12, tracking: -20, before: 1.4 }),
       p('Venue web', f.bold, 9, { leading: 10 }),
+      p('Venue label', f.medium, 8, { caps: true, leading: 9, tracking: 20 }),
       p('Tour meta', f.medium, 7, { before: 0.6, leading: 8 }),
       p('Highlight title', f.headStyle, 15, { font: f.head, leading: 15.8, before: 0.5, after: 2 }),
       p('Highlight copy', f.light, 8.5, { leading: 9.8, after: 1.5 }),
@@ -174,6 +175,7 @@ export function styles(palette: GuidePalette): { paraStyles: ParaStyle[]; charSt
       { name: 'Accent', style: f.medium },
       { name: 'Ahead when', style: f.medium, caps: true },
       { name: 'Standfirst', style: f.bold },
+      { name: 'Web inline', style: f.bold, size: 9 },
       { name: 'Info bold', font: f.body, style: f.bold },
       { name: 'Email', font: f.body, style: f.italic, size: 7.5, colour: text, tint: 80 },
       { name: 'Rating', style: f.medium, size: 6.5 },
@@ -365,6 +367,13 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
     const p = pic(url);
     items.push({ kind: 'image', ...b, link: p?.path ?? '', px: p?.px, py: p?.py, fill: 'Paper' });
   };
+  /** The entry's label on its picture ("ATTRACTION"), as the 2026 Visit pages tag them: its section's colour on a light tint of it. */
+  const label = (items: Item[], v: GuideVenue, section: { name: string; colour: string }, x: number, y: number) => {
+    const text = v.label || (section.name === 'Visit' ? 'ATTRACTION' : '');
+    if (!text) return;
+    const w = Math.min(40, 4 + text.length * 2.1);
+    items.push({ kind: 'text', x, y, w, h: 4.6, fill: section.colour, fillTint: 20, inset: 0.8, centre: true, paras: [{ style: 'Venue label', colour: section.colour, runs: [{ text }] }] });
+  };
   const footer = (items: Item[], textLine: string) => {
     if (!textLine) return;
     items.push({ kind: 'text', x: left() ? 8.1 : 30, y: PAGE_H - 4.6 - 3.2, w: PAGE_W - 38, h: 3.6, paras: [{ style: 'Footer', runs: [{ text: textLine }] }] });
@@ -504,8 +513,19 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
       if (p.kind === 'full') {
         const v = p.venue;
         const x = LEFT_MARGIN(left());
-        if (v.imageUrl) image(items, v.imageUrl, { x, y: 8.5, w: 94.9, h: 62 });
-        items.push({ kind: 'text', x, y: v.imageUrl ? 73.5 : 8.5, w: 94.9, h: v.imageUrl ? 70 : 135, paras: venueParas(v, 'full', s, section.colour, textColour(palette)) });
+        // As the 2026 Visit pages: the picture across the top with its label, the name and copy in a wide column,
+        // the details in a narrow one under a rule with an (i), the website large at the foot.
+        const parts = venueParts(v, 'full', section.colour, textColour(palette));
+        const top = v.imageUrl ? 73.5 : 8.5;
+        if (v.imageUrl) {
+          image(items, v.imageUrl, { x, y: 8.5, w: 94.9, h: 62 });
+          label(items, v, section, x, 8.5 + 62 - 4.6);
+        }
+        items.push({ kind: 'text', x, y: top, w: 60, h: 141.5 + 8.5 - top - 10, paras: parts.main });
+        items.push({ kind: 'line', x1: x + 63.5, y1: top + 2, x2: x + 94.9, y2: top + 2, stroke: section.colour, weight: 0.75 });
+        items.push({ kind: 'text', x: x + 63.5 + 31.4 / 2 - 2.4, y: top - 0.4, w: 4.8, h: 4.8, fill: 'Paper', centre: true, paras: [{ style: 'Venue info', runs: [{ text: '', inline: iconShape({ label: 'Info', Icon: Info }, 3.6, 1.75, section.colour) }] }] });
+        items.push({ kind: 'text', x: x + 63.5, y: top + 5, w: 31.4, h: 141.5 + 8.5 - top - 15, paras: parts.info });
+        if (parts.web.length) items.push({ kind: 'text', x, y: 141.5 + 8.5 - 7, w: 94.9, h: 6, paras: parts.web.map((p) => ({ ...p, size: 12 })) });
       } else {
         const rows = vs.grid === 'grid16' ? VENUE_GRID16 : ROWS[vs.grid] ?? ROWS.grid8!;
         const gap = vs.grid === 'grid16' ? 1 : 2;
@@ -532,12 +552,32 @@ export function guidePages(input: LayoutInput): { pages: GuidePage[]; masters: I
           items.push({ kind: 'line', x1: b.x, y1: b.y, x2: b.x + b.w, y2: b.y, stroke: section.colour, weight: 0.6 });
           if (c.frame === 'quarter') {
             const half = (b.w - 3) / 2;
-            if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: half, h: b.h - 1.6 });
+            if (c.imageUrl) {
+              image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: half, h: b.h - 1.6 });
+              label(items, c, section, b.x, b.y + 1.6);
+            }
             items.push({ kind: 'text', x: b.x + half + 3, y: b.y + 1.6, w: half, h: b.h - 1.6, paras: venueParas(c, c.frame, s, section.colour, textColour(palette)) });
           } else if (c.frame === 'half' || c.frame === 'three-quarters') {
+            // As the 2026 Visit pages' half pages: the picture on the left with its label, the details beside it,
+            // then the name and copy across, and the phone, email and website on a line at the foot.
+            const parts = venueParts(c, c.frame, section.colour, textColour(palette));
             const ph = c.frame === 'half' ? 38 : 62;
-            if (c.imageUrl) image(items, c.imageUrl, { x: b.x, y: b.y + 1.6, w: b.w, h: ph });
-            items.push({ kind: 'text', x: b.x, y: b.y + 1.6 + (c.imageUrl ? ph + 2 : 0), w: b.w, h: b.h - 1.6 - (c.imageUrl ? ph + 2 : 0), paras: venueParas(c, c.frame, s, section.colour, textColour(palette)) });
+            const pw = c.imageUrl ? Math.round(b.w * 0.62 * 10) / 10 : 0;
+            const y0 = b.y + 1.6;
+            if (c.imageUrl) {
+              image(items, c.imageUrl, { x: b.x, y: y0, w: pw, h: ph });
+              label(items, c, section, b.x, y0);
+            }
+            const info = parts.info.filter((p) => p.style === 'Venue info' && !p.runs.some((r) => r.char === 'Email'));
+            const contact: Para[] = [{ style: 'Venue phone', colour: section.colour, runs: [
+              ...(c.phone ? [{ text: c.phone }] : []),
+              ...(c.email ? [{ text: `${c.phone ? ' | ' : ''}${c.email}`, char: 'Email' }] : []),
+              ...(c.website ? [{ text: `${c.phone || c.email ? '  |  ' : ''}${c.website.toLowerCase()}`, char: 'Web inline' }] : []),
+            ] }];
+            if (c.imageUrl) items.push({ kind: 'text', x: b.x + pw + 3, y: y0, w: b.w - pw - 3, h: ph, paras: info });
+            const below = y0 + (c.imageUrl ? ph + 2 : 0);
+            items.push({ kind: 'text', x: b.x, y: below, w: b.w, h: b.y + b.h - below - 7, paras: c.imageUrl ? parts.main : [...parts.main, ...info] });
+            items.push({ kind: 'text', x: b.x, y: b.y + b.h - 6, w: b.w, h: 6, paras: contact });
           } else {
             items.push({ kind: 'text', x: b.x, y: b.y + (vs.grid === 'grid16' ? 0.8 : 1.6), w: b.w, h: b.h - 1.6, paras: fitted(c.options.length ? c.options : [c.copy], (copy) => venueParas({ ...c, copy }, 'listing', vs.grid === 'grid16' || vs.grid === 'grid12' ? { ...s, copy: 6.5 } : s, section.colour, textColour(palette)), b.w, b.h - 1.6) });
           }
@@ -634,18 +674,35 @@ export function venueParas(v: GuideVenue, frame: string, s: { when: number; titl
       ...(v.website ? [{ style: 'Web', size: s.small, runs: [{ text: v.website }] }] : []),
     ];
   }
+  const { main, info, web } = venueParts(v, frame, accent, text);
+  return [...main, ...info, ...web];
+
+}
+
+/**
+ * A bigger venue entry in its parts, as the 2026 Visit pages lay it out: the
+ * name and copy; the details column (price, hours, buses, address, phone,
+ * email), each behind its icon; and the website.
+ */
+export function venueParts(v: GuideVenue, frame: string, accent?: string, text = INK): { main: Para[]; info: Para[]; web: Para[] } {
   const colour = accent ? { colour: accent } : {};
   const icon = (Icon: Icon['Icon'], label: string): Run[] => [{ text: '', inline: iconShape({ label, Icon }, 2.6, 1.75, text, 80) }, { text: '\u2009' }];
   // Its first sentence leads, in Bold, as the 2026 pages open each entry.
   const first = v.copy.match(/^.+?[.!?](?=\s|$)/)?.[0] ?? '';
   const rest = v.copy.slice(first.length).trim();
-  return [
-    { style: 'Venue title', size: frame === 'full' ? 14 : 12, ...colour, runs: [{ text: v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
-    ...(v.copy ? [{ style: 'Venue copy', runs: [...(first ? [{ text: rest ? `${first} ` : first, char: 'Standfirst' }] : []), ...(rest || !first ? [{ text: rest || v.copy }] : [])] }] : []),
-    ...(v.opening ? [{ style: 'Venue info', runs: [...icon(Clock, 'Opening'), { text: v.opening }] }] : []),
-    ...(v.bus ? [{ style: 'Venue info', runs: [...icon(Bus, 'Bus'), { text: v.bus }] }] : []),
-    ...(v.address ? [{ style: 'Venue info', runs: [...icon(MapPin, 'Address'), { text: v.address, char: 'Info bold' }] }] : []),
-    ...(v.phone || v.email ? [{ style: 'Venue phone', ...colour, runs: [...(v.phone ? [{ text: v.phone }] : []), ...(v.email ? [{ text: `${v.phone ? '  ' : ''}${v.email}`, char: 'Email' }] : [])] }] : []),
-    ...(v.website ? [{ style: 'Venue web', ...colour, runs: [{ text: v.website.toLowerCase() }] }] : []),
-  ];
+  return {
+    main: [
+      { style: 'Venue title', size: frame === 'full' ? 14 : 12, ...colour, runs: [{ text: v.name }, ...(v.isNew ? [{ text: '  NEW', char: 'Tag' }] : []), ...(v.tripadvisor ? [{ text: '  ' }, { text: '', inline: bubbles(v.tripadvisor.rating) }, { text: `\u2009${v.tripadvisor.rating.toFixed(1)}`, char: 'Rating' }] : [])] },
+      ...(v.copy ? [{ style: 'Venue copy', runs: [...(first ? [{ text: rest ? `${first} ` : first, char: 'Standfirst' }] : []), ...(rest || !first ? [{ text: rest || v.copy }] : [])] }] : []),
+    ],
+    info: [
+      ...(v.price ? [{ style: 'Venue info', runs: [...icon(Ticket, 'Price'), { text: v.price }] }] : []),
+      ...(v.opening ? [{ style: 'Venue info', runs: [...icon(Clock, 'Opening'), { text: v.opening }] }] : []),
+      ...(v.bus ? [{ style: 'Venue info', runs: [...icon(Bus, 'Bus'), { text: v.bus }] }] : []),
+      ...(v.address ? [{ style: 'Venue info', runs: [...icon(MapPin, 'Address'), { text: v.address, char: 'Info bold' }] }] : []),
+      ...(v.phone ? [{ style: 'Venue phone', ...colour, runs: [{ text: v.phone }] }] : []),
+      ...(v.email ? [{ style: 'Venue info', runs: [{ text: v.email, char: 'Email' }] }] : []),
+    ],
+    web: v.website ? [{ style: 'Venue web', ...colour, runs: [{ text: v.website.toLowerCase() }] }] : [],
+  };
 }

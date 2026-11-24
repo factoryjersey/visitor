@@ -34,7 +34,7 @@ export type Box = { x: number; y: number; w: number; h: number };
 export type Item =
   | (Box & { kind: 'rect'; fill: string; tint?: number })
   | { kind: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; weight: number }
-  | (Box & { kind: 'text'; paras: Para[]; fill?: string; vertical?: boolean; centre?: boolean; thread?: string; inset?: number })
+  | (Box & { kind: 'text'; paras: Para[]; fill?: string; fillTint?: number; vertical?: boolean; centre?: boolean; thread?: string; inset?: number })
   | (Box & { kind: 'image'; link: string; px?: number; py?: number; fill?: string });
 /** A page, and the parent page (master) it takes its ears and folio from. */
 export type IdmlPage = { n: number; items: Item[]; master?: string };
@@ -183,7 +183,7 @@ export function idmlFiles(doc: IdmlInput): [string, string][] {
           const cx = dx + (it.x + it.w / 2) * MM, cy = -H / 2 + (it.y + it.h / 2) * MM;
           const geometry = it.vertical ? pathLocal(it.h * MM, it.w * MM) : path(it, dx);
           const transform = it.vertical ? `0 1 -1 0 ${fmt(cx)} ${fmt(cy)}` : '1 0 0 1 0 0';
-          body += `<TextFrame Self="${fid}" ParentStory="${story}" PreviousTextFrame="${prev}" NextTextFrame="${nxt}" ContentType="TextType" ItemLayer="${layer}" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}" StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="${transform}">${geometry}<TextFramePreference TextColumnCount="1" AutoSizingType="Off" VerticalJustification="${it.centre ? 'CenterAlign' : 'TopAlign'}" InsetSpacing="${inset} ${inset} ${inset} ${inset}" FirstBaselineOffset="AscentOffset" IgnoreWrap="false"/></TextFrame>`;
+          body += `<TextFrame Self="${fid}" ParentStory="${story}" PreviousTextFrame="${prev}" NextTextFrame="${nxt}" ContentType="TextType" ItemLayer="${layer}" FillColor="${it.fill ? colourRef(it.fill) : 'Swatch/None'}"${it.fillTint !== undefined ? ` FillTint="${it.fillTint}"` : ''} StrokeColor="Swatch/None" StrokeWeight="0" AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="${transform}">${geometry}<TextFramePreference TextColumnCount="1" AutoSizingType="Off" VerticalJustification="${it.centre ? 'CenterAlign' : 'TopAlign'}" InsetSpacing="${inset} ${inset} ${inset} ${inset}" FirstBaselineOffset="AscentOffset" IgnoreWrap="false"/></TextFrame>`;
         }
     }
     return body;
