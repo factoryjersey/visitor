@@ -142,6 +142,7 @@ const venueGuideSchema = z.object({
   guideLabel: z.string().max(40),
   listingSize: z.enum(LISTING_SIZES),
   guideLine: z.string().trim().max(160).optional(),
+  printPrice: z.string().trim().max(60).optional(),
 });
 
 /** Where a venue sits in the guide, under which label, and how much room it gets. */
@@ -162,6 +163,8 @@ export async function saveVenueGuide(form: FormData) {
       guideArea: v.guideArea.trim() || null,
       guideLabel: v.guideLabel.trim() || null,
       listingSize: v.listingSize,
+      // Staff's own admission price, printed in place of Visit Jersey's; cleared, theirs prints again.
+      ...(v.printPrice !== undefined ? { printPrice: v.printPrice || null } : {}),
       editedBy: user.email,
       editedAt: now,
       updatedAt: now,

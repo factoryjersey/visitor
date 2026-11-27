@@ -250,7 +250,7 @@ export async function buildGuide(window: Window, opts: { draft?: boolean; layout
   ].sort((a, b) => (a.code || 'ZZZ').localeCompare(b.code || 'ZZZ') || a.name.localeCompare(b.name));
   // Admission prices from Visit Jersey, printed in the bigger entries' details as the 2026 Visit pages print them.
   const prices = await visitJerseyPrices(selection.venues.map((p) => p.id));
-  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map((p) => ({ ...guideVenue(p), ...(prices.get(p.id) ? { price: prices.get(p.id) } : {}) })).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => venueGridFor(layouts, s), (s) => budgetFor(layouts, s));
+  const sections = venueSections(selection.venues.filter((p) => !doSet || !inIndex.has(p.id)).map((p) => ({ ...guideVenue(p), ...(p.printPrice || prices.get(p.id) ? { price: p.printPrice || prices.get(p.id) } : {}) })).filter((v) => !(UNPRINTED_SECTIONS as readonly string[]).includes(v.section)), (s) => venueGridFor(layouts, s), (s) => budgetFor(layouts, s));
   // Do prints even when every provider is in its index and no venue has a page of its own.
   if (doSet && !sections.some((s) => s.section === 'Do')) {
     const at = sections.findIndex((s) => VENUE_SECTION_ORDER.indexOf(s.section as never) > VENUE_SECTION_ORDER.indexOf('Do'));
