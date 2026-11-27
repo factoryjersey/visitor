@@ -202,6 +202,8 @@ export const places = pgTable('places', {
   openMonths: integer('open_months').array().notNull().default([]),
   /** Opening and closing times through the week, as the source lists them. Null when it does not, or hides them. */
   openingHours: jsonb('opening_hours').$type<WeekHours | null>(),
+  /** The admission price as the guide prints it ("£10.25 - £15.45"), set by staff where Visit Jersey's figure is out of date: it prints in place of theirs. */
+  printPrice: text('print_price'),
   lowRatePence: integer('low_rate_pence'),
   highRatePence: integer('high_rate_pence'),
   aaRating: text('aa_rating'),

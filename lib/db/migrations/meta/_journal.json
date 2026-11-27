@@ -281,6 +281,13 @@
       "when": 1795390835914,
       "tag": "0039_google_drive",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795477235914,
+      "tag": "0040_place_print_price",
+      "breakpoints": true
     }
   ]
 }
